@@ -28,6 +28,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6322800268969151281}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.9, y: 0.8, z: 0.964}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
@@ -35,7 +36,6 @@ Transform:
   m_Children:
   - {fileID: 8209209219958638211}
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &6322800268969151284
 MeshFilter:
@@ -95,9 +95,17 @@ SphereCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6322800268969151281}
   m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
   m_IsTrigger: 0
+  m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 2
+  serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!54 &6322800268969151287
@@ -107,10 +115,21 @@ Rigidbody:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6322800268969151281}
-  serializedVersion: 2
+  serializedVersion: 4
   m_Mass: 1
   m_Drag: 0
   m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
@@ -136,12 +155,9 @@ MonoBehaviour:
   OnObjectSelected:
     m_PersistentCalls:
       m_Calls: []
-  OnHoverActiveMaterial: {fileID: 2100000, guid: 5e88a93148f69984e968ecc92408960f,
-    type: 2}
-  OnSelectedActiveMaterial: {fileID: 2100000, guid: 8521b32b7fcd7ae41acc48012ada9ec0,
-    type: 2}
-  OnPassiveStateMaterial: {fileID: 2100000, guid: 2ab8149ec4775284bada96c1b85b4a09,
-    type: 2}
+  OnHoverActiveMaterial: {fileID: 0}
+  OnSelectedActiveMaterial: {fileID: 0}
+  OnPassiveStateMaterial: {fileID: 0}
 --- !u!1 &8437322805096348919
 GameObject:
   m_ObjectHideFlags: 0
@@ -173,7 +189,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6322800268969151179}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}

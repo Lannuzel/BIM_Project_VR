@@ -5,7 +5,7 @@ public class EyeTrackingDataLogger : MonoBehaviour
 {
     [SerializeField] private EyeTrackingRay eyeTrackingRay;
     private StreamWriter csvWriter;
-    [SerializeField] private string csvFilePath = "EyeTrackingData.csv";
+    [SerializeField] private string csvFilePath = "./Data/EyeTrackingData.csv";
 
     private void Start()
     {
