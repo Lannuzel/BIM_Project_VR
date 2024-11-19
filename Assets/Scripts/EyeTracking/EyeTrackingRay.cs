@@ -98,27 +98,45 @@ public class EyeTrackingRay : MonoBehaviour
 
             lineRenderer.startColor = lineRenderer.endColor = rayColorHoverState;
 
-            // keep a cache of interactables
-            if (!interactables.TryGetValue(hit.transform.gameObject.GetHashCode(), out EyeInteractable eyeInteractable))
+            if (interactables.TryGetValue(hit.transform.gameObject.GetHashCode(), out EyeInteractable eyeInteractable))
             {
-                eyeInteractable = hit.transform.GetComponent<EyeInteractable>();
-                interactables.Add(hit.transform.gameObject.GetHashCode(), eyeInteractable);
+                if (eyeInteractable != null)  // Vérifie si l'objet interactable existe
+                {
+                    var toLocalSpace = transform.InverseTransformPoint(eyeInteractable.transform.position);
+                    lineRenderer.SetPosition(1, new Vector3(0, 0, toLocalSpace.z));
+
+                    // hover started
+                    eyeInteractable.Hover(true);
+
+                    lastEyeInteractable = eyeInteractable;
+                }
+                else
+                {
+                    //Debug.LogWarning($"EyeInteractable component is missing on {hit.transform.gameObject.name}.");
+                }
             }
-
-            // limit line render ray
-            var toLocalSpace = transform.InverseTransformPoint(eyeInteractable.transform.position);
-            lineRenderer.SetPosition(1, new Vector3(0, 0, toLocalSpace.z));
-
-            // hover started
-            eyeInteractable.Hover(true);
-
-            lastEyeInteractable = eyeInteractable;
+            else
+            {
+                //Debug.LogWarning($"Interactable object not found in dictionary for {hit.transform.gameObject.name}.");
+            }
         }
+
     }
 
     private void HoverEnded(bool reset = false)
     {
-        foreach (var interactable in interactables) interactable.Value.Hover(false);
+        foreach (var interactable in interactables)
+        {
+            if (interactable.Value != null) // Vérifie si la référence n'est pas nulle
+            {
+                interactable.Value.Hover(false);
+            }
+        }
+
+        if (reset)
+        {
+            interactables.Clear();
+        }
     }
 
     private void OnDestroy() => interactables.Clear();
