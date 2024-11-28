@@ -10,18 +10,17 @@ public class AudioTracker : MonoBehaviour
     private string filePath;
     private bool isRecording = false;
     private int sampleRate = 44100; // Fréquence d'échantillonnage standard
-
     private MemoryStream memoryStream;
     private BinaryWriter binaryWriter;
-
     private int lastSamplePosition = 0; // Position précédente dans le clip audio
     private string micDevice;
 
     void Start()
     {
         audioSource = GetComponent<AudioSource>();
-        filePath =  $"./Data/{userName}_Audio.wav";
-        StartRecording();
+        // filePath =  $"{userName}_Audio.wav";
+        filePath =  Path.Combine(Application.persistentDataPath, $"{userName}Audio.wav");
+        StartRecording(); 
     }
 
     public void StartRecording()

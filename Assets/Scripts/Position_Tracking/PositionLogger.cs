@@ -14,9 +14,10 @@ public class PositionLogger : MonoBehaviour
 
     [SerializeField] private float logInterval = 0.5f; // Enregistre toutes les 0.5 secondes
     
-
     void Start()
     {
+        fileName =  Path.Combine(Application.persistentDataPath,"UsersPositions.csv");
+
         // Trouver tous les UserTracker dans la scène
         userTrackers.AddRange(FindObjectsOfType<UserTracker>());
 

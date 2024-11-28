@@ -6,11 +6,12 @@ public class FaceTrackingRecorder : MonoBehaviour
     [SerializeField] private OVRFaceExpressions faceExpressions;
     private StreamWriter writer;
     private bool isRecording = false;
-    [SerializeField] private string csvFilePath = "./Data/FaceTrackingData.csv";
+    [SerializeField] private string csvFilePath = "FaceTrackingData.csv";
 
     void Start()
     {
-        
+        csvFilePath = Path.Combine(Application.persistentDataPath,"FaceTrackingData.csv");
+
         if (faceExpressions == null) // Si pas déjà assigné dans l'inspecteur
         {
             faceExpressions = FindObjectOfType<OVRFaceExpressions>();

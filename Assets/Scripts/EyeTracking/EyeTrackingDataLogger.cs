@@ -5,10 +5,12 @@ public class EyeTrackingDataLogger : MonoBehaviour
 {
     [SerializeField] private EyeTrackingRay eyeTrackingRay;
     private StreamWriter csvWriter;
-    [SerializeField] private string csvFilePath = "./Data/EyeTrackingData.csv";
+    [SerializeField] private string csvFilePath = "EyeTrackingData.csv";
 
     private void Start()
     {
+        csvFilePath = Path.Combine(Application.persistentDataPath,"EyeTrackingData.csv");
+
         csvWriter = new StreamWriter(csvFilePath, false);  // false écrase le fichier existant
         csvWriter.WriteLine("Time;RayOriginX;RayOriginY;RayOriginZ;HitPointX;HitPointY;HitPointZ;ObjectHit");
     }
