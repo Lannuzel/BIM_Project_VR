@@ -443,6 +443,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: XRI Network Game Manager
       objectReference: {fileID: 0}
+    - target: {fileID: 8647664954492677990, guid: 0267a1d338db2bf4c9625e450bbaaad0,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -516,7 +521,7 @@ PrefabInstance:
     - target: {fileID: 3992934537725953122, guid: 208c2548f5e1da646af2d1b9e3cf4cf9,
         type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 4719646798650747941, guid: 208c2548f5e1da646af2d1b9e3cf4cf9,
         type: 3}
@@ -758,6 +763,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: NetworkManager_VR_Mutliplayer_Template
+      objectReference: {fileID: 0}
+    - target: {fileID: 5087823492143518475, guid: 3967f87296c892e40b57e37bc8601550,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1331,7 +1341,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &503592700
 Transform:
   m_ObjectHideFlags: 0
@@ -5218,7 +5228,7 @@ PrefabInstance:
     - target: {fileID: 5311395694275460507, guid: 813642986a89f3a45a88639d20996f29,
         type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 5335611043037011896, guid: 813642986a89f3a45a88639d20996f29,
         type: 3}
@@ -7348,7 +7358,7 @@ PrefabInstance:
     - target: {fileID: 950452678824256546, guid: 03490eaf7fd83564291a84ec3e4015ad,
         type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 996697081011487312, guid: 03490eaf7fd83564291a84ec3e4015ad,
         type: 3}
@@ -9428,6 +9438,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 4473651029586011289, guid: 4a30026de8ddb4849876c41f398f73d2,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6469596502069807352, guid: 4a30026de8ddb4849876c41f398f73d2,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -9482,6 +9497,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: InteractionRigOVR-FullSynthetic
+      objectReference: {fileID: 0}
+    - target: {fileID: 8961301539984056978, guid: 4a30026de8ddb4849876c41f398f73d2,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

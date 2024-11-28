@@ -3,15 +3,22 @@ using UnityEngine;
 
 public class EyeTrackingDataLogger : MonoBehaviour
 {
+    private string fileName = "EyeTrackingData.csv";
+    private string folderName = "Data";
+    private string filePath;
     [SerializeField] private EyeTrackingRay eyeTrackingRay;
     private StreamWriter csvWriter;
-    [SerializeField] private string csvFilePath = "EyeTrackingData.csv";
-
     private void Start()
     {
-        csvFilePath = Path.Combine(Application.persistentDataPath,"EyeTrackingData.csv");
-
-        csvWriter = new StreamWriter(csvFilePath, false);  // false écrase le fichier existant
+        // Combine correctement les chemins
+        string folderPath = Path.Combine(Application.persistentDataPath, folderName);
+        // Créez le dossier si nécessaire
+        if (!Directory.Exists(folderPath))
+        {
+            Directory.CreateDirectory(folderPath);
+        }
+        filePath =  Path.Combine(Application.persistentDataPath,folderName,fileName);
+        csvWriter = new StreamWriter(filePath, false);  // false écrase le fichier existant
         csvWriter.WriteLine("Time;RayOriginX;RayOriginY;RayOriginZ;HitPointX;HitPointY;HitPointZ;ObjectHit");
     }
 
