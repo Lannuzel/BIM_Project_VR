@@ -21,12 +21,26 @@ public class PlayerSpawner : MonoBehaviour, INetworkRunnerCallbacks
     #region INetworkRunnerCallbacks
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
-        if (player == runner.LocalPlayer && playerPrefab != null)
+        if (playerPrefab != null)
         {
-            //Vector3 spawnPosition = new Vector3(UnityEngine.Random.Range(1, 5), 0.5f, UnityEngine.Random.Range(1, 5));
+            Vector3 spawnPosition = new Vector3(UnityEngine.Random.Range(1, 5), 0.5f, UnityEngine.Random.Range(1, 5));
 
-            NetworkObject networkPlayerObject = runner.Spawn(playerPrefab, Vector3.zero, Quaternion.identity, player);
-            // Keep track of the player avatars so we can remove it when they disconnect
+            // Spawner le joueur
+            NetworkObject networkPlayerObject = runner.Spawn(playerPrefab, spawnPosition, Quaternion.identity, player);
+
+            // Attribuer un nom au joueur
+            var playerController = networkPlayerObject.GetComponent<PlayerController>();
+            if (playerController != null)
+            {
+                string playerName = player == runner.LocalPlayer
+                    ? PlayerPrefs.GetString("PlayerName", $"Player {player.PlayerId}")
+                    : $"Player {player.PlayerId}";
+
+                Debug.Log($"Nom récupéré pour le joueur {player.PlayerId} : {playerName}");
+                playerController.PlayerName = playerName;
+            }
+
+            // Suivi des joueurs connectés
             _spawnedUsers.Add(player, networkPlayerObject);
         }
     }
