@@ -5,7 +5,9 @@ using UnityEngine;
 
 public class PositionLogger : MonoBehaviour
 {
-    [SerializeField] private string fileName = "./Data/UsersPositions.csv"; // Nom du fichier CSV
+    private string fileName = "UsersPositions.csv"; // Nom du fichier CSV
+    private string folderName = "Data";
+    private string filePath;
     private List<UserTracker> userTrackers = new List<UserTracker>();
     private StreamWriter writer;
     private bool isRecording = false;
@@ -14,9 +16,17 @@ public class PositionLogger : MonoBehaviour
 
     [SerializeField] private float logInterval = 0.5f; // Enregistre toutes les 0.5 secondes
     
-
     void Start()
     {
+        // Combine correctement les chemins
+        string folderPath = Path.Combine(Application.persistentDataPath, folderName);
+        // Créez le dossier si nécessaire
+        if (!Directory.Exists(folderPath))
+        {
+            Directory.CreateDirectory(folderPath);
+        }
+        filePath =  Path.Combine(Application.persistentDataPath,folderName,fileName);
+
         // Trouver tous les UserTracker dans la scène
         userTrackers.AddRange(FindObjectsOfType<UserTracker>());
 
@@ -27,7 +37,7 @@ public class PositionLogger : MonoBehaviour
     void StartLogging()
     {
        
-        writer = new StreamWriter(fileName, false); // Ouvre en écrasant le fichier existant
+        writer = new StreamWriter(filePath, false); // Ouvre en écrasant le fichier existant
 
         // Écrire l'en-tête (une colonne pour chaque utilisateur avec ses coordonnées)
         writer.Write("Timestamp");
@@ -39,7 +49,7 @@ public class PositionLogger : MonoBehaviour
         writer.WriteLine();
 
         isRecording = true;
-        Debug.Log($"Logging started. File saved at {fileName}");
+        Debug.Log($"Logging started. File saved at {filePath}");
     }
 
     void Update()

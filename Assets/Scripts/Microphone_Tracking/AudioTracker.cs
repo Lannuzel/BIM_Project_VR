@@ -5,23 +5,31 @@ using UnityEngine;
 [RequireComponent(typeof(AudioSource))]
 public class AudioTracker : MonoBehaviour
 {
-    [SerializeField] private string userName = "User_test"; // Nom unique de l'utilisateur
-    private AudioSource audioSource;
+    private static string userName = "test";
+    private string fileName = $"{userName}_Audio.wav"; // Nom unique de l'utilisateur
+    private string folderName = "Data";
     private string filePath;
+    private AudioSource audioSource;
     private bool isRecording = false;
     private int sampleRate = 44100; // Fréquence d'échantillonnage standard
-
     private MemoryStream memoryStream;
     private BinaryWriter binaryWriter;
-
     private int lastSamplePosition = 0; // Position précédente dans le clip audio
     private string micDevice;
 
     void Start()
     {
+        // Combine correctement les chemins
+        string folderPath = Path.Combine(Application.persistentDataPath, folderName);
+        // Créez le dossier si nécessaire
+        if (!Directory.Exists(folderPath))
+        {
+            Directory.CreateDirectory(folderPath);
+        }
+        Debug.Log(Application.persistentDataPath);
+        filePath =  Path.Combine(Application.persistentDataPath,folderName,fileName);
         audioSource = GetComponent<AudioSource>();
-        filePath =  $"./Data/{userName}_Audio.wav";
-        StartRecording();
+        StartRecording(); 
     }
 
     public void StartRecording()

@@ -3,14 +3,25 @@ using UnityEngine;
 
 public class FaceTrackingRecorder : MonoBehaviour
 {
+    private string fileName = "FaceTrackingData.csv";
+    private string folderName = "Data";
+    private string filePath;
+
     [SerializeField] private OVRFaceExpressions faceExpressions;
     private StreamWriter writer;
     private bool isRecording = false;
-    [SerializeField] private string csvFilePath = "./Data/FaceTrackingData.csv";
 
     void Start()
     {
-        
+        // Combine correctement les chemins
+        string folderPath = Path.Combine(Application.persistentDataPath, folderName);
+        // Créez le dossier si nécessaire
+        if (!Directory.Exists(folderPath))
+        {
+            Directory.CreateDirectory(folderPath);
+        }
+        filePath =  Path.Combine(Application.persistentDataPath,folderName,fileName);
+
         if (faceExpressions == null) // Si pas déjà assigné dans l'inspecteur
         {
             faceExpressions = FindObjectOfType<OVRFaceExpressions>();
@@ -29,7 +40,7 @@ public class FaceTrackingRecorder : MonoBehaviour
 
     public void StartRecording()
     {
-        writer = new StreamWriter(csvFilePath, false); //ecrase fichier existant
+        writer = new StreamWriter(filePath, false); //ecrase fichier existant
         
         // Écrire l'en-tête (noms des colonnes)
         writer.Write("Timestamp");
