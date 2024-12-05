@@ -1,9 +1,11 @@
 using System.IO;
 using UnityEngine;
+using System;
 
 public class FaceTrackingRecorder : MonoBehaviour
 {
-    private string fileName = "FaceTrackingData.csv";
+    private string fileName;
+    private string timestamp;
     private string folderName = "Data";
     private string filePath;
 
@@ -13,6 +15,8 @@ public class FaceTrackingRecorder : MonoBehaviour
 
     void Start()
     {
+        timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"); // Format : 2024-12-04_14-23-15
+        fileName = $"{timestamp}_FaceTrackingData.csv";
         // Combine correctement les chemins
         string folderPath = Path.Combine(Application.persistentDataPath, folderName);
         // Créez le dossier si nécessaire
@@ -69,6 +73,14 @@ public class FaceTrackingRecorder : MonoBehaviour
         }
         isRecording = false;
         Debug.Log("Recording stopped.");
+    }
+    public void AddMarker()
+    {
+        if (writer != null)
+        {
+            writer.WriteLine($"{Time.time},MARKER");
+            writer.Flush();
+        }
     }
 
     void Update()

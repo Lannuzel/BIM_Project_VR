@@ -5,7 +5,8 @@ using UnityEngine;
 
 public class PositionLogger : MonoBehaviour
 {
-    private string fileName = "UsersPositions.csv"; // Nom du fichier CSV
+    private string fileName; // Nom du fichier CSV
+    private string timestamp;
     private string folderName = "Data";
     private string filePath;
     private List<UserTracker> userTrackers = new List<UserTracker>();
@@ -18,6 +19,10 @@ public class PositionLogger : MonoBehaviour
     
     void Start()
     {
+
+        timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"); // Format : 2024-12-04_14-23-15
+        fileName = $"{timestamp}_UsersPositions.csv";
+
         // Combine correctement les chemins
         string folderPath = Path.Combine(Application.persistentDataPath, folderName);
         // Créez le dossier si nécessaire
@@ -80,6 +85,15 @@ public class PositionLogger : MonoBehaviour
 
         writer.WriteLine(); // Passe à la ligne suivante
         writer.Flush(); // Écrire immédiatement les données
+    }
+
+    public void AddMarker()
+    {
+        if (writer != null)
+        {
+            writer.WriteLine($"{Time.time},MARKER");
+            writer.Flush();
+        }
     }
 
     void OnDestroy()

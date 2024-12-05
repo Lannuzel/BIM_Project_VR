@@ -5,9 +5,9 @@ using UnityEngine;
 [RequireComponent(typeof(AudioSource))]
 public class AudioTracker : MonoBehaviour
 {
-    private static string userName = "test";
-    private string fileName = $"{userName}_Audio.wav"; // Nom unique de l'utilisateur
+    private string fileName = "Audio.wav"; // Nom unique de l'utilisateur
     private string folderName = "Data";
+    private string timestamp;
     private string filePath;
     private AudioSource audioSource;
     private bool isRecording = false;
@@ -19,6 +19,8 @@ public class AudioTracker : MonoBehaviour
 
     void Start()
     {
+        timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"); // Format : 2024-12-04_14-23-15
+        fileName = $"{timestamp}_Audio.wav";
         // Combine correctement les chemins
         string folderPath = Path.Combine(Application.persistentDataPath, folderName);
         // Créez le dossier si nécessaire
@@ -44,7 +46,7 @@ public class AudioTracker : MonoBehaviour
             InitWAV();
             isRecording = true;
 
-            Debug.Log($"Recording audio for {userName}. File saved at {filePath}");
+            Debug.Log($"Recording audio. File saved at {filePath}");
         }
         else
         {
@@ -106,7 +108,7 @@ public class AudioTracker : MonoBehaviour
             binaryWriter.Close();
             memoryStream.Close();
 
-            Debug.Log($"Audio recording stopped for {userName}");
+            Debug.Log($"Audio recording stopped");
         }
     }
 
@@ -139,5 +141,23 @@ public class AudioTracker : MonoBehaviour
     private void OnDestroy()
     {
         StopRecording();
+    }
+    public void AddSyncSignalToRecording()
+    {
+        float frequency = 440f; // Fréquence du bip (440 Hz, un La)
+        float duration = 0.5f; // Durée du bip en secondes
+        int sampleCount = (int)(duration * sampleRate);
+        float[] samples = new float[sampleCount];
+
+        for (int i = 0; i < sampleCount; i++)
+        {
+            samples[i] = Mathf.Sin(2 * Mathf.PI * frequency * i / sampleRate);
+        }
+
+        foreach (float sample in samples)
+        {
+            short intData = (short)(sample * short.MaxValue);
+            binaryWriter.Write(intData);
+        }
     }
 }

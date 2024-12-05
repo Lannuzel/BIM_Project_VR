@@ -145,8 +145,7 @@ PlayerSettings:
   bundleVersion: 0.0.1
   preloadedAssets:
   - {fileID: 0}
-  - {fileID: 3233996788981779080, guid: 87b413c5a910b15498a98200731b1754, type: 2}
-  - {fileID: 5269706996647393442, guid: e3aee76b9372917449aef639e2f74814, type: 2}
+  - {fileID: 11400000, guid: 9d9639f4982acdd48abc4a230a195d92, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -176,7 +175,7 @@ PlayerSettings:
     iPhone: 0
     tvOS: 0
   overrideDefaultApplicationIdentifier: 1
-  AndroidBundleVersionCode: 3
+  AndroidBundleVersionCode: 5
   AndroidMinSdkVersion: 32
   AndroidTargetSdkVersion: 32
   AndroidPreferredInstallLocation: 0
@@ -259,7 +258,7 @@ PlayerSettings:
   clonedFromGUID: f9aa94d3cea2f4d49b4b8ea6ba3f701b
   templatePackageId: com.unity.template.vr-multiplayer@1.1.2
   templateDefaultScene: Assets/Scenes/SampleScene.unity
-  useCustomMainManifest: 0
+  useCustomMainManifest: 1
   useCustomLauncherManifest: 0
   useCustomMainGradleTemplate: 0
   useCustomLauncherGradleManifest: 0
@@ -544,7 +543,7 @@ PlayerSettings:
   - m_BuildTarget: WindowsStandaloneSupport
     m_GraphicsJobs: 0
   - m_BuildTarget: AndroidPlayer
-    m_GraphicsJobs: 1
+    m_GraphicsJobs: 0
   m_BuildTargetGraphicsJobMode:
   - m_BuildTarget: AndroidPlayer
     m_GraphicsJobMode: 1
