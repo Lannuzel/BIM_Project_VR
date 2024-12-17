@@ -42,8 +42,26 @@ public class PlayerSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
             // Suivi des joueurs connectés
             _spawnedUsers.Add(player, networkPlayerObject);
+            StartCoroutine(WaitForPlayerName(runner, player, networkPlayerObject));
         }
     }
+
+    private IEnumerator WaitForPlayerName(NetworkRunner runner, PlayerRef player, NetworkObject networkPlayerObject)
+    {
+        while (string.IsNullOrEmpty(PlayerPrefs.GetString("PlayerName")))
+        {
+            yield return null; // Attendre une frame
+        }
+
+        string playerName = PlayerPrefs.GetString("PlayerName", $"Player {player.PlayerId}");
+        var playerController = networkPlayerObject.GetComponent<PlayerController>();
+        if (playerController != null)
+        {
+            playerController.PlayerName = playerName;
+            Debug.Log($"Nom final attribué : {playerName}");
+        }
+    }
+
 
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
     {

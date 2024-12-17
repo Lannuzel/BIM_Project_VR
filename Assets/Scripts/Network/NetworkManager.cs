@@ -33,7 +33,7 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
     private void Start()
     {
         // fixing the server to a perticular region
-        Fusion.Photon.Realtime.PhotonAppSettings.Global.AppSettings.FixedRegion = "asia";
+        Fusion.Photon.Realtime.PhotonAppSettings.Global.AppSettings.FixedRegion = "eu";
     }
 
     public async void CreateSession(string roomCode)

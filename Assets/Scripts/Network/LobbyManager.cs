@@ -23,19 +23,6 @@ public class LobbyManager : MonoBehaviour
             Debug.LogWarning("Veuillez sélectionner un nom valide !");
         }
     }
-
-    public void OnNameSubmit()
-    {
-        string playerName = dropdown.options[dropdown.value].text;
-        if (!string.IsNullOrEmpty(playerName))
-        {
-            PlayerPrefs.SetString("PlayerName", playerName);
-        }
-        else
-        {
-            Debug.LogWarning("Veuillez entrer un nom !");
-        }
-    }
     
     public void UpdateDropdownOptions()
     {

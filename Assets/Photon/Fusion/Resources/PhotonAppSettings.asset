@@ -13,12 +13,12 @@ MonoBehaviour:
   m_Name: PhotonAppSettings
   m_EditorClassIdentifier: 
   AppSettings:
-    AppIdFusion: 9ba9b88e-2aa9-452a-b030-b5207af80c20
+    AppIdFusion: 8708a90d-8be4-4e37-bdeb-6cb29a468b2c
     AppIdChat: 
     AppIdVoice: 
     AppVersion: 
     UseNameServer: 1
-    FixedRegion: 
+    FixedRegion: eu
     Server: 
     Port: 0
     ProxyServer: 
@@ -26,6 +26,6 @@ MonoBehaviour:
     EnableProtocolFallback: 1
     AuthMode: 0
     EnableLobbyStatistics: 0
-    NetworkLogging: 1
+    NetworkLogging: 5
     encryptionMode: 0
     emptyRoomTtl: 0

@@ -17,6 +17,17 @@ public class HardwareRig : MonoBehaviour, INetworkRunnerCallbacks
 
     void Start()
     {
+        if (NetworkManager.Instance == null)
+        {
+            Debug.LogError("NetworkManager.Instance est NULL !");
+            return;
+        }
+
+        if (NetworkManager.Instance.Runner == null)
+        {
+            Debug.LogError("NetworkManager.Instance.Runner est NULL !");
+            return;
+        }
         NetworkManager.Instance.Runner.AddCallbacks(this);
     }
 
