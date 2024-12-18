@@ -3,25 +3,33 @@ using UnityEngine;
 
 public class FaceTrackingRecorder : MonoBehaviour
 {
-    private string fileName = "FaceTrackingData.csv";
+    public static FaceTrackingRecorder Instance;
     private string folderName = "Data";
     private string filePath;
 
     [SerializeField] private OVRFaceExpressions faceExpressions;
     private StreamWriter writer;
     private bool isRecording = false;
-
+    void Awake() { Instance = this; }
     void Start()
     {
         // Combine correctement les chemins
         string folderPath = Path.Combine(Application.persistentDataPath, folderName);
+
         // Créez le dossier si nécessaire
         if (!Directory.Exists(folderPath))
         {
             Directory.CreateDirectory(folderPath);
         }
-        filePath =  Path.Combine(Application.persistentDataPath,folderName,fileName);
 
+        // Crée le nom du fichier au format date_heure + type de tracker
+        string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+        string fileName = $"{timestamp}_FaceTrackingData.csv";
+
+        // Chemin complet du fichier
+        filePath = Path.Combine(folderPath, fileName);
+
+        // Vérifie la présence du composant faceExpressions
         if (faceExpressions == null) // Si pas déjà assigné dans l'inspecteur
         {
             faceExpressions = FindObjectOfType<OVRFaceExpressions>();
@@ -34,14 +42,14 @@ public class FaceTrackingRecorder : MonoBehaviour
             return;
         }
 
-        StartRecording();
-
+        // Démarre l'enregistrement
+        //StartRecording();
     }
 
     public void StartRecording()
     {
         writer = new StreamWriter(filePath, false); //ecrase fichier existant
-        
+
         // Écrire l'en-tête (noms des colonnes)
         writer.Write("Timestamp");
         foreach (var expression in System.Enum.GetValues(typeof(OVRFaceExpressions.FaceExpression)))

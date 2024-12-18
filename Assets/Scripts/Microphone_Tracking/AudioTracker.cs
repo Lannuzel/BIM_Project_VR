@@ -5,8 +5,8 @@ using UnityEngine;
 [RequireComponent(typeof(AudioSource))]
 public class AudioTracker : MonoBehaviour
 {
+    public static AudioTracker Instance;
     private static string userName = "test";
-    private string fileName = $"{userName}_Audio.wav"; // Nom unique de l'utilisateur
     private string folderName = "Data";
     private string filePath;
     private AudioSource audioSource;
@@ -16,39 +16,72 @@ public class AudioTracker : MonoBehaviour
     private BinaryWriter binaryWriter;
     private int lastSamplePosition = 0; // Position précédente dans le clip audio
     private string micDevice;
+    public AudioClip syncSignal; // Clip sonore de synchronisation
 
+    void Awake() { Instance = this; }
     void Start()
     {
+
+        // Sélection du microphone du casque
+        SelectHeadsetMicrophone();
+
         // Combine correctement les chemins
         string folderPath = Path.Combine(Application.persistentDataPath, folderName);
+
         // Créez le dossier si nécessaire
         if (!Directory.Exists(folderPath))
         {
             Directory.CreateDirectory(folderPath);
         }
-        Debug.Log(Application.persistentDataPath);
-        filePath =  Path.Combine(Application.persistentDataPath,folderName,fileName);
+
+        // Crée le nom du fichier avec timestamp + nom utilisateur
+        string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+        string fileName = $"{timestamp}_Audio.wav";
+
+        // Chemin complet du fichier
+        filePath = Path.Combine(folderPath, fileName);
+
+        Debug.Log($"Chemin du fichier audio : {filePath}");
+
+        // Initialisation de l'audio
         audioSource = GetComponent<AudioSource>();
-        StartRecording(); 
+        //StartRecording();
+    }
+
+    private void SelectHeadsetMicrophone()
+    {
+        foreach (string device in Microphone.devices)
+        {
+            if (device.ToLower().Contains("headset") /*|| device.ToLower().Contains("microphone")*/)
+            {
+                micDevice = device;
+                Debug.Log($"Microphone sélectionné : {micDevice}");
+                return;
+            }
+        }
+
+        Debug.LogError("Aucun microphone de casque trouvé !");
+        micDevice = null;
     }
 
     public void StartRecording()
     {
-        if (Microphone.devices.Length > 0)
+        if (!string.IsNullOrEmpty(micDevice))
         {
-            micDevice = Microphone.devices[0]; // Utilise le premier micro disponible
-            audioSource.clip = Microphone.Start(micDevice, true, 1, sampleRate);
-            while (!(Microphone.GetPosition(micDevice) > 0)) { } // Attente du démarrage du micro
+            audioSource.clip = Microphone.Start(micDevice, true, 10, sampleRate);
+            while (!(Microphone.GetPosition(micDevice) > 0)) { } // Attendre le démarrage
+
             audioSource.Play();
 
             InitWAV();
+            audioSource.PlayOneShot(syncSignal); // Jouer un signal sonore pour marquer le début
             isRecording = true;
 
-            Debug.Log($"Recording audio for {userName}. File saved at {filePath}");
+            Debug.Log($"Enregistrement audio en cours : {filePath}");
         }
         else
         {
-            Debug.LogError("No microphone detected!");
+            Debug.LogError("Microphone introuvable !");
         }
     }
 

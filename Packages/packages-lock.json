@@ -51,10 +51,11 @@
       "url": "https://packages.unity.com"
     },
     "com.meta.xr.sdk.core": {
-      "version": "file:C:/Users/tlannuzel/Downloads/com.meta.xr.sdk.core-69.0.0/package",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {}
+      "version": "69.0.1",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
     },
     "com.meta.xr.sdk.haptics": {
       "version": "69.0.1",

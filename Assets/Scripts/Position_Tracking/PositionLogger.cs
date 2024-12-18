@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class PositionLogger : MonoBehaviour
 {
-    private string fileName = "UsersPositions.csv"; // Nom du fichier CSV
+    public static PositionLogger Instance;
     private string folderName = "Data";
     private string filePath;
     private List<UserTracker> userTrackers = new List<UserTracker>();
@@ -15,28 +15,36 @@ public class PositionLogger : MonoBehaviour
     private float nextLogTime = 0f;
 
     [SerializeField] private float logInterval = 0.5f; // Enregistre toutes les 0.5 secondes
-    
+
+    void Awake() { Instance = this; }
     void Start()
     {
         // Combine correctement les chemins
         string folderPath = Path.Combine(Application.persistentDataPath, folderName);
+
         // Créez le dossier si nécessaire
         if (!Directory.Exists(folderPath))
         {
             Directory.CreateDirectory(folderPath);
         }
-        filePath =  Path.Combine(Application.persistentDataPath,folderName,fileName);
+
+        // Crée le nom du fichier au format date_heure + type de tracker
+        string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+        string fileName = $"{timestamp}_UsersPositions.csv";
+
+        // Chemin complet du fichier
+        filePath = Path.Combine(folderPath, fileName);
 
         // Trouver tous les UserTracker dans la scène
         userTrackers.AddRange(FindObjectsOfType<UserTracker>());
 
         // Initialiser l'enregistrement
-        StartLogging();
+        //StartLogging();
     }
 
-    void StartLogging()
+    public void StartLogging()
     {
-       
+
         writer = new StreamWriter(filePath, false); // Ouvre en écrasant le fichier existant
 
         // Écrire l'en-tête (une colonne pour chaque utilisateur avec ses coordonnées)
