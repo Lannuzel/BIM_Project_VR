@@ -9,6 +9,18 @@ TagManager:
   - Anchor
   - PlayerHand
   - Destroyer
+  - ButtonIcon
+  - Win10StyleMenu
+  - ButtonText
+  - Win10StyleButton
+  - RingButton
+  - Measure
+  - ButtonPanel
+  - MenuTitle
+  - RingMenu
+  - Interactable
+  - EndPoint
+  - StartPoint
   layers:
   - Default
   - TransparentFX
