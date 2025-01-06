@@ -45,7 +45,7 @@ public class AudioTracker : MonoBehaviour
 
         // Initialisation de l'audio
         audioSource = GetComponent<AudioSource>();
-        //StartRecording();
+        StartRecording();
     }
 
     private void SelectHeadsetMicrophone()

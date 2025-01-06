@@ -7,9 +7,14 @@ public class EyeTrackingDataLogger : MonoBehaviour
     private string folderName = "Data";
     private string filePath;
     [SerializeField] private EyeTrackingRay eyeTrackingRay;
-    private StreamWriter csvWriter;
+    private StreamWriter writer;
     private bool isRecording = false; // Contrôle l'état de l'enregistrement
     void Awake() { Instance = this; }
+
+    void Start()
+    {
+        StartRecording();
+    }
     
     public void StartRecording()
     {
@@ -36,8 +41,8 @@ public class EyeTrackingDataLogger : MonoBehaviour
         filePath = Path.Combine(folderPath, fileName);
         
         // Initialise le StreamWriter
-        csvWriter = new StreamWriter(filePath, false);  // false écrase le fichier existant
-        csvWriter.WriteLine("Time;RayOriginX;RayOriginY;RayOriginZ;HitPointX;HitPointY;HitPointZ;ObjectHit");
+        writer = new StreamWriter(filePath, false);  // false écrase le fichier existant
+        writer.WriteLine("Time;RayOriginX;RayOriginY;RayOriginZ;HitPointX;HitPointY;HitPointZ;ObjectHit");
 
         isRecording = true;
         Debug.Log("Recording started: " + filePath);
@@ -47,7 +52,7 @@ public class EyeTrackingDataLogger : MonoBehaviour
     {
         if (isRecording && eyeTrackingRay != null && eyeTrackingRay.TryGetRayHit(out RaycastHit hit))
         {
-            csvWriter.WriteLine($"{Time.time};{eyeTrackingRay.transform.position.x};{eyeTrackingRay.transform.position.y};{eyeTrackingRay.transform.position.z};" +
+            writer.WriteLine($"{Time.time};{eyeTrackingRay.transform.position.x};{eyeTrackingRay.transform.position.y};{eyeTrackingRay.transform.position.z};" +
                                 $"{hit.point.x};{hit.point.y};{hit.point.z};{hit.transform.name}");
         }
     }
@@ -61,10 +66,12 @@ public class EyeTrackingDataLogger : MonoBehaviour
         }
 
         isRecording = false;
-        if (csvWriter != null)
+        if (writer != null)
         {
-            csvWriter.Close();
-            csvWriter = null;
+            writer.Write($"END");
+
+            writer.Close();
+            writer = null;
         }
         Debug.Log("Recording stopped.");
     }

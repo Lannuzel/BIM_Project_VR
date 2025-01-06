@@ -39,7 +39,7 @@ public class PositionLogger : MonoBehaviour
         userTrackers.AddRange(FindObjectsOfType<UserTracker>());
 
         // Initialiser l'enregistrement
-        //StartLogging();
+        StartLogging();
     }
 
     public void StartLogging()
@@ -99,6 +99,7 @@ public class PositionLogger : MonoBehaviour
     {
         if (writer != null)
         {
+            writer.Write($"END");   
             writer.Close();
             writer = null;
         }

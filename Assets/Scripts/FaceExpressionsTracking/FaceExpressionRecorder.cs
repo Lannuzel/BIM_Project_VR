@@ -43,7 +43,7 @@ public class FaceTrackingRecorder : MonoBehaviour
         }
 
         // Démarre l'enregistrement
-        //StartRecording();
+        StartRecording();
     }
 
     public void StartRecording()
@@ -72,6 +72,7 @@ public class FaceTrackingRecorder : MonoBehaviour
     {
         if (writer != null)
         {
+            writer.Write($"END");
             writer.Close();
             writer = null;
         }

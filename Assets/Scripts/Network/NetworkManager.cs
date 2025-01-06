@@ -99,7 +99,7 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
         Debug.Log($"Player left: {player.PlayerId}");
     }
 
- public void UpdateLobbyCounter(int playerCount, int requiredPlayers)
+    public void UpdateLobbyCounter(int playerCount, int requiredPlayers)
     {
         if (lobbyCounterText != null)
         {
@@ -112,16 +112,20 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
         int playerCount = Runner.ActivePlayers.Count();
         UpdateLobbyCounter(playerCount, requiredPlayers);
 
-        if (playerCount >= requiredPlayers && !countdownStarted)
-        {
-            StartCoroutine(StartCountdown());
-        }
+        // if (playerCount >= requiredPlayers && !countdownStarted)
+        // {
+        //     StartCoroutine(StartCountdown());
+        // }
     }
 
-    private IEnumerator StartCountdown()
+    public void StartCountdown()
     {
-        countdownStarted = true;
-        int countdown = 5;
+        StartCoroutine(StartCountdownCoroutine());
+    }
+
+    private IEnumerator StartCountdownCoroutine()
+    {
+        int countdown = 10; // Durée du compte à rebours en secondes
 
         while (countdown > 0)
         {
@@ -133,17 +137,9 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
 
         if (lobbyCounterText != null)
             lobbyCounterText.text = "Starting...";
+
         LoadNextScene();
-    }
-
-    private async void LoadNextScene()
-    {
-        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(2); // Charge la scène 2
-
-        while (!asyncLoad.isDone)
-        {
-            await Task.Yield();
-        }
+        StartTrackers();
     }
 
     private void StartTrackers()
@@ -159,6 +155,16 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
         }
     }
 
+    private async void LoadNextScene()
+    {
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(2); // Charge la scène 2
+
+        while (!asyncLoad.isDone)
+        {
+            await Task.Yield();
+        }
+    }
+
     public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason)
     {
         Debug.Log("Runner Shutdown: " + shutdownReason);
@@ -166,21 +172,21 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
     #endregion
 
     #region INetworkRunnerCallbacks (Unused)
-    public void OnConnectedToServer(NetworkRunner runner) {}
-    public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason) {}
-    public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token) {}
-    public void OnCustomAuthenticationResponse(NetworkRunner runner, Dictionary<string, object> data) {}
-    public void OnDisconnectedFromServer(NetworkRunner runner, NetDisconnectReason reason) {}
-    public void OnHostMigration(NetworkRunner runner, HostMigrationToken hostMigrationToken) {}
-    public void OnInput(NetworkRunner runner, NetworkInput input) {}
-    public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) {}
-    public void OnObjectEnterAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) {}
-    public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) {}
-    public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress) {}
-    public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data) {}
-    public void OnSceneLoadDone(NetworkRunner runner) {}
-    public void OnSceneLoadStart(NetworkRunner runner) {}
-    public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList) {}
-    public void OnUserSimulationMessage(NetworkRunner runner, SimulationMessagePtr message) {}
+    public void OnConnectedToServer(NetworkRunner runner) { }
+    public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason) { }
+    public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token) { }
+    public void OnCustomAuthenticationResponse(NetworkRunner runner, Dictionary<string, object> data) { }
+    public void OnDisconnectedFromServer(NetworkRunner runner, NetDisconnectReason reason) { }
+    public void OnHostMigration(NetworkRunner runner, HostMigrationToken hostMigrationToken) { }
+    public void OnInput(NetworkRunner runner, NetworkInput input) { }
+    public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) { }
+    public void OnObjectEnterAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }
+    public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }
+    public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress) { }
+    public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data) { }
+    public void OnSceneLoadDone(NetworkRunner runner) { }
+    public void OnSceneLoadStart(NetworkRunner runner) { }
+    public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList) { }
+    public void OnUserSimulationMessage(NetworkRunner runner, SimulationMessagePtr message) { }
     #endregion
 }
