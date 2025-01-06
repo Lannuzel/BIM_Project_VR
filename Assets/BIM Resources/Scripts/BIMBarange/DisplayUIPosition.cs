@@ -26,7 +26,7 @@ public class DisplayUIPosition : MonoBehaviour
             // Position the UI in front of the user
             Vector3 targetPosition = cameraRef.position + cameraRef.forward * distance;
             uiCanvas.transform.position = targetPosition + offset;
-            transform.LookAt(cameraRef.transform);
+            transform.LookAt(transform.position + cameraRef.transform.forward);
 
             // Rotate the UI to face the user
            // uiCanvas.transform.rotation = Quaternion.LookRotation(uiCanvas.transform.position - cameraRef.position);

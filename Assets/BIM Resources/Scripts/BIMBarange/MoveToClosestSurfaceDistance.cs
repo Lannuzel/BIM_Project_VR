@@ -1,6 +1,8 @@
 using Meta.WitAi.Events;
 using System;
 using System.Collections.Generic;
+using System.Xml;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -245,8 +247,18 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
         targetPosition.y = 0;
         // Move the object to the target position
         objectToMove.transform.position = targetPosition;
+    }
 
-
-
+    public void SetDistance(TMP_Text distance)
+    {
+        string inputText = distance.text.Trim();
+        if (float.TryParse(inputText, out float result))
+        {
+            Debug.Log("Converted float value: " + result);
+        }
+        else
+        {
+            Debug.LogError("Failed to convert TMP_Text input to float. Input: " + inputText);
+        }
     }
 }

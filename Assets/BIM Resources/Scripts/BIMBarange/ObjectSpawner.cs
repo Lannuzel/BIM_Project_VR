@@ -1,6 +1,6 @@
 using UnityEngine;
-
-public class ObjectSpawner : MonoBehaviour
+using Fusion;
+public class ObjectSpawner : SimulationBehaviour
 {
     public OVRInput.Controller controller; // Assign your controller here
     public GameObject objectPrefab; // The prefab to spawn
@@ -11,7 +11,6 @@ public class ObjectSpawner : MonoBehaviour
     private bool isObjectSelected = false;
 
     public Transform chaireResources;
-
 
     void Update()
     {
@@ -34,7 +33,15 @@ public class ObjectSpawner : MonoBehaviour
         }
 
     }
+    // Update is called once per frame
+    void FixedUpdate()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape) ||  OVRInput.GetUp(OVRInput.Button.PrimaryIndexTrigger) )
+        {
+            NetworkManager.Instance.Runner.Spawn(objectPrefab, new Vector3(0, 1, 0), Quaternion.identity);
+        }
 
+    }
     void SpawnObject()
     {
         Vector3 spawnPosition = cameraTransform.transform.position + cameraTransform.forward * spawnDistance;
