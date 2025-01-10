@@ -1,31 +1,33 @@
 using System.IO;
 using UnityEngine;
-using System;
 
 public class FaceTrackingRecorder : MonoBehaviour
 {
-    private string fileName;
-    private string timestamp;
     private string folderName = "Data";
     private string filePath;
 
     [SerializeField] private OVRFaceExpressions faceExpressions;
     private StreamWriter writer;
     private bool isRecording = false;
-
     void Start()
     {
-        timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"); // Format : 2024-12-04_14-23-15
-        fileName = $"{timestamp}_FaceTrackingData.csv";
         // Combine correctement les chemins
         string folderPath = Path.Combine(Application.persistentDataPath, folderName);
+
         // Créez le dossier si nécessaire
         if (!Directory.Exists(folderPath))
         {
             Directory.CreateDirectory(folderPath);
         }
-        filePath =  Path.Combine(Application.persistentDataPath,folderName,fileName);
 
+        // Crée le nom du fichier au format date_heure + type de tracker
+        string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+        string fileName = $"{timestamp}_FaceTrackingData.csv";
+
+        // Chemin complet du fichier
+        filePath = Path.Combine(folderPath, fileName);
+
+        // Vérifie la présence du composant faceExpressions
         if (faceExpressions == null) // Si pas déjà assigné dans l'inspecteur
         {
             faceExpressions = FindObjectOfType<OVRFaceExpressions>();
@@ -38,14 +40,14 @@ public class FaceTrackingRecorder : MonoBehaviour
             return;
         }
 
+        // Démarre l'enregistrement
         StartRecording();
-
     }
 
     public void StartRecording()
     {
         writer = new StreamWriter(filePath, false); //ecrase fichier existant
-        
+
         // Écrire l'en-tête (noms des colonnes)
         writer.Write("Timestamp");
         foreach (var expression in System.Enum.GetValues(typeof(OVRFaceExpressions.FaceExpression)))
@@ -68,19 +70,12 @@ public class FaceTrackingRecorder : MonoBehaviour
     {
         if (writer != null)
         {
+            writer.Write($"END");
             writer.Close();
             writer = null;
         }
         isRecording = false;
         Debug.Log("Recording stopped.");
-    }
-    public void AddMarker()
-    {
-        if (writer != null)
-        {
-            writer.WriteLine($"{Time.time},MARKER");
-            writer.Flush();
-        }
     }
 
     void Update()
@@ -105,8 +100,29 @@ public class FaceTrackingRecorder : MonoBehaviour
         }
     }
 
+    public void AddMarker()
+    {
+        writer.WriteLine($"{Time.time};MARKER");
+        Debug.Log($"Marker ajouté dans le fichier CSV : {filePath}");
+    }
+
+
     private void OnDestroy()
     {
+        Debug.Log("Application quittée sur OnDestroy. Arrêt de l'enregistremen Face.");
         StopRecording();
     }
+    private void OnApplicationQuit()
+    {
+        Debug.Log("Application quittée. Arrêt de l'enregistrement FaceRecord.");
+        StopRecording();
+    }
+    // private void OnApplicationPause(bool isPaused)
+    // {
+    //     if (isPaused)
+    //     {
+    //         Debug.Log("Application quittée sur OnApplicationPause. Arrêt de l'enregistremen Face.");
+    //         StopRecording(); // Assure que l'enregistrement est arrêté proprement
+    //     }
+    // }
 }

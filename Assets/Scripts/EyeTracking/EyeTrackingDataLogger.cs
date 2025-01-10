@@ -1,54 +1,105 @@
 using System.IO;
 using UnityEngine;
-using System;
 
 public class EyeTrackingDataLogger : MonoBehaviour
 {
-    private string fileName;
-    private string timestamp;
     private string folderName = "Data";
     private string filePath;
     [SerializeField] private EyeTrackingRay eyeTrackingRay;
-    private StreamWriter csvWriter;
-    private void Start()
+    private StreamWriter writer;
+    private bool isRecording = false; // Contrôle l'état de l'enregistrement
+
+    void Start()
     {
-        timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"); // Format : 2024-12-04_14-23-15
-        fileName = $"{timestamp}_EyeTrackingData.csv";
+        StartRecording();
+    }
+    
+    public void StartRecording()
+    {
+        if (isRecording)
+        {
+            Debug.LogWarning("Recording is already in progress!");
+            return;
+        }
+
         // Combine correctement les chemins
         string folderPath = Path.Combine(Application.persistentDataPath, folderName);
-        // Créez le dossier si nécessaire
+        
+        // Crée le dossier si nécessaire
         if (!Directory.Exists(folderPath))
         {
             Directory.CreateDirectory(folderPath);
         }
-        filePath =  Path.Combine(Application.persistentDataPath,folderName,fileName);
-        csvWriter = new StreamWriter(filePath, false);  // false écrase le fichier existant
-        csvWriter.WriteLine("Time;RayOriginX;RayOriginY;RayOriginZ;HitPointX;HitPointY;HitPointZ;ObjectHit");
-    }
 
-    public void AddMarker()
-    {
-        if (csvWriter != null)
-        {
-            csvWriter.WriteLine($"{Time.time},MARKER");
-            csvWriter.Flush();
-        }
+        // Crée le nom du fichier au format date_heure + type de tracker
+        string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+        string fileName = $"{timestamp}_EyeTrackingData.csv";
+
+        // Chemin complet du fichier
+        filePath = Path.Combine(folderPath, fileName);
+        
+        // Initialise le StreamWriter
+        writer = new StreamWriter(filePath, false);  // false écrase le fichier existant
+        writer.WriteLine("Time;RayOriginX;RayOriginY;RayOriginZ;HitPointX;HitPointY;HitPointZ;ObjectHit");
+
+        isRecording = true;
+        Debug.Log("Recording started: " + filePath);
     }
 
     private void Update()
     {
-        if (eyeTrackingRay != null && eyeTrackingRay.TryGetRayHit(out RaycastHit hit))
+        if (isRecording && eyeTrackingRay != null && eyeTrackingRay.TryGetRayHit(out RaycastHit hit))
         {
-            csvWriter.WriteLine($"{Time.time};{eyeTrackingRay.transform.position.x};{eyeTrackingRay.transform.position.y};{eyeTrackingRay.transform.position.z};" +
+            writer.WriteLine($"{Time.time};{eyeTrackingRay.transform.position.x};{eyeTrackingRay.transform.position.y};{eyeTrackingRay.transform.position.z};" +
                                 $"{hit.point.x};{hit.point.y};{hit.point.z};{hit.transform.name}");
         }
     }
 
+    public void AddMarker()
+    {
+        writer.WriteLine($"{Time.time};MARKER");
+        Debug.Log($"Marker ajouté dans le fichier CSV : {filePath}");
+    }
+
+    public void StopRecording()
+    {
+        if (!isRecording)
+        {
+            Debug.LogWarning("No recording is in progress to stop.");
+            return;
+        }
+
+        isRecording = false;
+        if (writer != null)
+        {
+            writer.Write($"END");
+
+            writer.Close();
+            writer = null;
+        }
+        Debug.Log("Recording stopped.");
+    }
+
+
     private void OnDestroy()
     {
-        if (csvWriter != null)
-        {
-            csvWriter.Close();
-        }
+        Debug.Log("Application quittée sur OnDestroy. Arrêt de l'enregistremen Eye.");
+        StopRecording(); // Assure que l'enregistrement est arrêté proprement
     }
+
+    private void OnApplicationQuit()
+    {
+        Debug.Log("Application quittée. Arrêt de l'enregistrement EyeTracker.");
+        StopRecording();
+    }
+    
+    // private void OnApplicationPause(bool isPaused)
+    // {
+    //     if (isPaused)
+    //     {
+    //         Debug.Log("Application quittée sur OnApplicationPause. Arrêt de l'enregistremen Eye.");
+    //         StopRecording(); // Assure que l'enregistrement est arrêté proprement
+    //     }
+    // }
+
 }

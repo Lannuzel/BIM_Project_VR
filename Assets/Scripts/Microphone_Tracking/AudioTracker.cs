@@ -1,13 +1,13 @@
 using System;
 using System.IO;
 using UnityEngine;
+using UnityEngine.Android;
+using UnityEngine.Audio;
 
 [RequireComponent(typeof(AudioSource))]
 public class AudioTracker : MonoBehaviour
 {
-    private string fileName = "Audio.wav"; // Nom unique de l'utilisateur
     private string folderName = "Data";
-    private string timestamp;
     private string filePath;
     private AudioSource audioSource;
     private bool isRecording = false;
@@ -16,41 +16,83 @@ public class AudioTracker : MonoBehaviour
     private BinaryWriter binaryWriter;
     private int lastSamplePosition = 0; // Position précédente dans le clip audio
     private string micDevice;
+    public AudioClip syncSignal; // Clip sonore de synchronisation
 
     void Start()
     {
-        timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"); // Format : 2024-12-04_14-23-15
-        fileName = $"{timestamp}_Audio.wav";
+
+        // Sélection du microphone du casque
+        SelectHeadsetMicrophone();
+
         // Combine correctement les chemins
         string folderPath = Path.Combine(Application.persistentDataPath, folderName);
+
         // Créez le dossier si nécessaire
         if (!Directory.Exists(folderPath))
         {
             Directory.CreateDirectory(folderPath);
         }
-        Debug.Log(Application.persistentDataPath);
-        filePath =  Path.Combine(Application.persistentDataPath,folderName,fileName);
+
+        // Crée le nom du fichier avec timestamp + nom utilisateur
+        string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+        string fileName = $"{timestamp}_Audio.wav";
+
+        // Chemin complet du fichier
+        filePath = Path.Combine(folderPath, fileName);
+
+        Debug.Log($"Chemin du fichier audio : {filePath}");
+
+        // Initialisation de l'audio
         audioSource = GetComponent<AudioSource>();
-        StartRecording(); 
+        StartRecording();
+    }
+
+    private void SelectHeadsetMicrophone()
+    {
+        //TODO : Problème reconaissance micro ????
+        // foreach (string device in Microphone.devices)
+        // {
+        //     Debug.Log($"Device : {device}");
+        //     if (device.ToLower().Contains("android") || device.ToLower().Contains("input"))            {
+        //         micDevice = device;
+        //         Debug.Log($"Microphone sélectionné : {micDevice}");
+        //         return;
+        //     }
+        // }
+
+        
+        if (!Permission.HasUserAuthorizedPermission(Permission.Microphone))
+            Permission.RequestUserPermission(Permission.Microphone);
+
+        
+        micDevice = Microphone.devices[0]; // Utilise le premier micro disponible
+        if (!string.IsNullOrEmpty(micDevice))
+        {
+            Debug.Log($"Microphone sélectionné : {micDevice}");
+            return;
+        }
+        Debug.LogError("Aucun microphone de casque trouvé !");
+        micDevice = null;
     }
 
     public void StartRecording()
     {
-        if (Microphone.devices.Length > 0)
+        if (!string.IsNullOrEmpty(micDevice))
         {
-            micDevice = Microphone.devices[0]; // Utilise le premier micro disponible
-            audioSource.clip = Microphone.Start(micDevice, true, 1, sampleRate);
-            while (!(Microphone.GetPosition(micDevice) > 0)) { } // Attente du démarrage du micro
+            audioSource.clip = Microphone.Start(micDevice, true, 10, sampleRate);
+            while (!(Microphone.GetPosition(micDevice) > 0)) { } // Attendre le démarrage
+
             audioSource.Play();
 
             InitWAV();
+
             isRecording = true;
 
-            Debug.Log($"Recording audio. File saved at {filePath}");
+            Debug.Log($"Enregistrement audio en cours : {filePath}");
         }
         else
         {
-            Debug.LogError("No microphone detected!");
+            Debug.LogError("Microphone introuvable !");
         }
     }
 
@@ -69,6 +111,41 @@ public class AudioTracker : MonoBehaviour
 
         // Écrire un en-tête WAV vide, à remplir plus tard
         binaryWriter.Write(new char[44]); // Réserve 44 octets pour l'en-tête WAV
+    }
+
+    private float[] GetSamplesFromAudioClip(AudioClip clip)
+    {
+        if (clip == null) return null;
+
+        float[] samples = new float[clip.samples * clip.channels];
+        clip.GetData(samples, 0);
+        return samples;
+    }
+
+    public void AddAudioMarker()
+    {
+        if (syncSignal == null)
+        {
+            Debug.LogError("Le signal de synchronisation (syncSignal) n'est pas assigné !");
+            return;
+        }
+
+        // Récupérer les échantillons du signal sonore
+        float[] markerSamples = GetSamplesFromAudioClip(syncSignal);
+        if (markerSamples == null || markerSamples.Length == 0)
+        {
+            Debug.LogError("Impossible de récupérer les échantillons du signal sonore !");
+            return;
+        }
+
+        // Convertir les échantillons en données audio et les insérer dans le flux
+        foreach (float sample in markerSamples)
+        {
+            short intData = (short)(sample * short.MaxValue); // Convertir en PCM 16 bits
+            binaryWriter.Write(intData);
+        }
+
+        Debug.Log("Signal sonore inséré dans le fichier audio.");
     }
 
     private void SaveNewAudioData()
@@ -105,10 +182,10 @@ public class AudioTracker : MonoBehaviour
             WriteWAVHeader();
             SaveToFile();
 
-            binaryWriter.Close();
-            memoryStream.Close();
+            binaryWriter?.Close();
+            memoryStream?.Close();
 
-            Debug.Log($"Audio recording stopped");
+            Debug.Log($"Audio recording stopped.");
         }
     }
 
@@ -140,24 +217,23 @@ public class AudioTracker : MonoBehaviour
 
     private void OnDestroy()
     {
+        Debug.Log("Application quittée sur OnDestroy. Arrêt de l'enregistremen Audio.");
         StopRecording();
     }
-    public void AddSyncSignalToRecording()
+
+    private void OnApplicationQuit()
     {
-        float frequency = 440f; // Fréquence du bip (440 Hz, un La)
-        float duration = 0.5f; // Durée du bip en secondes
-        int sampleCount = (int)(duration * sampleRate);
-        float[] samples = new float[sampleCount];
-
-        for (int i = 0; i < sampleCount; i++)
-        {
-            samples[i] = Mathf.Sin(2 * Mathf.PI * frequency * i / sampleRate);
-        }
-
-        foreach (float sample in samples)
-        {
-            short intData = (short)(sample * short.MaxValue);
-            binaryWriter.Write(intData);
-        }
+        Debug.Log("Application quittée. Arrêt de l'enregistrement audio.");
+        StopRecording();
     }
+
+    // private void OnApplicationPause(bool isPaused)
+    // {
+    //     if (isPaused)
+    //     {
+    //         Debug.Log("Application quittée sur OnApplicationPause. Arrêt de l'enregistremen Audio.");
+    //         StopRecording(); // Assure que l'enregistrement est arrêté proprement
+    //     }
+    // }
+
 }

@@ -1,0 +1,95 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+public class MarkerManager : MonoBehaviour
+{
+    private List<PositionLogger> positionLoggers = new List<PositionLogger>();
+    private List<FaceTrackingRecorder> faceLoggers = new List<FaceTrackingRecorder>();
+    private List<EyeTrackingDataLogger> eyeLoggers = new List<EyeTrackingDataLogger>();
+    private List<AudioTracker> audioTrackers = new List<AudioTracker>();
+
+    void Start()
+    {
+        // Recherchez tous les trackers dans la scène
+        positionLoggers.AddRange(FindObjectsOfType<PositionLogger>());
+        audioTrackers.AddRange(FindObjectsOfType<AudioTracker>());
+        faceLoggers.AddRange(FindObjectsOfType<FaceTrackingRecorder>());
+        eyeLoggers.AddRange(FindObjectsOfType<EyeTrackingDataLogger>());
+    }
+
+    public void StopAllRecordings()
+    {
+        Debug.Log("Arrêt de tous les enregistrements...");
+
+        // Arrête les enregistrements pour les PositionLoggers
+        Debug.Log("Arrêt des enregistrements dans les positionLoggers...");
+        foreach (var positionLogger in positionLoggers)
+        {
+            positionLogger.StopRecording();
+            Debug.Log("Enregistrement arrêté dans un positionLogger.");
+        }
+
+        // Arrête les enregistrements pour les EyeLoggers
+        Debug.Log("Arrêt des enregistrements dans les eyeLoggers...");
+        foreach (var eyeLogger in eyeLoggers)
+        {
+            eyeLogger.StopRecording();
+            Debug.Log("Enregistrement arrêté dans un eyeLogger.");
+        }
+
+        // Arrête les enregistrements pour les FaceLoggers
+        Debug.Log("Arrêt des enregistrements dans les faceLoggers...");
+        foreach (var faceLogger in faceLoggers)
+        {
+            faceLogger.StopRecording();
+            Debug.Log("Enregistrement arrêté dans un faceLogger.");
+        }
+
+        // Arrête les enregistrements pour les AudioTrackers
+        Debug.Log("Arrêt des enregistrements dans les audioTrackers...");
+        foreach (var audioTracker in audioTrackers)
+        {
+            audioTracker.StopRecording();
+            Debug.Log("Enregistrement audio arrêté dans un audioTracker.");
+        }
+
+        Debug.Log("Tous les enregistrements ont été arrêtés avec succès.");
+    }
+    public void AddMarkerToAllLogs()
+    {
+        Debug.Log($"Ajout d'un marker à tous les logs...");
+
+        // Ajoutez un marker dans les fichiers CSV
+        Debug.Log("Ajout du marker dans les positionLoggers...");
+        foreach (var positionLogger in positionLoggers)
+        {
+            positionLogger.AddMarker();
+            Debug.Log($"Marker ajouté dans un positionLogger.");
+        }
+
+        Debug.Log("Ajout du marker dans les eyeLoggers...");
+        foreach (var eyeLogger in eyeLoggers)
+        {
+            eyeLogger.AddMarker();
+            Debug.Log($"Marker ajouté dans un eyeLogger.");
+        }
+
+        Debug.Log("Ajout du marker dans les faceLoggers...");
+        foreach (var faceLogger in faceLoggers)
+        {
+            faceLogger.AddMarker();
+            Debug.Log($"Marker  ajouté dans un faceLogger.");
+        }
+
+        // Ajoutez un marker dans les fichiers audio
+        Debug.Log("Ajout du marker dans les audioTrackers...");
+        foreach (var audioTracker in audioTrackers)
+        {
+            audioTracker.AddAudioMarker();
+            Debug.Log("Audio marker ajouté dans un audioTracker.");
+        }
+
+        Debug.Log($"Ajout du marker terminé.");
+    }
+
+}
