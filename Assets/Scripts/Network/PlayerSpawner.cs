@@ -39,7 +39,7 @@ public class PlayerSpawner : MonoBehaviour, INetworkRunnerCallbacks
                 Debug.Log($"Nom récupéré pour le joueur {player.PlayerId} : {playerName}");
                 playerController.PlayerName = playerName;
             }
-
+            DontDestroyOnLoad(playerController);
             // Suivi des joueurs connectés
             _spawnedUsers.Add(player, networkPlayerObject);
             StartCoroutine(WaitForPlayerName(runner, player, networkPlayerObject));

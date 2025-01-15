@@ -45,14 +45,14 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
     public async void CreateSession(string roomCode)
     {
         CreateRunner();
-        await LoadScene();
+       // await LoadScene();
         await Connect(roomCode);
     }
 
     public async void JoinSession(string roomCode)
     {
         CreateRunner();
-        await LoadScene();
+      //  await LoadScene();
         await Connect(roomCode);
     }
 
@@ -79,7 +79,7 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
             GameMode = GameMode.Shared,
             SessionName = sessionName,
             SceneManager = GetComponent<NetworkSceneManagerDefault>(),
-            Scene = SceneRef.FromIndex(1)
+           // Scene = SceneRef.FromIndex(1)
         };
         await Runner.StartGame(args);
     }
@@ -138,7 +138,7 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
         if (lobbyCounterText != null)
             lobbyCounterText.text = "Starting...";
 
-        LoadNextScene();
+      //  LoadNextScene();
         StartTrackers();
     }
 

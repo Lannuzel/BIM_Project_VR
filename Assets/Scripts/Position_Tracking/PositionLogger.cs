@@ -5,7 +5,6 @@ using UnityEngine;
 
 public class PositionLogger : MonoBehaviour
 {
-    public static PositionLogger Instance;
     private string folderName = "Data";
     private string filePath;
     private List<UserTracker> userTrackers = new List<UserTracker>();
@@ -16,7 +15,6 @@ public class PositionLogger : MonoBehaviour
 
     [SerializeField] private float logInterval = 0.5f; // Enregistre toutes les 0.5 secondes
 
-    void Awake() { Instance = this; }
     void Start()
     {
         // Combine correctement les chemins
@@ -70,7 +68,7 @@ public class PositionLogger : MonoBehaviour
     }
     void LogUserPositions()
     {
-        writer.Write($"{Time.time:F2}"); // Ajoute le timestamp en première colonne
+        writer.Write($"{Time.time}"); // Ajoute le timestamp en première colonne
 
         foreach (var user in userTrackers)
         {
@@ -90,12 +88,13 @@ public class PositionLogger : MonoBehaviour
         writer.Flush(); // Écrire immédiatement les données
     }
 
-    void OnDestroy()
+    public void AddMarker()
     {
-        StopLogging();
+        writer.WriteLine($"{Time.time};MARKER");
+        Debug.Log($"Marker ajouté dans le fichier CSV : {filePath}");
     }
 
-    void StopLogging()
+    public void StopRecording()
     {
         if (writer != null)
         {
@@ -107,4 +106,24 @@ public class PositionLogger : MonoBehaviour
         isRecording = false;
         Debug.Log("Logging stopped.");
     }
+    void OnDestroy()
+    {
+        Debug.Log("Application quittée sur OnDestroy. Arrêt de l'enregistrement Position.");
+        StopRecording();
+    }
+
+    private void OnApplicationQuit()
+    {
+        Debug.Log("Application quittée. Arrêt de l'enregistrement Position.");
+        StopRecording();
+    }
+    // private void OnApplicationPause(bool isPaused)
+    // {
+    //     if (isPaused)
+    //     {
+    //         Debug.Log("Application quittée sur OnApplicationPause. Arrêt de l'enregistremen Position.");
+    //         StopRecording(); // Assure que l'enregistrement est arrêté proprement
+    //     }
+    // }
+
 }

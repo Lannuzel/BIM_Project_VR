@@ -146,8 +146,6 @@ PlayerSettings:
   preloadedAssets:
   - {fileID: 0}
   - {fileID: 11400000, guid: 9d9639f4982acdd48abc4a230a195d92, type: 2}
-  - {fileID: 3233996788981779080, guid: 87b413c5a910b15498a98200731b1754, type: 2}
-  - {fileID: 5269706996647393442, guid: e3aee76b9372917449aef639e2f74814, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -954,11 +952,11 @@ PlayerSettings:
   apiCompatibilityLevel: 6
   activeInputHandler: 2
   windowsGamepadBackendHint: 0
-  cloudProjectId: 2c76adea-f6bd-436d-8d41-23e523373100
+  cloudProjectId: 8115fd31-34cf-47d5-8e8c-f5cb9de269b2
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: BIM_project (1)
-  organizationId: tdtk38
+  projectName: BIM_Project_VR
+  organizationId: barange
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
   hmiLoadingImage: {fileID: 0}

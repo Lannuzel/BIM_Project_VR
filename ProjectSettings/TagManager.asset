@@ -9,6 +9,19 @@ TagManager:
   - Anchor
   - PlayerHand
   - Destroyer
+  - CinemachineTarget
+  - Win10StyleMenu
+  - DefaultMenu
+  - MenuTitle
+  - ButtonPanel
+  - Win10StyleButton
+  - DefaultButton
+  - ButtonIcon
+  - ButtonText
+  - Measure
+  - Interactable
+  - StartPoint
+  - EndPoint
   layers:
   - Default
   - TransparentFX

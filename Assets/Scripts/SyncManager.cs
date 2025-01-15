@@ -35,9 +35,10 @@ public class SyncManager : NetworkBehaviour
         IsRecordingStarted = true;
 
         // Appeler les méthodes de démarrage des enregistrements ici
-        PositionLogger.Instance.StartLogging();
+      /*  PositionLogger.Instance.StartLogging();
         AudioTracker.Instance.StartRecording();
         FaceTrackingRecorder.Instance.StartRecording();
         EyeTrackingDataLogger.Instance.StartRecording();
+      */
     }
 }

@@ -3,13 +3,11 @@ using UnityEngine;
 
 public class EyeTrackingDataLogger : MonoBehaviour
 {
-    public static EyeTrackingDataLogger Instance;
     private string folderName = "Data";
     private string filePath;
     [SerializeField] private EyeTrackingRay eyeTrackingRay;
     private StreamWriter writer;
     private bool isRecording = false; // Contrôle l'état de l'enregistrement
-    void Awake() { Instance = this; }
 
     void Start()
     {
@@ -57,6 +55,12 @@ public class EyeTrackingDataLogger : MonoBehaviour
         }
     }
 
+    public void AddMarker()
+    {
+        writer.WriteLine($"{Time.time};MARKER");
+        Debug.Log($"Marker ajouté dans le fichier CSV : {filePath}");
+    }
+
     public void StopRecording()
     {
         if (!isRecording)
@@ -76,8 +80,26 @@ public class EyeTrackingDataLogger : MonoBehaviour
         Debug.Log("Recording stopped.");
     }
 
+
     private void OnDestroy()
     {
+        Debug.Log("Application quittée sur OnDestroy. Arrêt de l'enregistremen Eye.");
         StopRecording(); // Assure que l'enregistrement est arrêté proprement
     }
+
+    private void OnApplicationQuit()
+    {
+        Debug.Log("Application quittée. Arrêt de l'enregistrement EyeTracker.");
+        StopRecording();
+    }
+    
+    // private void OnApplicationPause(bool isPaused)
+    // {
+    //     if (isPaused)
+    //     {
+    //         Debug.Log("Application quittée sur OnApplicationPause. Arrêt de l'enregistremen Eye.");
+    //         StopRecording(); // Assure que l'enregistrement est arrêté proprement
+    //     }
+    // }
+
 }

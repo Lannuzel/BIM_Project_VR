@@ -15864,7 +15864,7 @@ MonoBehaviour:
   _runnerPrefab: {fileID: 4513330611610373785, guid: c68f88e2cf8135843b62f4aa34fed6b6,
     type: 3}
   lobbyCounterText: {fileID: 0}
-  requiredPlayers: 3
+  requiredPlayers: 1
 --- !u!4 &1469432376
 Transform:
   m_ObjectHideFlags: 0

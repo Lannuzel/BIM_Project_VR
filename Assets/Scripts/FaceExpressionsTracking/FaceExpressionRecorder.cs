@@ -3,14 +3,12 @@ using UnityEngine;
 
 public class FaceTrackingRecorder : MonoBehaviour
 {
-    public static FaceTrackingRecorder Instance;
     private string folderName = "Data";
     private string filePath;
 
     [SerializeField] private OVRFaceExpressions faceExpressions;
     private StreamWriter writer;
     private bool isRecording = false;
-    void Awake() { Instance = this; }
     void Start()
     {
         // Combine correctement les chemins
@@ -102,8 +100,29 @@ public class FaceTrackingRecorder : MonoBehaviour
         }
     }
 
+    public void AddMarker()
+    {
+        writer.WriteLine($"{Time.time};MARKER");
+        Debug.Log($"Marker ajouté dans le fichier CSV : {filePath}");
+    }
+
+
     private void OnDestroy()
     {
+        Debug.Log("Application quittée sur OnDestroy. Arrêt de l'enregistremen Face.");
         StopRecording();
     }
+    private void OnApplicationQuit()
+    {
+        Debug.Log("Application quittée. Arrêt de l'enregistrement FaceRecord.");
+        StopRecording();
+    }
+    // private void OnApplicationPause(bool isPaused)
+    // {
+    //     if (isPaused)
+    //     {
+    //         Debug.Log("Application quittée sur OnApplicationPause. Arrêt de l'enregistremen Face.");
+    //         StopRecording(); // Assure que l'enregistrement est arrêté proprement
+    //     }
+    // }
 }

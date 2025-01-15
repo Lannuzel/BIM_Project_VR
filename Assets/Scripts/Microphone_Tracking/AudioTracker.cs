@@ -1,12 +1,12 @@
 using System;
 using System.IO;
 using UnityEngine;
+using UnityEngine.Android;
+using UnityEngine.Audio;
 
 [RequireComponent(typeof(AudioSource))]
 public class AudioTracker : MonoBehaviour
 {
-    public static AudioTracker Instance;
-    private static string userName = "test";
     private string folderName = "Data";
     private string filePath;
     private AudioSource audioSource;
@@ -18,7 +18,6 @@ public class AudioTracker : MonoBehaviour
     private string micDevice;
     public AudioClip syncSignal; // Clip sonore de synchronisation
 
-    void Awake() { Instance = this; }
     void Start()
     {
 
@@ -50,16 +49,28 @@ public class AudioTracker : MonoBehaviour
 
     private void SelectHeadsetMicrophone()
     {
-        foreach (string device in Microphone.devices)
-        {
-            if (device.ToLower().Contains("headset") /*|| device.ToLower().Contains("microphone")*/)
-            {
-                micDevice = device;
-                Debug.Log($"Microphone sélectionné : {micDevice}");
-                return;
-            }
-        }
+        //TODO : Problème reconaissance micro ????
+        // foreach (string device in Microphone.devices)
+        // {
+        //     Debug.Log($"Device : {device}");
+        //     if (device.ToLower().Contains("android") || device.ToLower().Contains("input"))            {
+        //         micDevice = device;
+        //         Debug.Log($"Microphone sélectionné : {micDevice}");
+        //         return;
+        //     }
+        // }
 
+        
+        if (!Permission.HasUserAuthorizedPermission(Permission.Microphone))
+            Permission.RequestUserPermission(Permission.Microphone);
+
+        
+        micDevice = Microphone.devices[0]; // Utilise le premier micro disponible
+        if (!string.IsNullOrEmpty(micDevice))
+        {
+            Debug.Log($"Microphone sélectionné : {micDevice}");
+            return;
+        }
         Debug.LogError("Aucun microphone de casque trouvé !");
         micDevice = null;
     }
@@ -74,7 +85,7 @@ public class AudioTracker : MonoBehaviour
             audioSource.Play();
 
             InitWAV();
-            audioSource.PlayOneShot(syncSignal); // Jouer un signal sonore pour marquer le début
+
             isRecording = true;
 
             Debug.Log($"Enregistrement audio en cours : {filePath}");
@@ -100,6 +111,41 @@ public class AudioTracker : MonoBehaviour
 
         // Écrire un en-tête WAV vide, à remplir plus tard
         binaryWriter.Write(new char[44]); // Réserve 44 octets pour l'en-tête WAV
+    }
+
+    private float[] GetSamplesFromAudioClip(AudioClip clip)
+    {
+        if (clip == null) return null;
+
+        float[] samples = new float[clip.samples * clip.channels];
+        clip.GetData(samples, 0);
+        return samples;
+    }
+
+    public void AddAudioMarker()
+    {
+        if (syncSignal == null)
+        {
+            Debug.LogError("Le signal de synchronisation (syncSignal) n'est pas assigné !");
+            return;
+        }
+
+        // Récupérer les échantillons du signal sonore
+        float[] markerSamples = GetSamplesFromAudioClip(syncSignal);
+        if (markerSamples == null || markerSamples.Length == 0)
+        {
+            Debug.LogError("Impossible de récupérer les échantillons du signal sonore !");
+            return;
+        }
+
+        // Convertir les échantillons en données audio et les insérer dans le flux
+        foreach (float sample in markerSamples)
+        {
+            short intData = (short)(sample * short.MaxValue); // Convertir en PCM 16 bits
+            binaryWriter.Write(intData);
+        }
+
+        Debug.Log("Signal sonore inséré dans le fichier audio.");
     }
 
     private void SaveNewAudioData()
@@ -136,10 +182,10 @@ public class AudioTracker : MonoBehaviour
             WriteWAVHeader();
             SaveToFile();
 
-            binaryWriter.Close();
-            memoryStream.Close();
+            binaryWriter?.Close();
+            memoryStream?.Close();
 
-            Debug.Log($"Audio recording stopped for {userName}");
+            Debug.Log($"Audio recording stopped.");
         }
     }
 
@@ -171,6 +217,23 @@ public class AudioTracker : MonoBehaviour
 
     private void OnDestroy()
     {
+        Debug.Log("Application quittée sur OnDestroy. Arrêt de l'enregistremen Audio.");
         StopRecording();
     }
+
+    private void OnApplicationQuit()
+    {
+        Debug.Log("Application quittée. Arrêt de l'enregistrement audio.");
+        StopRecording();
+    }
+
+    // private void OnApplicationPause(bool isPaused)
+    // {
+    //     if (isPaused)
+    //     {
+    //         Debug.Log("Application quittée sur OnApplicationPause. Arrêt de l'enregistremen Audio.");
+    //         StopRecording(); // Assure que l'enregistrement est arrêté proprement
+    //     }
+    // }
+
 }

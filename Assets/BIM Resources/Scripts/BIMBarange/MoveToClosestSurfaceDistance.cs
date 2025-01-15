@@ -1,0 +1,275 @@
+using Meta.WitAi.Events;
+using System;
+using System.Collections.Generic;
+using System.Xml;
+using TMPro;
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+public class MoveToClosestSurfaceDistance : MonoBehaviour
+{
+    public Transform controller;
+    // Layer mask for raycast targets (optional)
+    public LayerMask raycastLayerMask;
+
+    public Transform targetObject;
+    // Maximum raycast distance
+    public float raycastMaxDistance = 100f;
+
+    public float targetClosestDistance = 5f;
+
+    public GameObject spawnObjTarget;
+    public GameObject spawnObjRef;
+
+    private GameObject spawnObj;
+
+    private List<GameObject> selectedObjects;// = new List<GameObject>(); // List of selected objects
+    private XRIBIMInputActions playerInputActions;
+    private ObjectInteractionHandler objectInteractionHandler;
+
+    public TMP_Text distance;
+
+    private void Start()
+    {
+        selectedObjects = ObjectInteractionHandler.Instance.SelectedObjects();
+    }
+    private void Awake()
+    {
+        objectInteractionHandler = ObjectInteractionHandler.Instance;
+        playerInputActions = objectInteractionHandler.playerInputActions;
+        playerInputActions.XRIRightInteraction.Enable();
+        playerInputActions.XRILeftInteraction.Enable();
+
+    }
+
+    private void OnEnable()
+    {
+        playerInputActions.XRIRightInteraction.Enable();
+        playerInputActions.XRILeftInteraction.Enable();
+
+        //adding actionListeners
+        playerInputActions.XRIRightInteraction.Select.performed += MoveToSurfaceDistance;
+
+    }
+    private void OnDisable()
+    {
+        //adding actionListeners
+        playerInputActions.XRIRightInteraction.Select.performed -= MoveToSurfaceDistance;
+
+    }
+
+    private void MoveToSurfaceDistance(InputAction.CallbackContext context)
+    {
+        Vector3 controllerPosition = controller.position;
+        Quaternion controllerRotation = controller.rotation;
+        Vector3 rayDirection = controllerRotation * Vector3.forward;
+
+        // Raycast logic
+        Ray ray = new Ray(controllerPosition, rayDirection);
+        RaycastHit hit;
+        // Perform the raycast
+        if (Physics.Raycast(ray, out hit, raycastMaxDistance))
+        {
+            foreach (GameObject obj in selectedObjects)
+            {
+                MoveToShortestDistanceFromPlane(hit, obj);
+            }
+        }
+    }
+
+    public void MoveToSurfaceDistance()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            // Perform the raycast
+            if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out RaycastHit hit, raycastMaxDistance, raycastLayerMask))
+            {
+                foreach(GameObject obj in selectedObjects)
+                {
+                    MoveToClosestSurface(hit, obj);
+                }               
+            }
+        }
+
+    }
+    public void Update1()
+    {
+        if (playerInputActions.XRIRightInteraction.Select.ReadValue<float>() > 0.3)
+        {
+            Vector3 controllerPosition = controller.position;
+            Quaternion controllerRotation = controller.rotation;
+            Vector3 rayDirection = controllerRotation * Vector3.forward;
+
+            // Raycast logic
+            Ray ray = new Ray(controllerPosition, rayDirection);
+            RaycastHit hit;
+            // Perform the raycast
+            if (Physics.Raycast(ray, out hit, raycastMaxDistance))
+            {
+                foreach (GameObject obj in selectedObjects)
+                {
+                    MoveToShortestDistanceFromPlane(hit, obj);  
+                  // MoveToClosestSurface(hit, obj);
+                }
+            }
+        }
+
+
+
+
+            if (Input.GetMouseButtonDown(0))
+        {
+            // Perform the raycast
+            if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out RaycastHit hit, raycastMaxDistance, raycastLayerMask))
+            {
+
+                    MoveToClosestSurface(hit);
+
+            }
+        }
+
+    }
+
+    void MoveToClosestSurface(RaycastHit hit, GameObject targetObject)
+    {
+        
+        // Get the collider of the hit object
+        Collider hitCollider = hit.collider;
+
+        // Get the collider of the target object
+        Collider targetCollider = targetObject.transform.GetComponent<Collider>();
+
+        if (hitCollider != null && targetCollider != null)
+        {
+            // Find the closest point on the hit surface to the target object
+            Vector3 closestPointOnHitSurface = hitCollider.ClosestPoint(targetObject.transform.position);
+            spawnObj = Instantiate(spawnObjRef);
+            spawnObj.transform.position = closestPointOnHitSurface;
+            Vector3 surfaceNormal = hit.normal;
+
+            Debug.LogError("step 2  spawn marquer1");
+            // Find the closest point on the target object's surface to the hit surface
+            Vector3 closestPointOnTargetSurface = targetCollider.ClosestPoint(closestPointOnHitSurface);
+            spawnObj = Instantiate(spawnObjTarget);
+            spawnObj.transform.position = closestPointOnTargetSurface;
+
+            Debug.LogError("step 3  spawn marquer2");
+            // Calculate the direction vector from the hit surface to the target object's surface
+            Vector3 direction = closestPointOnTargetSurface - closestPointOnHitSurface;
+
+            // Calculate the current closest distance between the two surfaces
+            float currentClosestDistance = direction.magnitude;
+
+            // Calculate the adjustment needed to achieve the target distance
+            float adjustmentDistance = targetClosestDistance - currentClosestDistance;
+
+            // Move the target object along the direction vector to achieve the target distance
+            Vector3 targetPosition = targetObject.transform.position + direction.normalized * adjustmentDistance;
+            targetPosition.y = 0;
+            // Set the new position of the target object
+            targetObject.transform.position = targetPosition;
+            Debug.LogError("step 4  object repositioned"  );
+        }
+        else
+        {
+            Debug.LogWarning("Either the hit object or the target object is missing a collider.");
+        }
+     
+
+    }
+
+
+    void MoveToClosestSurface(RaycastHit hit)
+    {
+        // Get the collider of the hit object
+        Collider hitCollider = hit.collider;
+
+        // Get the collider of the target object
+        Collider targetCollider = targetObject.GetComponent<Collider>();
+
+        if (hitCollider != null && targetCollider != null)
+        {
+            // Find the closest point on the hit surface to the target object
+            Vector3 closestPointOnHitSurface = hitCollider.ClosestPoint(targetObject.transform.position);
+            spawnObj = Instantiate(spawnObjRef, closestPointOnHitSurface, Quaternion.identity);
+            Vector3 surfaceNormal = hit.normal;
+
+            // Find the closest point on the target object's surface to the hit surface
+            Vector3 closestPointOnTargetSurface = targetCollider.ClosestPoint(closestPointOnHitSurface);
+            spawnObj = Instantiate(spawnObjTarget, closestPointOnTargetSurface, Quaternion.identity);
+            // Calculate the direction vector from the hit surface to the target object's surface
+            Vector3 direction = closestPointOnTargetSurface - closestPointOnHitSurface;
+
+            // Calculate the current closest distance between the two surfaces
+            float currentClosestDistance = direction.magnitude;
+
+            // Calculate the adjustment needed to achieve the target distance
+            float adjustmentDistance = targetClosestDistance - currentClosestDistance;
+
+            // Move the target object along the direction vector to achieve the target distance
+            Vector3 targetPosition = targetObject.transform.position + direction.normalized * adjustmentDistance;
+
+            // Set the new position of the target object
+            targetObject.transform.position = targetPosition;
+        }
+        else
+        {
+            Debug.LogWarning("Either the hit object or the target object is missing a collider.");
+        }
+    }
+
+
+
+    void MoveToShortestDistanceFromPlane(RaycastHit hit, GameObject objectToMove)
+    {
+
+        Vector3 planeNormal = hit.normal; // Use up or forward depending on your plane orientation
+
+        // Get the plane's position
+        Vector3 planePosition = hit.collider.transform.position;
+
+        // Get the object's current position
+        Vector3 objectPosition = objectToMove.transform.position;
+
+        // Calculate the vector from the plane to the object
+        Vector3 planeToObject = objectPosition - planePosition;
+
+        // Project this vector onto the plane's normal to find the shortest distance
+        float shortestDistance = Vector3.Dot(planeToObject, planeNormal);
+
+        // Calculate the nearest point on the plane
+        Vector3 nearestPointOnPlane = objectPosition - planeNormal * shortestDistance;
+       // spawnObj = Instantiate(spawnObj, nearestPointOnPlane, Quaternion.identity);
+        
+        Collider collider = objectToMove.GetComponent<Collider>();
+        // Calculate the target position at the specified distance from the plane
+        Vector3 targetPosition = nearestPointOnPlane + planeNormal * targetClosestDistance + new Vector3(planeNormal.x * collider.bounds.size.x / 2, 0, planeNormal.z * collider.bounds.size.z / 2);
+           
+
+        targetPosition.y = 0;
+        // Move the object to the target position
+        objectToMove.transform.position = targetPosition;
+    }
+
+    public void SetDistance(TMP_Text distance)
+    {
+        string expression = distance.text.Replace("E+", "*10^")
+                             .Replace("E-", "*10^-");
+
+        List<string> tokens = Tokenizer.Tokenize(expression);
+        Parser parser = new(tokens);
+        try
+        {
+            Node node = parser.Parse();
+            string data = node.Evaluate().ToString();
+
+            try
+            {
+                targetClosestDistance = float.Parse(data);
+            }
+            catch { }
+        }
+        catch { }
+
+    }
+}
