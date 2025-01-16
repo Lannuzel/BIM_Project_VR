@@ -10909,6 +10909,11 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: -3468553061479561089, guid: e19e2abd8c132b74aa01b33816a26d9d,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: -1541151730001483846, guid: e19e2abd8c132b74aa01b33816a26d9d,
         type: 3}
       propertyPath: m_LocalScale.x
@@ -89024,7 +89029,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1687857469820952370
 Transform:
   m_ObjectHideFlags: 0
@@ -103311,7 +103316,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!1 &2956511353364202685
 GameObject:
   m_ObjectHideFlags: 0
@@ -190499,7 +190504,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &7984585279487508311
 RectTransform:
   m_ObjectHideFlags: 0
@@ -198056,7 +198061,7 @@ MonoBehaviour:
   moveSpeed: 1
   highlightMaterial: {fileID: -876546973899608171, guid: fda02044b9f6e2249b51ff25288d54f3,
     type: 3}
-  objectPrefab: {fileID: 5281409088066820205, guid: 1cc14675111ef2c42a3c56e19fadcea3,
+  objectPrefab: {fileID: 6548133584592920561, guid: 215281a69a5257d48ba62cab7c099250,
     type: 3}
   spawnDistance: 2
   chaireResources: {fileID: 5829744256347023845}
