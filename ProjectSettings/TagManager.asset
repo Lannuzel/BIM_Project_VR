@@ -22,6 +22,7 @@ TagManager:
   - Interactable
   - StartPoint
   - EndPoint
+  - Floor
   layers:
   - Default
   - TransparentFX

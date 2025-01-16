@@ -144,7 +144,7 @@ public class ObjectInteractionHandler : NetworkBehaviour
         Bounds bounds = renderers[0].bounds;
         foreach (Renderer renderer in renderers)
         {
-        //    bounds.Encapsulate(renderer.bounds);
+            bounds.Encapsulate(renderer.bounds);
         }
 
         return bounds;

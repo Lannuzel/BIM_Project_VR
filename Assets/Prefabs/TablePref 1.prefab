@@ -124,6 +124,7 @@ GameObject:
   - component: {fileID: 6916004699015333475}
   - component: {fileID: 202408707863877430}
   - component: {fileID: 3676853011871525406}
+  - component: {fileID: 6691222088638737177}
   m_Layer: 0
   m_Name: TablePref 1
   m_TagString: Interactable
@@ -255,3 +256,24 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 2020804157510136435, guid: e19e2abd8c132b74aa01b33816a26d9d, type: 3}
+--- !u!65 &6691222088638737177
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6548133584592920561}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 7.551116, y: 7.9278235, z: 9.495763}
+  m_Center: {x: -8.726948, y: 3.965772, z: 4.7500367}

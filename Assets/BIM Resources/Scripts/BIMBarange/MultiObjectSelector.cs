@@ -52,8 +52,8 @@ public class MultiObjectSelector : Fusion.NetworkBehaviour
 
         //adding actionListeners
         playerInputActions.XRIRightInteraction.Select.performed += SelectObject_performed;
-        playerInputActions.XRIRightInteraction.CopyPaste.performed += CopyPaste_performed;
-        playerInputActions.XRIRightInteraction.Spawn.performed += SpawnObject_performed;
+     //   playerInputActions.XRIRightInteraction.CopyPaste.performed += CopyPaste_performed;
+     //   playerInputActions.XRIRightInteraction.Spawn.performed += SpawnObject_performed;
   
         // playerInputActions.XRIRightInteraction.Activate.canceled += DrawLine_endDrawing;
 
@@ -66,8 +66,8 @@ public class MultiObjectSelector : Fusion.NetworkBehaviour
 
         //adding actionListeners
         playerInputActions.XRIRightInteraction.Select.performed += SelectObject_performed;
-        playerInputActions.XRIRightInteraction.CopyPaste.performed += CopyPaste_performed;
-        playerInputActions.XRIRightInteraction.Spawn.performed += SpawnObject_performed;
+       // playerInputActions.XRIRightInteraction.CopyPaste.performed += CopyPaste_performed;
+       // playerInputActions.XRIRightInteraction.Spawn.performed += SpawnObject_performed;
 
         // playerInputActions.XRIRightInteraction.Activate.canceled += DrawLine_endDrawing;
 
@@ -77,8 +77,8 @@ public class MultiObjectSelector : Fusion.NetworkBehaviour
     {
         //adding actionListeners
         playerInputActions.XRIRightInteraction.Select.performed -= SelectObject_performed;
-        playerInputActions.XRIRightInteraction.CopyPaste.performed -= CopyPaste_performed;
-        playerInputActions.XRIRightInteraction.Spawn.performed -= SpawnObject_performed;
+       // playerInputActions.XRIRightInteraction.CopyPaste.performed -= CopyPaste_performed;
+        //playerInputActions.XRIRightInteraction.Spawn.performed -= SpawnObject_performed;
 
         // playerInputActions.XRIRightInteraction.Activate.canceled += DrawLine_endDrawing;
 

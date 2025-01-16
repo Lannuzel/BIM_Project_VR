@@ -50,14 +50,73 @@ public class MoveObjectRaycast : NetworkBehaviour
             // Perform the raycast
             if (Physics.Raycast(ray, out hit))
             {
-                 foreach (GameObject obj in selectedObjects)
-                 {
-                    MoveToShortestDistanceFromPlane_V1(hit, obj);
-                   //  MoveToClosestSurface(hit, obj);
-                 }
+            if (hit.collider.transform.tag != "Floor")
+                {
+                foreach (GameObject obj in selectedObjects)
+                    {
+                     MoveToShortestDistanceFromPlane_V1(hit, obj);
+                    //  MoveToClosestSurface(hit, obj);
+                    //MoveToSurface(hit, obj);
+                    //  MoveToSurfaceNW(hit, obj);
+                }
+
+            }
             }
     }
+    public void MoveToSurface(RaycastHit hit, GameObject objectToMove)
+    {
+                  // Find the closest point on the surface of the reference collider
+            Vector3 closestPoint = hit.collider.ClosestPoint(transform.position);
 
+            // Calculate the direction away from the surface
+            Vector3 directionFromSurface = (objectToMove.transform.position - closestPoint).normalized;
+
+            // Set the new position at the specified distance from the surface
+            transform.position = closestPoint + directionFromSurface * distanceFromSurface;
+    }
+    void MoveToSurfaceNW(RaycastHit hit, GameObject objectToMove)
+    {
+        // Find the closest point on the surface of the reference collider
+        Vector3 closestPoint = hit.collider.ClosestPoint(transform.position);
+
+        // Calculate the direction away from the surface
+        Vector3 directionFromSurface = (objectToMove.transform.position - closestPoint).normalized;
+
+        NetworkObject networkObj = objectToMove.GetComponent<NetworkObject>();
+        if (networkObj != null && networkObj.HasStateAuthority)
+        {
+          // Check if the input field is not empty
+            if (!string.IsNullOrEmpty(inputField.text))
+            {
+                // Try to parse the input text to a number
+                if (float.TryParse(inputField.text, out float number))
+                {
+                    // Calculate the double of the number
+                    distanceFromSurface = number;
+                }
+                else
+                {
+                    // If parsing fails, print an error message
+                    Debug.LogError("Invalid input. Please enter a valid number.");
+                }
+            }
+
+            // Set the new position at the specified distance from the surface
+            Vector3 newPosition = closestPoint + directionFromSurface * distanceFromSurface;
+            newPosition.y = 0;
+
+            // Use NetworkTransform if present
+            NetworkTransform networkTransform = objectToMove.GetComponent<NetworkTransform>();
+            if (networkTransform != null)
+            {
+                networkTransform.Teleport(newPosition);
+            }
+            else
+            {
+                objectToMove.transform.position = newPosition; // Fallback if no NetworkTransform
+            }
+        }
+    }
     void MoveToShortestDistanceFromPlane_V1(RaycastHit hit, GameObject objectToMove)
     {
     // Get the normal of the surface hit
