@@ -278,7 +278,7 @@ public class MultiObjectSelector : Fusion.NetworkBehaviour
                         obj.transform.position = newPosition; // Fallback if no NetworkTransform
                     }
 
-                    Debug.Log($"Moved {obj.name} to {newPosition}");
+                    //Debug.Log($"Moved {obj.name} to {newPosition}");
                 }
                 else
                 {
