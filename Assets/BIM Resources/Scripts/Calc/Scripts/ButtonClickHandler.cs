@@ -13,7 +13,8 @@ public class ButtonClickHandler : MonoBehaviour
         if(characterToDisplay.text == "="){
             transform.GetComponent<Button>().onClick.AddListener(() => displayScript.Evaluate());
         }
-        else if( characterToDisplay.text == "Ơ"){
+        else if( characterToDisplay.text == "<--")
+        {
             transform.GetComponent<Button>().onClick.AddListener(() => displayScript.EraseOne());
         }
         else
