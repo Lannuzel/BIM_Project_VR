@@ -25,14 +25,14 @@ public class MoveObjectRaycast : NetworkBehaviour
     {
         playerInputActions.XRIRightInteraction.Enable();
         //adding actionListeners
-        playerInputActions.XRIRightInteraction.Select.performed += MoveToSurfaceDistance;
+        playerInputActions.XRIRightInteraction.Activate.performed += MoveToSurfaceDistance;
 
     }
 
     private void OnDisable()
     {
         //adding actionListeners
-        playerInputActions.XRIRightInteraction.Select.performed -= MoveToSurfaceDistance;
+        playerInputActions.XRIRightInteraction.Activate .performed -= MoveToSurfaceDistance;
 
     }
 

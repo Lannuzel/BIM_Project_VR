@@ -1,4 +1,6 @@
+using Fusion;
 using Meta.WitAi.Events;
+using Oculus.Interaction;
 using System;
 using System.Collections.Generic;
 using System.Xml;
@@ -23,11 +25,19 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
 
     private GameObject spawnObj;
 
+    public Transform cameraRef;
+
+   public Material lineMaterial;
+    public GameObject endPointPref;
+    private GameObject lineObj;
+    private Vector3 normal;
+    private Vector3 tangentEnd;
+   public GameObject measurePref;
+    public TMP_InputField inputField;
+
     private List<GameObject> selectedObjects;// = new List<GameObject>(); // List of selected objects
     private XRIBIMInputActions playerInputActions;
     private ObjectInteractionHandler objectInteractionHandler;
-
-    public TMP_Text distance;
 
     private void Start()
     {
@@ -38,44 +48,172 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
         objectInteractionHandler = ObjectInteractionHandler.Instance;
         playerInputActions = objectInteractionHandler.playerInputActions;
         playerInputActions.XRIRightInteraction.Enable();
-        playerInputActions.XRILeftInteraction.Enable();
 
     }
 
     private void OnEnable()
     {
         playerInputActions.XRIRightInteraction.Enable();
-        playerInputActions.XRILeftInteraction.Enable();
-
+       
         //adding actionListeners
-        playerInputActions.XRIRightInteraction.Select.performed += MoveToSurfaceDistance;
+        playerInputActions.XRIRightInteraction.Activate.performed += MoveToSurfaceDistance;
 
     }
     private void OnDisable()
     {
         //adding actionListeners
-        playerInputActions.XRIRightInteraction.Select.performed -= MoveToSurfaceDistance;
+        playerInputActions.XRIRightInteraction.Activate.performed -= MoveToSurfaceDistance;
 
     }
 
     private void MoveToSurfaceDistance(InputAction.CallbackContext context)
     {
-        Vector3 controllerPosition = controller.position;
-        Quaternion controllerRotation = controller.rotation;
-        Vector3 rayDirection = controllerRotation * Vector3.forward;
+        DrawTengentLine();
+    }
 
-        // Raycast logic
-        Ray ray = new Ray(controllerPosition, rayDirection);
-        RaycastHit hit;
-        // Perform the raycast
-        if (Physics.Raycast(ray, out hit, raycastMaxDistance))
+
+    private void LateUpdate()
+    {
+        if (lineObj != null)
         {
-            foreach (GameObject obj in selectedObjects)
+            if (playerInputActions.XRIRightInteraction.ActivateValue.ReadValue<float>() > 0.3)
+            {            // Get the controller's position and orientation
+                Vector3 controllerPosition = controller.position;
+                Quaternion controllerRotation = controller.rotation;
+                Vector3 rayDirection = controllerRotation * Vector3.forward;
+
+                // Raycast logic
+                Ray ray = new Ray(controllerPosition, rayDirection);
+                // Perform a raycast
+                if (Physics.Raycast(ray, out RaycastHit hit))
+                {
+                    LineRenderer currentLine = lineObj.transform.GetComponent<LineRenderer>();
+                    normal = hit.normal;
+                    // Calculate the endpoint of the tangent line
+                    tangentEnd = hit.point + normal * targetClosestDistance;
+                    currentLine.SetPosition(0, hit.point);
+                    currentLine.SetPosition(1, tangentEnd);
+
+                    foreach (GameObject objToMove in selectedObjects)
+                    {
+                        MoveObjectToNormalDistance(objToMove);
+                    }
+                }
+
+            }
+            else Destroy(lineObj);
+        }
+
+    }
+
+    void DrawTengentLine()
+    {
+        {
+            // Get the controller's position and orientation
+            Vector3 controllerPosition = controller.position;
+            Quaternion controllerRotation = controller.rotation;
+            Vector3 rayDirection = controllerRotation * Vector3.forward;
+
+            // Raycast logic
+            Ray ray = new Ray(controllerPosition, rayDirection);
+            // Perform a raycast
+            if (Physics.Raycast(ray, out RaycastHit hit))
             {
-                MoveToShortestDistanceFromPlane(hit, obj);
+                // Get the surface normal at the hit point
+                normal = hit.normal;
+
+                // Calculate the endpoint of the tangent line
+                tangentEnd = hit.point + normal * targetClosestDistance;
+             //create new line and assign start point 
+                lineObj = new GameObject("Line");
+
+                LineRenderer currentLine = lineObj.AddComponent<LineRenderer>();
+                currentLine.material = lineMaterial;
+                currentLine.startWidth = 0.01f;
+                currentLine.endWidth = 0.01f;
+                currentLine.positionCount = 2;
+                currentLine.SetPosition(0, hit.point);
+                currentLine.SetPosition(1, tangentEnd);
+
+                foreach (GameObject objToMove in selectedObjects) 
+                {
+                    MoveObjectToNormalDistance(objToMove);
+                }
             }
         }
+
     }
+
+
+    public void MoveObjectToNormalDistance(GameObject objToMove)
+    {
+
+        NetworkObject networkObj = objToMove.GetComponent<NetworkObject>();
+        if (networkObj != null && networkObj.HasStateAuthority)
+        {
+            Vector3 newPosition = objToMove.transform.position;
+            Collider collider = objToMove.transform.GetComponent<Collider>();
+            if (normal.x < 0)
+            {
+                newPosition.x = tangentEnd.x - collider.bounds.size.x / 2;
+            }
+            else if (normal.x > 0)
+            {
+                newPosition.x = tangentEnd.x + collider.bounds.size.x / 2;
+            }
+            else if (normal.z > 0)
+            {
+                newPosition.z = tangentEnd.z + collider.bounds.size.z / 2;
+            }
+            else if (normal.z < 0)
+            {
+                newPosition.z = tangentEnd.z - collider.bounds.size.z / 2;
+            }
+
+            // Use NetworkTransform if present
+            NetworkTransform networkTransform = objToMove.GetComponent<NetworkTransform>();
+            if (networkTransform != null)
+            {
+                networkTransform.Teleport(newPosition);
+            }
+            else
+            {
+                objToMove.transform.position = newPosition; // Fallback if no NetworkTransform
+            }
+
+            //Debug.Log($"Moved {obj.name} to {newPosition}");
+        }
+        else
+        {
+            Debug.LogWarning($"Cannot move {objToMove.name}. No State Authority!");
+        }
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     public void MoveToSurfaceDistance()
     {
@@ -251,25 +389,31 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
         objectToMove.transform.position = targetPosition;
     }
 
-    public void SetDistance(TMP_Text distance)
+    public void SetDistance(TMP_InputField inputField)
     {
-        string expression = distance.text.Replace("E+", "*10^")
-                             .Replace("E-", "*10^-");
-
-        List<string> tokens = Tokenizer.Tokenize(expression);
-        Parser parser = new(tokens);
-        try
+        // Check if the input field is not empty
+        if (!string.IsNullOrEmpty(inputField.text))
         {
-            Node node = parser.Parse();
-            string data = node.Evaluate().ToString();
-
-            try
+            // Try to parse the input text to a number
+            if (float.TryParse(inputField.text, out float number))
             {
-                targetClosestDistance = float.Parse(data);
+                // Calculate the double of the number
+                targetClosestDistance = number;
+
+                // Print the doubled value to the console
+                Debug.Log("Doubled Value: " + targetClosestDistance);
             }
-            catch { }
+            else
+            {
+                // If parsing fails, print an error message
+                Debug.LogError("Invalid input. Please enter a valid number.");
+            }
         }
-        catch { }
+        else
+        {
+            // Handle empty input
+            Debug.LogError("Input field is empty. Please enter a value.");
+        }
 
     }
 }

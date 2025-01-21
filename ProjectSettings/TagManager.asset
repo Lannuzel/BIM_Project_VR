@@ -23,6 +23,7 @@ TagManager:
   - StartPoint
   - EndPoint
   - Floor
+  - Wall
   layers:
   - Default
   - TransparentFX
@@ -41,7 +42,7 @@ TagManager:
   - 
   - 
   - 
-  - 
+  - Wall
   - 
   - 
   - 

@@ -20,6 +20,7 @@ public class ReferenceLineFromObject : MonoBehaviour
     private List<GameObject> selectedObjects;// = new List<GameObject>(); // List of selected objects
     private ObjectInteractionHandler objectInteractionHandler;
 
+    public LayerMask layerMask;
     private bool showRefLines = false;
     // Start is called before the first frame update
     private void Start()
@@ -79,7 +80,7 @@ public class ReferenceLineFromObject : MonoBehaviour
             //draw a line towards the -Z axis from the corner point
             Ray ray = new Ray(position, new Vector3(0, 0, -1));
             // Perform a raycast
-            if (Physics.Raycast(ray, out hit))
+            if (Physics.Raycast(ray, out hit,20,layerMask))
             {
                 dLine.SetPosition(0, position);
                 dLine.SetPosition(1, hit.point);
@@ -102,7 +103,7 @@ public class ReferenceLineFromObject : MonoBehaviour
             //draw a line towards the -X axis from the corner point
             Ray ray = new Ray(position, new Vector3(-1, 0, 0));
             // Perform a raycast
-            if (Physics.Raycast(ray, out hit))
+            if (Physics.Raycast(ray, out hit, 20, layerMask))
             {
                 dLine.SetPosition(0, position);
                 dLine.SetPosition(1, hit.point);
@@ -148,14 +149,14 @@ public class ReferenceLineFromObject : MonoBehaviour
         //draw a line towards the -Z axis from the corner point
             Ray ray = new Ray(position, new Vector3(0, 0, -1));
             // Perform a raycast
-            if (Physics.Raycast(ray, out hit))
+            if (Physics.Raycast(ray, out hit,20, layerMask))
             {
             DrawLine(go, position, hit.point, "DirectionLineZ"); 
             }
             //draw a line towards the -X axis from the corner point
             ray = new Ray(position, new Vector3(-1, 0, 0));
             // Perform a raycast
-            if (Physics.Raycast(ray, out hit))
+            if (Physics.Raycast(ray, out hit, 20, layerMask ))
             {
                 DrawLine(go, position, hit.point, "DirectionLineX");
             }

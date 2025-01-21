@@ -255,8 +255,34 @@ public class MultiObjectSelector : Fusion.NetworkBehaviour
     }
     void MoveObjects()
     {
-        Vector2 joystickInput = playerInputActions.XRIRightInteraction.Move.ReadValue<Vector2>();
-        Vector3 moveDirection = new Vector3(joystickInput.x, 0, joystickInput.y) * moveSpeed * Time.deltaTime;
+        Vector2 movementInput = playerInputActions.XRIRightInteraction.Move.ReadValue<Vector2>();
+        Vector3 forward = cameraTransform.forward;
+        Vector3 right = cameraTransform.right;
+
+        // Flatten the vectors to avoid vertical movement
+        forward.y = 0;
+        right.y = 0;
+
+        forward.Normalize();
+        right.Normalize();
+
+        Vector3 movement = (forward * movementInput.y + right * movementInput.x) * moveSpeed * Time.deltaTime; 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      //  Vector3 moveDirection = new Vector3(joystickInput.x, 0, joystickInput.y) * moveSpeed * Time.deltaTime;
 
         foreach (GameObject obj in selectedObjects)
         {
@@ -265,7 +291,7 @@ public class MultiObjectSelector : Fusion.NetworkBehaviour
                 NetworkObject networkObj = obj.GetComponent<NetworkObject>();
                 if (networkObj != null && networkObj.HasStateAuthority)
                 {
-                    Vector3 newPosition = obj.transform.position + moveDirection;
+                    Vector3 newPosition = obj.transform.position + movement;
 
                     // Use NetworkTransform if present
                     NetworkTransform networkTransform = obj.GetComponent<NetworkTransform>();
