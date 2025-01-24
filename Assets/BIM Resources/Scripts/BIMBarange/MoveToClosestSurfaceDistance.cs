@@ -39,6 +39,9 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
     private XRIBIMInputActions playerInputActions;
     private ObjectInteractionHandler objectInteractionHandler;
 
+
+    public Vector3 positionOffset = Vector3.zero;
+
     private void Start()
     {
         selectedObjects = ObjectInteractionHandler.Instance.SelectedObjects();
@@ -86,22 +89,24 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
                 Ray ray = new Ray(controllerPosition, rayDirection);
                 // Perform a raycast
                 if (Physics.Raycast(ray, out RaycastHit hit))
-                {
-                    LineRenderer currentLine = lineObj.transform.GetComponent<LineRenderer>();
-                    normal = hit.normal;
-                    // Calculate the endpoint of the tangent line
-                    tangentEnd = hit.point + normal * targetClosestDistance;
-                    currentLine.SetPosition(0, hit.point);
-                    currentLine.SetPosition(1, tangentEnd);
-
-                    foreach (GameObject objToMove in selectedObjects)
+                {   if (hit.transform.tag == "Wall")
                     {
-                        MoveObjectToNormalDistance(objToMove);
+                        LineRenderer currentLine = lineObj.transform.GetComponent<LineRenderer>();
+                        normal = hit.normal;
+                        // Calculate the endpoint of the tangent line
+                        tangentEnd = hit.point + normal * targetClosestDistance;
+                        currentLine.SetPosition(0, hit.point);
+                        currentLine.SetPosition(1, tangentEnd);
+
+                        foreach (GameObject objToMove in selectedObjects)
+                        {
+                            MoveObjectToNormalDistance(objToMove, tangentEnd);
+                        }
                     }
                 }
 
             }
-            else Destroy(lineObj);
+           // else Destroy(lineObj);
         }
 
     }
@@ -119,25 +124,28 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
             // Perform a raycast
             if (Physics.Raycast(ray, out RaycastHit hit))
             {
-                // Get the surface normal at the hit point
-                normal = hit.normal;
-
-                // Calculate the endpoint of the tangent line
-                tangentEnd = hit.point + normal * targetClosestDistance;
-             //create new line and assign start point 
-                lineObj = new GameObject("Line");
-
-                LineRenderer currentLine = lineObj.AddComponent<LineRenderer>();
-                currentLine.material = lineMaterial;
-                currentLine.startWidth = 0.01f;
-                currentLine.endWidth = 0.01f;
-                currentLine.positionCount = 2;
-                currentLine.SetPosition(0, hit.point);
-                currentLine.SetPosition(1, tangentEnd);
-
-                foreach (GameObject objToMove in selectedObjects) 
+                if (hit.transform.tag == "Wall")
                 {
-                    MoveObjectToNormalDistance(objToMove);
+                    // Get the surface normal at the hit point
+                    normal = hit.normal;
+
+                    // Calculate the endpoint of the tangent line
+                    tangentEnd = hit.point + normal * targetClosestDistance;
+                    //create new line and assign start point 
+                    lineObj = new GameObject("Line");
+
+                    LineRenderer currentLine = lineObj.AddComponent<LineRenderer>();
+                    currentLine.material = lineMaterial;
+                    currentLine.startWidth = 0.01f;
+                    currentLine.endWidth = 0.01f;
+                    currentLine.positionCount = 2;
+                    currentLine.SetPosition(0, hit.point);
+                    currentLine.SetPosition(1, tangentEnd);
+
+                    foreach (GameObject objToMove in selectedObjects)
+                    {
+                        MoveObjectToNormalDistance(objToMove, tangentEnd);
+                    }
                 }
             }
         }
@@ -145,75 +153,55 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
     }
 
 
-    public void MoveObjectToNormalDistance(GameObject objToMove)
+    public void MoveObjectToNormalDistance(GameObject objToMove, Vector3 tangentEnd)
     {
 
         NetworkObject networkObj = objToMove.GetComponent<NetworkObject>();
         if (networkObj != null && networkObj.HasStateAuthority)
         {
-            Vector3 newPosition = objToMove.transform.position;
+            Vector3 newPosition = tangentEnd;
+            // newPosition = newPosition;
+            newPosition.y = 0;
+
+            //Vector3 newPosition = objToMove.transform.position;
             Collider collider = objToMove.transform.GetComponent<Collider>();
+            Debug.Log("normal" + normal.ToString());
             if (normal.x < 0)
             {
-                newPosition.x = tangentEnd.x - collider.bounds.size.x / 2;
+                newPosition.x = newPosition.x + positionOffset.x+ (collider.bounds.size.x/2);
             }
             else if (normal.x > 0)
             {
-                newPosition.x = tangentEnd.x + collider.bounds.size.x / 2;
+                newPosition.x = newPosition.x + positionOffset.x + (collider.bounds.size.x / 2);
             }
-            else if (normal.z > 0)
+            if (normal.z > 0)
             {
-                newPosition.z = tangentEnd.z + collider.bounds.size.z / 2;
+                newPosition.z = newPosition.z + positionOffset.z + (collider.bounds.size.z / 2);
             }
             else if (normal.z < 0)
             {
-                newPosition.z = tangentEnd.z - collider.bounds.size.z / 2;
+                newPosition.z = newPosition.z + positionOffset.z + (collider.bounds.size.z / 2);
             }
+                // Use NetworkTransform if present
+                NetworkTransform networkTransform = objToMove.GetComponent<NetworkTransform>();
+                if (networkTransform != null)
+                {
+                    networkTransform.Teleport(newPosition);
+                }
+                else
+                {
+                    objToMove.transform.position = newPosition; // Fallback if no NetworkTransform
+                }
 
-            // Use NetworkTransform if present
-            NetworkTransform networkTransform = objToMove.GetComponent<NetworkTransform>();
-            if (networkTransform != null)
-            {
-                networkTransform.Teleport(newPosition);
+                //Debug.Log($"Moved {obj.name} to {newPosition}");
             }
             else
             {
-                objToMove.transform.position = newPosition; // Fallback if no NetworkTransform
+                Debug.LogWarning($"Cannot move {objToMove.name}. No State Authority!");
             }
 
-            //Debug.Log($"Moved {obj.name} to {newPosition}");
-        }
-        else
-        {
-            Debug.LogWarning($"Cannot move {objToMove.name}. No State Authority!");
-        }
-
+        
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     public void MoveToSurfaceDistance()
     {
