@@ -16,8 +16,9 @@ public class ObjectInteractionHandler : NetworkBehaviour
     public List<GameObject> selectedObjects = new List<GameObject>(); // List of selected objects
     public Material boundingBoxMaterial; // Optional material for visualizing the bounding box
 
-
+    public ObjectOutline objectOutliner;
     public Transform runTimeGeneratedResources;
+    public Transform instantiatedChaires;
 
 
 
@@ -77,7 +78,7 @@ public class ObjectInteractionHandler : NetworkBehaviour
        */
         spawnObj.transform.position = spawnPosition;
         spawnObj.transform.rotation = spawnedObjectPrefab.transform.rotation;
-        spawnObj.transform.parent = runTimeGeneratedResources;
+        spawnObj.transform.parent = instantiatedChaires;
         SelectObjects(spawnObj.gameObject);
         spawnedObject = null;
     }
@@ -86,6 +87,7 @@ public class ObjectInteractionHandler : NetworkBehaviour
     {
         if (!selectedObjects.Contains(hitObject))
         {
+            objectOutliner.EnableOutLine(hitObject.transform);
             //HighlightObject(hitObject);
             CreateBoundingBox(hitObject);
             selectedObjects.Add(hitObject);
@@ -115,6 +117,7 @@ public class ObjectInteractionHandler : NetworkBehaviour
         // Set the MeshFilter to use a cube mesh
         meshFilter.mesh = CreateCubeMesh();
 
+
         // Assign the material if provided
         if (boundingBoxMaterial != null)
         {
@@ -124,7 +127,7 @@ public class ObjectInteractionHandler : NetworkBehaviour
         // Set the bounding box size to match the target object
         Bounds bounds = CalculateBounds(targetObject);
         boxCollider.center = bounds.center - targetObject.transform.position;
-        boxCollider.size = bounds.size;
+        boxCollider.size = bounds.size* 0.8f;
         boundingBox.transform.position = bounds.center;
 
         // Make the bounding box a child of the target object
@@ -146,7 +149,7 @@ public class ObjectInteractionHandler : NetworkBehaviour
         {
             bounds.Encapsulate(renderer.bounds);
         }
-
+        
         return bounds;
     }
 
@@ -163,7 +166,7 @@ public class ObjectInteractionHandler : NetworkBehaviour
     {
         List<GameObject> objectsToBeDeleted = new List<GameObject>(); // List of copied objects
         RemoveBoundingBoxes();
-
+        RemoveOutLines();
         foreach (GameObject obj in selectedObjects)
         {
             if (obj != null) // Check if the GameObject is not null
@@ -183,6 +186,19 @@ public class ObjectInteractionHandler : NetworkBehaviour
             {
                 //   RemoveHighlight(obj);
                 RemoveBoundingBox(obj);
+            }
+        }
+        //clear list
+        // boundingBoxes.Clear();
+    }
+    private void RemoveOutLines()
+    {
+
+        foreach (GameObject obj in selectedObjects)
+        {
+            if (obj != null)
+            {
+                objectOutliner.DisableOutLine(obj.transform);   
             }
         }
         //clear list

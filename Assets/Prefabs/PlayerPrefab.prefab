@@ -431,6 +431,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6be74bc0142aa8443a8a6ce5e7f73982, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  thankGivingWindow: {fileID: 7339132711480263965, guid: a3b3535a94fa2ad4ca8c38cb08e95a01,
+    type: 3}
+  delay: 1800
 --- !u!114 &-1609552420710567778
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -444,8 +447,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   markerManager: {fileID: 1823465414780957231}
-  thankGivingWindow: {fileID: 7339132711480263965, guid: a3b3535a94fa2ad4ca8c38cb08e95a01,
-    type: 3}
+  timerThreshold: 1800
 --- !u!114 &1823465414780957231
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -7,7 +7,9 @@ public class MarkerManager : MonoBehaviour
     private List<FaceTrackingRecorder> faceLoggers = new List<FaceTrackingRecorder>();
     private List<EyeTrackingDataLogger> eyeLoggers = new List<EyeTrackingDataLogger>();
     private List<AudioTracker> audioTrackers = new List<AudioTracker>();
+    private List<ChairPositionDataLogger> chairPositionLogger = new List<ChairPositionDataLogger>();
 
+    private bool successStatus = true;
     void Start()
     {
         // Recherchez tous les trackers dans la scène
@@ -15,6 +17,12 @@ public class MarkerManager : MonoBehaviour
         audioTrackers.AddRange(FindObjectsOfType<AudioTracker>());
         faceLoggers.AddRange(FindObjectsOfType<FaceTrackingRecorder>());
         eyeLoggers.AddRange(FindObjectsOfType<EyeTrackingDataLogger>());
+        chairPositionLogger.AddRange(FindObjectsOfType<ChairPositionDataLogger>());
+    }
+    public void StopAllRecordingsTimeOut()
+    {
+        successStatus = false;
+        StopAllRecordings();
     }
 
     public void StopAllRecordings()
@@ -53,6 +61,17 @@ public class MarkerManager : MonoBehaviour
             Debug.Log("Enregistrement audio arrêté dans un audioTracker.");
         }
 
+
+
+        // Arrête les enregistrements pour les AudioTrackers
+        Debug.Log("Arrêt des enregistrements dans les chairLoggers...");
+        foreach (var chairLogger in chairPositionLogger)
+        {
+            chairLogger.AddChairPositionLog(successStatus);
+            chairLogger.StopRecording();
+            Debug.LogError("Enregistrement charirLogs arrêté.");
+        }
+
         Debug.Log("Tous les enregistrements ont été arrêtés avec succès.");
     }
     public void AddMarkerToAllLogs()
@@ -89,6 +108,13 @@ public class MarkerManager : MonoBehaviour
             Debug.Log("Audio marker ajouté dans un audioTracker.");
         }
 
+        // Ajoutez un marker dans les fichiers chairePosition
+        Debug.Log("Ajout du marker dans les chairePositionLogger...");
+        foreach (var chairLogger in chairPositionLogger)
+        {
+            chairLogger.AddMarker();
+            Debug.LogError("marker ajouté dans une chaireLogger.");
+        }
         Debug.Log($"Ajout du marker terminé.");
     }
 

@@ -193,7 +193,8 @@ public class DistanceMeasurementTool : MonoBehaviour
         {
             currentLine.SetPosition(0, currentPoint); // Update the line's Start to the current hit point
             measurementUI.transform.position = (currentPoint + currentLine.GetPosition(1)) / 2;
-            measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
+            measurementUI.transform.LookAt(-(measurementUI.transform.position + cameraRef.forward));
+           //measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
             measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString() + " mètre";
         }
     }
@@ -203,7 +204,8 @@ public class DistanceMeasurementTool : MonoBehaviour
         {
             currentLine.SetPosition(1, currentPoint); // Update the line's endpoint to the current hit point
             measurementUI.transform.position = (currentPoint + currentLine.GetPosition(0)) / 2;
-            measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
+            measurementUI.transform.LookAt(-(measurementUI.transform.position + cameraRef.forward));
+           // measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
             measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString() + " mètre";
         }
     }
@@ -230,7 +232,8 @@ public class DistanceMeasurementTool : MonoBehaviour
         measurementHandler.AddLine(currentLine.transform);
         
         measurementUI.transform.position = (currentLine.GetPosition(0) + currentLine.GetPosition(1)) / 2;
-        measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
+        measurementUI.transform.LookAt(-(measurementUI.transform.position + cameraRef.forward));
+       // measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
         measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString() + " mètre";
 
         if (isDrawing || isModifyingEndPoint)

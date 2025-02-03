@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Xml;
 using TMPro;
+using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -41,6 +42,12 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
 
 
     public Vector3 positionOffset = Vector3.zero;
+    public float positionOffsetXp = 0f;
+    public float positionOffsetXn = 0f;
+    public float positionOffsetZp = 0f;
+    public float positionOffsetZn = 0f;
+    public float xZOffset = 0;
+    public float zXOffset = 0;
 
     private void Start()
     {
@@ -100,13 +107,16 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
 
                         foreach (GameObject objToMove in selectedObjects)
                         {
-                            MoveObjectToNormalDistance(objToMove, tangentEnd);
+                             MoveObjectToNormalDistance1(objToMove, tangentEnd);
+                           // MoveToClosestSurface(hit, objToMove);
+
                         }
                     }
                 }
 
             }
-           // else Destroy(lineObj);
+            // else Destroy(lineObj);
+            lineObj= null;  
         }
 
     }
@@ -144,7 +154,8 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
 
                     foreach (GameObject objToMove in selectedObjects)
                     {
-                        MoveObjectToNormalDistance(objToMove, tangentEnd);
+                        MoveObjectToNormalDistance1(objToMove, tangentEnd);
+                      //  MoveToClosestSurface(hit, objToMove);
                     }
                 }
             }
@@ -153,7 +164,8 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
     }
 
 
-    public void MoveObjectToNormalDistance(GameObject objToMove, Vector3 tangentEnd)
+
+    public void MoveObjectToNormalDistance(GameObject objToMove, RaycastHit hit)
     {
 
         NetworkObject networkObj = objToMove.GetComponent<NetworkObject>();
@@ -163,12 +175,33 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
             // newPosition = newPosition;
             newPosition.y = 0;
 
-            //Vector3 newPosition = objToMove.transform.position;
-            Collider collider = objToMove.transform.GetComponent<Collider>();
+
+            // Get the collider of the hit object
+            Collider hitCollider = hit.collider;
+
+            // Get the collider of the target object
+            Collider targetCollider = objToMove.transform.GetComponent<Collider>();
+
+                spawnObj = Instantiate(spawnObjRef);
+                spawnObj.transform.position = hit.point;
+                Vector3 surfaceNormal = hit.normal;
+
+            // Calculate the endpoint of the tangent line
+            tangentEnd = hit.point + normal * targetClosestDistance;
+
+            Debug.LogError("step 2  spawn marquer1");
+                // Find the closest point on the target object's surface to the hit surface
+                Vector3 closestPointOnTargetSurface = targetCollider.ClosestPoint(hit.point);
+                spawnObj = Instantiate(spawnObjTarget);
+                spawnObj.transform.position = closestPointOnTargetSurface;
+
+
+                //Vector3 newPosition = objToMove.transform.position;
+                Collider collider = objToMove.transform.GetComponent<Collider>();
             Debug.Log("normal" + normal.ToString());
             if (normal.x < 0)
             {
-                newPosition.x = newPosition.x + positionOffset.x+ (collider.bounds.size.x/2);
+                newPosition.x = newPosition.x + positionOffset.x + (collider.bounds.size.x / 2);
             }
             else if (normal.x > 0)
             {
@@ -182,8 +215,64 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
             {
                 newPosition.z = newPosition.z + positionOffset.z + (collider.bounds.size.z / 2);
             }
-                // Use NetworkTransform if present
-                NetworkTransform networkTransform = objToMove.GetComponent<NetworkTransform>();
+            // Use NetworkTransform if present
+            NetworkTransform networkTransform = objToMove.GetComponent<NetworkTransform>();
+            if (networkTransform != null)
+            {
+                networkTransform.Teleport(newPosition);
+            }
+            else
+            {
+                objToMove.transform.position = newPosition; // Fallback if no NetworkTransform
+            }
+
+            //Debug.Log($"Moved {obj.name} to {newPosition}");
+        }
+        else
+        {
+            Debug.LogWarning($"Cannot move {objToMove.name}. No State Authority!");
+        }
+
+
+    }
+
+    public void MoveObjectToNormalDistance1(GameObject objToMove, Vector3 tangentEnd)
+    {
+
+        NetworkObject networkObj = objToMove.GetComponent<NetworkObject>();
+        if (networkObj != null && networkObj.HasStateAuthority)
+        {
+
+            Vector3 newPosition = tangentEnd;
+            // newPosition = newPosition;
+            newPosition.y = 0;
+
+            //Vector3 newPosition = objToMove.transform.position;
+            Collider collider = objToMove.transform.GetComponent<Collider>();
+            Debug.LogError("normal" + normal.ToString());
+            if (normal.x < 0)
+            {
+                newPosition.x = newPosition.x + positionOffsetXn + (collider.bounds.size.x / 2);
+                newPosition.z = newPosition.z + xZOffset;
+            }
+            else if (normal.x > 0)
+            {
+                newPosition.x = newPosition.x + positionOffsetXp  + (collider.bounds.size.x / 2);
+                newPosition.z = newPosition.z + xZOffset;
+            }
+            if (normal.z > 0)
+            {
+                newPosition.z = newPosition.z + positionOffsetZp + (collider.bounds.size.z / 2);
+                newPosition.x = newPosition.x + zXOffset;
+            }
+            else if (normal.z < 0)
+            {
+                newPosition.z = newPosition.z + positionOffsetZn + (collider.bounds.size.z / 2);
+                newPosition.x = newPosition.x + zXOffset;
+
+            }
+            // Use NetworkTransform if present
+            NetworkTransform networkTransform = objToMove.GetComponent<NetworkTransform>();
                 if (networkTransform != null)
                 {
                     networkTransform.Teleport(newPosition);
@@ -202,7 +291,59 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
 
         
     }
+    void MoveToClosestSurface(RaycastHit hit, GameObject objToMove)
+    {
+        NetworkObject networkObj = objToMove.GetComponent<NetworkObject>();
+        if (networkObj != null && networkObj.HasStateAuthority)
+        {
 
+            // Get the collider of the hit object
+            Collider hitCollider = hit.collider;
+
+            // Get the collider of the target object
+            Collider targetCollider = objToMove.transform.GetComponent<Collider>();
+
+            if (hitCollider != null && targetCollider != null)
+            {
+                spawnObj = Instantiate(spawnObjRef);
+                spawnObj.transform.position = hit.point;
+                Vector3 surfaceNormal = hit.normal;
+
+                Debug.LogError("step 2  spawn marquer1");
+                // Find the closest point on the target object's surface to the hit surface
+                Vector3 closestPointOnTargetSurface = targetCollider.ClosestPoint(hit.point);
+                spawnObj = Instantiate(spawnObjTarget);
+                spawnObj.transform.position = closestPointOnTargetSurface;
+
+                Debug.LogError("step 3  spawn marquer2");
+                // Calculate the direction vector from the hit surface to the target object's surface
+                Vector3 direction = closestPointOnTargetSurface - hit.point;
+
+                // Calculate the current closest distance between the two surfaces
+                float currentClosestDistance = direction.magnitude;
+
+                // Calculate the adjustment needed to achieve the target distance
+                float adjustmentDistance = targetClosestDistance - currentClosestDistance;
+
+                // Move the target object along the direction vector to achieve the target distance
+                Vector3 targetPosition = objToMove.transform.position + direction.normalized * adjustmentDistance;
+                targetPosition.y = 0;
+
+
+                
+                // Use NetworkTransform if present
+                NetworkTransform networkTransform = objToMove.GetComponent<NetworkTransform>();
+                if (networkTransform != null)
+                {
+                    networkTransform.Teleport(targetPosition);
+                }
+                else
+                {
+                    objToMove.transform.position = targetPosition; // Fallback if no NetworkTransform
+                }
+            }
+        }
+    }
     public void MoveToSurfaceDistance()
     {
         if (Input.GetMouseButtonDown(0))
@@ -256,53 +397,7 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
 
     }
 
-    void MoveToClosestSurface(RaycastHit hit, GameObject targetObject)
-    {
-        
-        // Get the collider of the hit object
-        Collider hitCollider = hit.collider;
-
-        // Get the collider of the target object
-        Collider targetCollider = targetObject.transform.GetComponent<Collider>();
-
-        if (hitCollider != null && targetCollider != null)
-        {
-            // Find the closest point on the hit surface to the target object
-            Vector3 closestPointOnHitSurface = hitCollider.ClosestPoint(targetObject.transform.position);
-            spawnObj = Instantiate(spawnObjRef);
-            spawnObj.transform.position = closestPointOnHitSurface;
-            Vector3 surfaceNormal = hit.normal;
-
-            Debug.LogError("step 2  spawn marquer1");
-            // Find the closest point on the target object's surface to the hit surface
-            Vector3 closestPointOnTargetSurface = targetCollider.ClosestPoint(closestPointOnHitSurface);
-            spawnObj = Instantiate(spawnObjTarget);
-            spawnObj.transform.position = closestPointOnTargetSurface;
-
-            Debug.LogError("step 3  spawn marquer2");
-            // Calculate the direction vector from the hit surface to the target object's surface
-            Vector3 direction = closestPointOnTargetSurface - closestPointOnHitSurface;
-
-            // Calculate the current closest distance between the two surfaces
-            float currentClosestDistance = direction.magnitude;
-
-            // Calculate the adjustment needed to achieve the target distance
-            float adjustmentDistance = targetClosestDistance - currentClosestDistance;
-
-            // Move the target object along the direction vector to achieve the target distance
-            Vector3 targetPosition = targetObject.transform.position + direction.normalized * adjustmentDistance;
-            targetPosition.y = 0;
-            // Set the new position of the target object
-            targetObject.transform.position = targetPosition;
-            Debug.LogError("step 4  object repositioned"  );
-        }
-        else
-        {
-            Debug.LogWarning("Either the hit object or the target object is missing a collider.");
-        }
-     
-
-    }
+  
 
 
     void MoveToClosestSurface(RaycastHit hit)
@@ -369,7 +464,7 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
         
         Collider collider = objectToMove.GetComponent<Collider>();
         // Calculate the target position at the specified distance from the plane
-        Vector3 targetPosition = nearestPointOnPlane + planeNormal * targetClosestDistance + new Vector3(planeNormal.x * collider.bounds.size.x / 2, 0, planeNormal.z * collider.bounds.size.z / 2);
+        Vector3 targetPosition = nearestPointOnPlane + planeNormal * targetClosestDistance;// + new Vector3(planeNormal.x * collider.bounds.size.x / 2, 0, planeNormal.z * collider.bounds.size.z / 2);
            
 
         targetPosition.y = 0;

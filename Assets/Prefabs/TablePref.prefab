@@ -28,9 +28,9 @@ Transform:
   m_GameObject: {fileID: 1883029715795612974}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 3.26, y: -2.48, z: -0}
-  m_LocalScale: {x: 9, y: 9, z: 9}
-  m_ConstrainProportionsScale: 1
+  m_LocalPosition: {x: 4.74, y: -3.83, z: 0}
+  m_LocalScale: {x: 9.11, y: 11.4, z: 9.11}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7370408256250739045}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -124,7 +124,7 @@ GameObject:
   - component: {fileID: 6916004699015333475}
   - component: {fileID: 202408707863877430}
   - component: {fileID: 3676853011871525406}
-  - component: {fileID: 6691222088638737177}
+  - component: {fileID: 6142964108038588354}
   m_Layer: 0
   m_Name: TablePref
   m_TagString: Interactable
@@ -141,8 +141,8 @@ Transform:
   m_GameObject: {fileID: 6548133584592920561}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+  m_LocalPosition: {x: 0.46, y: 0, z: 0.35}
+  m_LocalScale: {x: 0.09, y: 0.09, z: 0.09}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 2489037256059745207}
@@ -256,7 +256,7 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 2020804157510136435, guid: e19e2abd8c132b74aa01b33816a26d9d, type: 3}
---- !u!65 &6691222088638737177
+--- !u!65 &6142964108038588354
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -275,5 +275,5 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 11, y: 7.9278235, z: 9.495763}
-  m_Center: {x: -6.52, y: 3.965772, z: 4.7500367}
+  m_Size: {x: 11.31, y: 7.37, z: 9.495762}
+  m_Center: {x: -5.76, y: 4.24, z: 4.7500362}
