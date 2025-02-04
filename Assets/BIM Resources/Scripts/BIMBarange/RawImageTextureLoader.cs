@@ -24,7 +24,17 @@ public class RawImageTextureLoader : MonoBehaviour
         {
             rawImage.texture = userDocuments[2];
         }
-     
-    }
+        AdjustHeightToAspectRatio();
 
+
+    }
+    public void AdjustHeightToAspectRatio()
+    {
+        if (rawImage.texture != null)
+        {
+            float aspectRatio = (float)rawImage.texture.height / rawImage.texture.width;
+            RectTransform rt = rawImage.GetComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(rt.sizeDelta.x, rt.sizeDelta.x * aspectRatio);
+        }
+    }
 }
