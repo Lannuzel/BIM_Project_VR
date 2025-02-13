@@ -59,15 +59,28 @@ public class Display : MonoBehaviour
     {
         if (inFaultState || lastOpIsEvaluation || textMesh.text.Length == 1)
         {
+            if (lastOpIsEvaluation) { Debug.LogError(" Last op is EvaluationOp"); }
+            else if (inFaultState) { Debug.LogError(" Last op is fault state"); }
+            else if (textMesh.text.Length==1 ) { Debug.LogError(" string lenght is 1 "); }
+
+
             Clear();
+            Debug.LogError(" Removed Last Data");
             return;
+
         }
 
+      //  textMesh.text = textMesh.text.Remove(textMesh.text.Length - 1);
+  
+
+        Debug.LogError("  Last Data    " + textMesh.text + "  lenth   " + textMesh.text.Length);
         textMesh.text = textMesh.text.Remove(textMesh.text.Length - 1);
+        Debug.LogError(" Removed Last Data  " + textMesh.text + "  Length    " + textMesh.text.Length);
     }
 
     private void Clear()
     {
+        Debug.LogError("  Indide Clear() Last Data    " + textMesh.text + "  lenth   " + textMesh.text.Length + " setting it to 0 " );
         textMesh.text = "0";
     }
 

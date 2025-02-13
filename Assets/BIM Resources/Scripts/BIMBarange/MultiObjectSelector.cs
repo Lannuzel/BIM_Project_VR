@@ -159,7 +159,7 @@ public class MultiObjectSelector : Fusion.NetworkBehaviour
        
             if (selectedObjects.Count > 0)
             {
-                MoveObjects();
+                MoveObjectsXZ();
             }
         if (IsSpawned)
         {
@@ -265,24 +265,68 @@ public class MultiObjectSelector : Fusion.NetworkBehaviour
 
         forward.Normalize();
         right.Normalize();
+            
 
         Vector3 movement = (forward * movementInput.y + right * movementInput.x) * moveSpeed * Time.deltaTime; 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
       //  Vector3 moveDirection = new Vector3(joystickInput.x, 0, joystickInput.y) * moveSpeed * Time.deltaTime;
+
+        foreach (GameObject obj in selectedObjects)
+        {
+            if (obj != null)
+            {
+                NetworkObject networkObj = obj.GetComponent<NetworkObject>();
+                if (networkObj != null && networkObj.HasStateAuthority)
+                {
+                    Vector3 newPosition = obj.transform.position + movement;
+
+                    // Use NetworkTransform if present
+                    NetworkTransform networkTransform = obj.GetComponent<NetworkTransform>();
+                    if (networkTransform != null)
+                    {
+                        networkTransform.Teleport(newPosition);
+                    }
+                    else
+                    {
+                        obj.transform.position = newPosition; // Fallback if no NetworkTransform
+                    }
+
+                    //Debug.Log($"Moved {obj.name} to {newPosition}");
+                }
+                else
+                {
+                    Debug.LogWarning($"Cannot move {obj.name}. No State Authority!");
+                }
+            }
+        }
+    }
+
+    public void  MoveObjectsXZ()
+    {
+        Vector2 movementInput = playerInputActions.XRIRightInteraction.Move.ReadValue<Vector2>();
+        Vector3 forward = cameraTransform.forward;
+        Vector3 right = cameraTransform.right;
+
+        // Flatten the vectors to avoid vertical movement
+        forward.y = 0;
+        right.y = 0;
+
+        forward.Normalize();
+        right.Normalize();
+        float x= Mathf.Abs(movementInput.y);
+        float z = Mathf.Abs(movementInput.x);
+
+       // movement = (forward * movementInput.y + right * movementInput.x) * moveSpeed * Time.deltaTime;   
+        Vector3 movement;
+        if (x > z)
+            movement = (forward * movementInput.y ) * moveSpeed * Time.deltaTime;
+        else
+            movement = (right * movementInput.x) * moveSpeed * Time.deltaTime;
+
+
+        //  Vector3 moveDirection = new Vector3(joystickInput.x, 0, joystickInput.y) * moveSpeed * Time.deltaTime;
 
         foreach (GameObject obj in selectedObjects)
         {

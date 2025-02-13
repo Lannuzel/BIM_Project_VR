@@ -5,6 +5,7 @@ using UnityEngine;
 using System;
 
 using System.Collections;
+using Meta.XR.MRUtilityKit;
 
 public class DisplayData : MonoBehaviour
 {
@@ -50,8 +51,9 @@ public class DisplayData : MonoBehaviour
             Clear();
             return;
         }
-
+        Debug.LogError("  Last Data" + textMesh.text + "    "+ textMesh.text.Length);
         textMesh.text = textMesh.text.Remove(textMesh.text.Length - 1);
+        Debug.LogError(" Removed Last Data" + textMesh.text + "    "+ textMesh.text.Length);
     }
      private void Clear()
     {

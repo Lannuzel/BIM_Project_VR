@@ -5,7 +5,7 @@ using Fusion;
 public class AlignObjects : MonoBehaviour
 {
     public List<GameObject> selectedObjects;     // List of selected objects
-    public bool alignToXAxis = true; // Set to true to align to X-axis, false for Z-axis
+    public bool alignToZAxis = true; // Set to true to align to X-axis, false for Z-axis
 
 
     private void Start()
@@ -17,15 +17,15 @@ public class AlignObjects : MonoBehaviour
     {
         selectedObjects = ObjectInteractionHandler.Instance.SelectedObjects();
     }
-    public void AlignObjectsToReferenceAxisX()
+    public void AlignObjectsToReferenceAxisZ()
     {
-        alignToXAxis = true;
+        alignToZAxis = true;
         AlignObjectsToReference();
 
     }
-    public void AlignObjectsToReferenceAxisZ()
+    public void AlignObjectsToReferenceAxisX()
     {
-        alignToXAxis = false;
+        alignToZAxis = false;
         AlignObjectsToReference();
     }
    public void AlignObjectsToReference()
@@ -47,13 +47,14 @@ public class AlignObjects : MonoBehaviour
             {
                 Vector3 newPosition = selectedObjects[i].transform.position;
 
-                if (alignToXAxis)
+                if (alignToZAxis)
                 {
-                    newPosition.x = referencePosition.x; // Align to the X-axis
+                    newPosition.z = referencePosition.z; // Align to the Z-axis
                 }
                 else
                 {
-                    newPosition.z = referencePosition.z; // Align to the Z-axis
+
+                    newPosition.x = referencePosition.x; // Align to the X-axis
                 }
 
                 NetworkObject networkObj = selectedObjects[i].GetComponent<NetworkObject>();

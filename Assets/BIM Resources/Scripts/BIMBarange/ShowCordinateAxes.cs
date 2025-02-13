@@ -7,6 +7,10 @@ public class ShowCoordinateAxes : MonoBehaviour
     public Vector3 axesOffset = Vector3.zero;   
     private List<GameObject> selectedObjects;
     private GameObject axes;
+    public GameObject xAxisText;
+    public GameObject zAxisText;
+    private GameObject xAxisTextGo;
+    private GameObject zAxisTextGo;
     private void Awake()
     {
         selectedObjects = ObjectInteractionHandler.Instance.SelectedObjects();
@@ -16,6 +20,12 @@ public class ShowCoordinateAxes : MonoBehaviour
         axes = new GameObject("Axes");
         axes.transform.rotation = Quaternion.identity;
         selectedObjects = ObjectInteractionHandler.Instance.SelectedObjects();
+
+        xAxisTextGo = Instantiate(xAxisText);
+        zAxisTextGo = Instantiate(zAxisText);
+        xAxisTextGo.transform.parent = axes.transform;
+        zAxisTextGo.transform.parent = axes.transform;
+
         // Initialize LineRenderers for X, Y, and Z axes
         axisLines = new LineRenderer[3];
 
@@ -30,8 +40,8 @@ public class ShowCoordinateAxes : MonoBehaviour
             lr.material =  new Material(Shader.Find("Sprites/Default"));
 
             if (i == 0) lr.startColor = lr.endColor = Color.red; // X-axis (Red)
-            if (i == 1) lr.startColor = lr.endColor = Color.blue; // Y-axis (Green)
-            if (i == 2) lr.startColor = lr.endColor = Color.green; // Z-axis (Blue)
+            if (i == 1) lr.startColor = lr.endColor = Color.blue; // Z-axis (Blue)
+            if (i == 2) lr.startColor = lr.endColor = Color.green; // Y-axis (Green) 
 
             lr.positionCount = 2; // Each axis is a line with two points
             axisLines[i] = lr;
@@ -43,9 +53,14 @@ public class ShowCoordinateAxes : MonoBehaviour
     {
         if (selectedObjects.Count > 0)
         {
-            axes.SetActive(true);
+            if (selectedObjects[0] != null)
+            {
+                axes.SetActive(true);
 
-            UpdateAxes(selectedObjects[0].transform);
+                UpdateAxes(selectedObjects[0].transform);
+
+            }
+
         }
         else
         {
@@ -65,10 +80,15 @@ public class ShowCoordinateAxes : MonoBehaviour
 
         // Y-axis
         axisLines[1].SetPosition(0, positionRef.position + axesOffset);
-        axisLines[1].SetPosition(1, positionRef.position + axesOffset+ positionRef.up * axisLength);
+        axisLines[1].SetPosition(1, positionRef.position + axesOffset -positionRef.up * axisLength);
 
         // Z-axis
         axisLines[2].SetPosition(0, positionRef.position + axesOffset);
         axisLines[2].SetPosition(1, positionRef.position + axesOffset+ positionRef.forward * axisLength);
+
+        xAxisTextGo.transform.position = axisLines[0].GetPosition(1);
+        zAxisTextGo.transform.position = axisLines[1].GetPosition(1);
+
+
     }
 }

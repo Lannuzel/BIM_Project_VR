@@ -73,7 +73,11 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
     {
         //adding actionListeners
         playerInputActions.XRIRightInteraction.Activate.performed -= MoveToSurfaceDistance;
-
+        if(lineObj != null)
+        {
+            Destroy(lineObj);
+            lineObj = null;
+        }
     }
 
     private void MoveToSurfaceDistance(InputAction.CallbackContext context)
@@ -96,7 +100,8 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
                 Ray ray = new Ray(controllerPosition, rayDirection);
                 // Perform a raycast
                 if (Physics.Raycast(ray, out RaycastHit hit))
-                {   if (hit.transform.tag == "Wall")
+                {
+                    if (hit.transform.tag == "Wall" || hit.transform.tag == "Interactable")
                     {
                         LineRenderer currentLine = lineObj.transform.GetComponent<LineRenderer>();
                         normal = hit.normal;
@@ -107,16 +112,20 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
 
                         foreach (GameObject objToMove in selectedObjects)
                         {
-                             MoveObjectToNormalDistance1(objToMove, tangentEnd);
-                           // MoveToClosestSurface(hit, objToMove);
+                            MoveObjectToNormalDistance1(objToMove, tangentEnd);
+                            // MoveToClosestSurface(hit, objToMove);
 
                         }
                     }
                 }
 
             }
-            // else Destroy(lineObj);
-            lineObj= null;  
+            else
+            {
+                Destroy(lineObj);
+               // lineObj = null;
+               transform.gameObject.SetActive(false);   
+            }
         }
 
     }
@@ -134,7 +143,7 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
             // Perform a raycast
             if (Physics.Raycast(ray, out RaycastHit hit))
             {
-                if (hit.transform.tag == "Wall")
+                if (hit.transform.tag == "Wall" ||hit.transform.tag == "Interactable")
                 {
                     // Get the surface normal at the hit point
                     normal = hit.normal;
@@ -249,7 +258,6 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
 
             //Vector3 newPosition = objToMove.transform.position;
             Collider collider = objToMove.transform.GetComponent<Collider>();
-            Debug.LogError("normal" + normal.ToString());
             if (normal.x < 0)
             {
                 newPosition.x = newPosition.x + positionOffsetXn + (collider.bounds.size.x / 2);
