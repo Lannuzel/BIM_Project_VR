@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 9006652259641904598}
   - component: {fileID: 3721002776009563975}
   - component: {fileID: 7831199645149992553}
-  m_Layer: 0
+  m_Layer: 19
   m_Name: Access Access [14476916]_[14475585]
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -125,7 +125,7 @@ GameObject:
   - component: {fileID: 202408707863877430}
   - component: {fileID: 3676853011871525406}
   - component: {fileID: 6142964108038588354}
-  m_Layer: 0
+  m_Layer: 19
   m_Name: TablePref
   m_TagString: Interactable
   m_Icon: {fileID: 0}

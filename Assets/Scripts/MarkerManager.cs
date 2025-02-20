@@ -27,7 +27,16 @@ public class MarkerManager : MonoBehaviour
 
     public void StopAllRecordings()
     {
-        Debug.Log("Arrêt de tous les enregistrements...");
+        Debug.Log("Arrêt de tous les enregistrements.: begin..");
+
+        // Arrête les enregistrements pour les AudioTrackers
+        Debug.Log("Arrêt des enregistrements dans les chairLoggers...");
+        foreach (var chairLogger in chairPositionLogger)
+        {
+            chairLogger.AddChairPositionLog(successStatus);
+            chairLogger.StopRecording();
+            Debug.LogError("Enregistrement charirLogs arrêté.");
+        }
 
         // Arrête les enregistrements pour les PositionLoggers
         Debug.Log("Arrêt des enregistrements dans les positionLoggers...");
@@ -63,14 +72,6 @@ public class MarkerManager : MonoBehaviour
 
 
 
-        // Arrête les enregistrements pour les AudioTrackers
-        Debug.Log("Arrêt des enregistrements dans les chairLoggers...");
-        foreach (var chairLogger in chairPositionLogger)
-        {
-            chairLogger.AddChairPositionLog(successStatus);
-            chairLogger.StopRecording();
-            Debug.LogError("Enregistrement charirLogs arrêté.");
-        }
 
         Debug.Log("Tous les enregistrements ont été arrêtés avec succès.");
     }
@@ -78,6 +79,13 @@ public class MarkerManager : MonoBehaviour
     {
         Debug.Log($"Ajout d'un marker à tous les logs...");
 
+        // Ajoutez un marker dans les fichiers chairePosition
+        Debug.Log("Ajout du marker dans les chairePositionLogger...");
+        foreach (var chairLogger in chairPositionLogger)
+        {
+            chairLogger.AddMarker();
+            Debug.LogError("marker ajouté dans une chaireLogger.");
+        }
         // Ajoutez un marker dans les fichiers CSV
         Debug.Log("Ajout du marker dans les positionLoggers...");
         foreach (var positionLogger in positionLoggers)
@@ -108,13 +116,6 @@ public class MarkerManager : MonoBehaviour
             Debug.Log("Audio marker ajouté dans un audioTracker.");
         }
 
-        // Ajoutez un marker dans les fichiers chairePosition
-        Debug.Log("Ajout du marker dans les chairePositionLogger...");
-        foreach (var chairLogger in chairPositionLogger)
-        {
-            chairLogger.AddMarker();
-            Debug.LogError("marker ajouté dans une chaireLogger.");
-        }
         Debug.Log($"Ajout du marker terminé.");
     }
 

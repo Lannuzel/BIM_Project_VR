@@ -189,7 +189,7 @@ public class ModifyDistanceMeasurement : MonoBehaviour
             currentLine.SetPosition(0, currentPoint); // Update the line's Start to the current hit point
             measurementUI.transform.position = (currentPoint + currentLine.GetPosition(1)) / 2;
             measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
-            measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString() + " mètre";
+            measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " mètre";
         }
     }
     private void UpdateLine(Vector3 currentPoint)
@@ -199,7 +199,7 @@ public class ModifyDistanceMeasurement : MonoBehaviour
             currentLine.SetPosition(1, currentPoint); // Update the line's endpoint to the current hit point
             measurementUI.transform.position = (currentPoint + currentLine.GetPosition(0)) / 2;
             measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
-            measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString() + " mètre";
+            measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " mètre";
         }
     }
     private void UpdateLine(Vector3 currentPoint, Transform endPointTransform )
@@ -226,7 +226,7 @@ public class ModifyDistanceMeasurement : MonoBehaviour
         
         measurementUI.transform.position = (currentLine.GetPosition(0) + currentLine.GetPosition(1)) / 2;
         measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
-        measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString() + " mètre";
+        measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " mètre";
 
         if (isDrawing || isModifyingEndPoint)
         {

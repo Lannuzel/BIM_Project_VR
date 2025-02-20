@@ -182,7 +182,7 @@ public class DrawLineBetweenTwoHits : MonoBehaviour
 
                 measurementUI.transform.position = (firstPoint + secondPoint) / 2;
                 measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
-                measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString() + " mètre";
+                measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " mètre";
                 Debug.Log("First Point: " + firstPoint + " | Second Point: " + secondPoint);
             }
         }
@@ -243,7 +243,7 @@ public class DrawLineBetweenTwoHits : MonoBehaviour
         measureText = measurementUI.GetComponentInChildren<TMP_Text>();
         measurementUI.transform.position = (p1 + p2) / 2;
         measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
-        measureText.text = (Vector3.Distance(dLine.GetPosition(0), dLine.GetPosition(1))).ToString() + " mètre";
+        measureText.text = (Vector3.Distance(dLine.GetPosition(0), dLine.GetPosition(1))).ToString("F2") + " mètre";
 
 
         return directionLine;

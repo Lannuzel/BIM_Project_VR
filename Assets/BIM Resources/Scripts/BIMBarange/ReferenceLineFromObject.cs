@@ -39,7 +39,8 @@ public class ReferenceLineFromObject : MonoBehaviour
             foreach (GameObject obj in selectedObjects)
             {
                 Transform DirectionLineZ = obj.transform.Find("DirectionLineZ");
-                if (DirectionLineZ != null)
+
+                if ((DirectionLineZ != null) )
                 {
                     UpdatePositionIndicator(obj);
                 }
@@ -74,28 +75,35 @@ public class ReferenceLineFromObject : MonoBehaviour
         Vector3 position = new Vector3(transformPos.x + posOffset.x, transformPos.y + posOffset.y, transformPos.z + posOffset.z);
 
         Transform DirectionLineZ = go.transform.Find("DirectionLineZ");
+
         if (DirectionLineZ == null) return;
 
         if (DirectionLineZ != null)
         {
             LineRenderer dLine = DirectionLineZ.GetComponent<LineRenderer>();
-
+            measurementUI = ObjectInteractionHandler.Instance.FindChildWithTagRecursive(DirectionLineZ, "Measure").gameObject;
 
             //draw a line towards the -Z axis from the corner point
             Ray ray = new Ray(position, new Vector3(0, 0, 1));
             // Perform a raycast
             if (Physics.Raycast(ray, out hit, 20, layerMask))
             {
+                dLine.enabled = true;
                 dLine.SetPosition(0, position);
                 dLine.SetPosition(1, hit.point);
 
 
-                measurementUI = ObjectInteractionHandler.Instance.FindChildWithTagRecursive(DirectionLineZ, "Measure").gameObject;
+                measurementUI.SetActive(true);
                 measureText = measurementUI.GetComponentInChildren<TMP_Text>();
                 measurementUI.transform.position = (dLine.GetPosition(0) + dLine.GetPosition(1)) / 2;
                 measurementUI.transform.LookAt(-(measurementUI.transform.position + cameraRef.forward));
-                measureText.text = (Vector3.Distance(dLine.GetPosition(0), dLine.GetPosition(1))).ToString() + " mètre";
+                measureText.text = (Vector3.Distance(dLine.GetPosition(0), dLine.GetPosition(1))).ToString("F2") + " mètre";
 
+            }
+            else
+            {
+                dLine.enabled = false;
+                measurementUI.SetActive(false);
             }
         }
         Transform DirectionLineX = go.transform.Find("DirectionLineX");
@@ -104,22 +112,30 @@ public class ReferenceLineFromObject : MonoBehaviour
         if (DirectionLineX != null)
         {
             LineRenderer dLine = DirectionLineX.GetComponent<LineRenderer>();
-
+            measurementUI = ObjectInteractionHandler.Instance.FindChildWithTagRecursive(DirectionLineX, "Measure").gameObject;
 
             //draw a line towards the -X axis from the corner point
             Ray ray = new Ray(position, new Vector3(1, 0, 0));
             // Perform a raycast
             if (Physics.Raycast(ray, out hit, 20, layerMask))
             {
+                dLine.enabled = true;
                 dLine.SetPosition(0, position);
                 dLine.SetPosition(1, hit.point);
-                measurementUI = ObjectInteractionHandler.Instance.FindChildWithTagRecursive(DirectionLineX, "Measure").gameObject;
+                
+                measurementUI.SetActive(true);  
                 measureText = measurementUI.GetComponentInChildren<TMP_Text>();
                 measurementUI.transform.position = (dLine.GetPosition(0) + dLine.GetPosition(1)) / 2;
                 measurementUI.transform.LookAt(-(measurementUI.transform.position + cameraRef.forward));
-                measureText.text = (Vector3.Distance(dLine.GetPosition(0), dLine.GetPosition(1))).ToString() + " mètre";
+                measureText.text = (Vector3.Distance(dLine.GetPosition(0), dLine.GetPosition(1))).ToString("F2") + " mètre";
+            }
+            else
+            {
+                dLine.enabled = false;
+                measurementUI.SetActive(false);
             }
         }
+   
     }
 
     public void DeleteReferenceLines()
@@ -170,6 +186,7 @@ public class ReferenceLineFromObject : MonoBehaviour
                 Destroy(directionLineX.gameObject);
             DrawLine(go, position, hit.point, "DirectionLineX");
         }
+     
     }
 
     private GameObject DrawLine(GameObject go, Vector3 p1, Vector3 p2, string name)
@@ -189,7 +206,7 @@ public class ReferenceLineFromObject : MonoBehaviour
         measureText = measurementUI.GetComponentInChildren<TMP_Text>();
         measurementUI.transform.position = (p1 + p2) / 2;
         measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
-        measureText.text = (Vector3.Distance(dLine.GetPosition(0), dLine.GetPosition(1))).ToString() + " mètre";
+        measureText.text = (Vector3.Distance(dLine.GetPosition(0), dLine.GetPosition(1))).ToString("F2" ) + " mètre";
 
         return directionLine;
     }
@@ -298,7 +315,7 @@ public class ReferenceLineFromObject : MonoBehaviour
                 measureText = measurementUI.GetComponentInChildren<TMP_Text>();
                 measurementUI.transform.position = (dLine.GetPosition(0) + dLine.GetPosition(1)) / 2;
                 measurementUI.transform.LookAt(-(measurementUI.transform.position + cameraRef.forward));
-                measureText.text = (Vector3.Distance(dLine.GetPosition(0), dLine.GetPosition(1))).ToString() + " mètre";
+                measureText.text = (Vector3.Distance(dLine.GetPosition(0), dLine.GetPosition(1))).ToString("F2") + " mètre";
 
             }
         }
@@ -319,7 +336,7 @@ public class ReferenceLineFromObject : MonoBehaviour
                 measureText = measurementUI.GetComponentInChildren<TMP_Text>();
                 measurementUI.transform.position = (dLine.GetPosition(0) + dLine.GetPosition(1)) / 2;
                 measurementUI.transform.LookAt(-(measurementUI.transform.position + cameraRef.forward));
-                measureText.text = (Vector3.Distance(dLine.GetPosition(0), dLine.GetPosition(1))).ToString() + " mètre";
+                measureText.text = (Vector3.Distance(dLine.GetPosition(0), dLine.GetPosition(1))).ToString("F2") + " mètre";
             }
         }
     }
@@ -387,7 +404,7 @@ public class ReferenceLineFromObject : MonoBehaviour
         measureText = measurementUI.GetComponentInChildren<TMP_Text>();
         measurementUI.transform.position = (p1 + p2) / 2;
         measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
-        measureText.text = (Vector3.Distance(dLine.GetPosition(0), dLine.GetPosition(1))).ToString() + " mètre";
+        measureText.text = (Vector3.Distance(dLine.GetPosition(0), dLine.GetPosition(1))).ToString("F2") + " mètre";
 
         return directionLine;
     }

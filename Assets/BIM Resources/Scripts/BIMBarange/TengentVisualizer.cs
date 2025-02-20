@@ -173,7 +173,7 @@ public class TangentVisualizer : MonoBehaviour
             measureText = measurementUI.GetComponentInChildren<TMP_Text>();
             measurementUI.transform.position = (hit.point + tangentEnd) / 2;
             measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
-            measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString() + " mètre";
+            measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2" ) + " mètre";
 
         Vector3 pos = objToMove.position;
         Collider collider = objToMove.transform.GetComponent<Collider>();

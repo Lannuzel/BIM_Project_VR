@@ -32,7 +32,7 @@ public class ChairPositionDataLogger : MonoBehaviour
         // Initialise le StreamWriter
         writer = new StreamWriter(filePath, false);  // false écrase le fichier existant
         writer.WriteLine("Time; ID ; Position");
-
+        writer.WriteLine();
         Debug.Log("Recording started: " + filePath);
     }
 
@@ -40,28 +40,45 @@ public class ChairPositionDataLogger : MonoBehaviour
 
     public void AddMarker()
     {
-        writer.WriteLine($"{Time.time};MARKER");
-        Debug.Log($"Marker ajouté dans le fichier CSV : {filePath}");
+        if (writer != null)
+        {
+            writer.WriteLine($"{Time.time};MARKER");
+            writer.Flush(); // Ensure data is written to file immediately
+            Debug.Log($"Marker ajouté dans le fichier CSV : {filePath}");
+        }
+        else
+        {
+            Debug.LogError($"issue in adding marker at PositionLogger");
+        }
     }
     public void AddChairPositionLog(bool status)
     {
-        
-        writer.WriteLine("Task Status, ", status);
+        if(status)
+            writer.WriteLine("Task Status , Succeed");
+        else
+            writer.WriteLine("Task Status , TimeOut");
+
+        writer.WriteLine();
         Debug.LogError("Task Status : " +  status);
         GameObject instantiatedChaires = GameObject.Find("InstantiatedChaires");
         if (instantiatedChaires != null)
-        {
+        {   int count = 0;
             List<Transform> interactableChildren = new List<Transform>();
 
-            foreach (Transform child in instantiatedChaires.transform)
+            Debug.LogError("::::::::::::::Chaire Position Log :::::::::::::");
+
+            foreach (Transform child in instantiatedChaires.transform )
             {
                 if (child.CompareTag("Interactable")) // Check if the child has the tag
                 {
                     interactableChildren.Add(child);
-                    writer.WriteLine(", "+ child.name + ", " + child.position.ToString());
-                    Debug.LogError("Found Interactable: " + child.name + "  " + child.position.ToString());
+                    writer.WriteLine(Time.time + ", " + child.name + ", " + child.position.ToString());
+                    Debug.LogError("chair : " + child.name + "  " + child.position.ToString());
+                    count++;
                 }
             }
+            writer.Flush();
+            Debug.LogError("Number of Chaires : " + count);
 
         }
         
@@ -81,8 +98,9 @@ public class ChairPositionDataLogger : MonoBehaviour
         if (writer != null)
         {
             writer.Write($"END");
-
+            writer.Flush(); // Ensure all data is written to disk
             writer.Close();
+            writer.Dispose(); // Ensure file is properly closed
             writer = null;
         }
         Debug.Log("Recording stopped.");

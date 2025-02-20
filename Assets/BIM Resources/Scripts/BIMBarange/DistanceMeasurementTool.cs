@@ -195,7 +195,7 @@ public class DistanceMeasurementTool : MonoBehaviour
             measurementUI.transform.position = (currentPoint + currentLine.GetPosition(1)) / 2;
             measurementUI.transform.LookAt(-(measurementUI.transform.position + cameraRef.forward));
            //measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
-            measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString() + " mètre";
+            measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " mètre";
         }
     }
     private void UpdateLine(Vector3 currentPoint)
@@ -206,7 +206,7 @@ public class DistanceMeasurementTool : MonoBehaviour
             measurementUI.transform.position = (currentPoint + currentLine.GetPosition(0)) / 2;
             measurementUI.transform.LookAt(-(measurementUI.transform.position + cameraRef.forward));
            // measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
-            measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString() + " mètre";
+            measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " mètre";
         }
     }
     private void UpdateLine(Vector3 currentPoint, Transform endPointTransform )
@@ -234,7 +234,7 @@ public class DistanceMeasurementTool : MonoBehaviour
         measurementUI.transform.position = (currentLine.GetPosition(0) + currentLine.GetPosition(1)) / 2;
         measurementUI.transform.LookAt(-(measurementUI.transform.position + cameraRef.forward));
        // measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
-        measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString() + " mètre";
+        measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2" ) + " mètre";
 
         if (isDrawing || isModifyingEndPoint)
         {
