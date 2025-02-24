@@ -24,6 +24,9 @@ TagManager:
   - EndPoint
   - Floor
   - Wall
+  - Line
+  - Undefined
+  - MeasureUI
   layers:
   - Default
   - TransparentFX

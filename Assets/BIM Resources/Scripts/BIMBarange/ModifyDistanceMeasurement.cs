@@ -6,8 +6,9 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
+using Fusion;
 
-public class ModifyDistanceMeasurement : MonoBehaviour
+public class ModifyDistanceMeasurement : NetworkBehaviour
 {
     public Transform controller;
     public Transform cameraRef;
@@ -22,7 +23,7 @@ public class ModifyDistanceMeasurement : MonoBehaviour
 
     private LineRenderer currentLine;
     private TMP_Text measureText;
-    private GameObject measurementUI;
+
     private Vector3 startPoint;
     private bool isDrawing = false;
 
@@ -37,8 +38,16 @@ public class ModifyDistanceMeasurement : MonoBehaviour
     private List<Transform> lines;
     private int count = 0;
 
+    private GameObject lineObj;
+    private NetworkedLine spawnedLine;
 
-   private void Awake()
+
+    private GameObject spawnRefStart;
+    private GameObject spawnRefEnd;
+
+    private NetworkedMUI spawnedUI;
+
+    private void Awake()
     {
         measurementHandler = MeasurementHandler.Instance;
         playerInputActions = measurementHandler.playerInputActions;
@@ -90,8 +99,10 @@ public class ModifyDistanceMeasurement : MonoBehaviour
              if (hit.transform.tag == "EndPoint" || hit.transform.tag == "StartPoint")
             {
                 currentLine = hit.collider.transform.parent.GetComponent<LineRenderer>();
-                measurementUI = FindChildWithTagRecursive(hit.collider.transform.parent, "Measure").gameObject;
-                measureText = measurementUI.GetComponentInChildren<TMP_Text>();
+                lineObj = hit.collider.transform.parent.gameObject;
+                Transform spawnedUITransform = FindChildWithTagRecursive(hit.collider.transform.parent, "MeasureUI");
+                spawnedUI = spawnedUITransform.gameObject.GetComponent<NetworkedMUI>();
+
 
                 if (hit.transform.tag == "EndPoint")
                 {
@@ -174,10 +185,7 @@ public class ModifyDistanceMeasurement : MonoBehaviour
 
         instance.transform.parent = currentLine.transform;
         instance.transform.tag = "StartPoint";
-        measurementUI = Instantiate(measurePref);
-        measurementUI.transform.parent = currentLine.transform;
-        measurementUI.transform.position = startPoint;
-        measureText  = measurementUI.GetComponentInChildren<TMP_Text>();
+        
 
         Debug.LogError(" Line created by S1");
     }
@@ -186,20 +194,69 @@ public class ModifyDistanceMeasurement : MonoBehaviour
     {
         if (currentLine != null)
         {
+
+            if (currentLine != null)
+            {
+                NetworkObject networklineObj = lineObj.GetComponent<NetworkObject>();
+                if (networklineObj != null && networklineObj.HasStateAuthority)
+                {
+                    // Use NetworkTransform if present
+                    NetworkTransform networkTransform = lineObj.GetComponent<NetworkTransform>();
+                    if (networkTransform != null)
+                    {
+
+                        spawnedLine = networklineObj.gameObject.GetComponent<NetworkedLine>();
+                        spawnedLine.SetLinePositions( currentPoint, currentLine.GetPosition(1), true);
+
+                        string data = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " mètre";
+                        spawnedUI.SetUIPositions((currentPoint + currentLine.GetPosition(1)) / 2, data, true);
+                    
+
+                    }
+
+
+                    //Debug.Log($"Moved {obj.name} to {newPosition}");
+                }
+
+            }
+
+
+
+
+
+
+
+
+
             currentLine.SetPosition(0, currentPoint); // Update the line's Start to the current hit point
-            measurementUI.transform.position = (currentPoint + currentLine.GetPosition(1)) / 2;
-            measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
-            measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " mètre";
+
         }
     }
     private void UpdateLine(Vector3 currentPoint)
     {
         if (currentLine != null)
         {
-            currentLine.SetPosition(1, currentPoint); // Update the line's endpoint to the current hit point
-            measurementUI.transform.position = (currentPoint + currentLine.GetPosition(0)) / 2;
-            measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
-            measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " mètre";
+            NetworkObject networklineObj = lineObj.GetComponent<NetworkObject>();
+            if (networklineObj != null && networklineObj.HasStateAuthority)
+            {
+                // Use NetworkTransform if present
+                NetworkTransform networkTransform = lineObj.GetComponent<NetworkTransform>();
+                if (networkTransform != null)
+                {
+
+                    spawnedLine = networklineObj.gameObject.GetComponent<NetworkedLine>();
+                    spawnedLine.SetLinePositions(currentLine.GetPosition(0), currentPoint, true);
+
+
+                    string data = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " mètre";
+                    spawnedUI.SetUIPositions((currentPoint + currentLine.GetPosition(0)) / 2, data, true);
+
+                }
+
+
+                //Debug.Log($"Moved {obj.name} to {newPosition}");
+            }
+
         }
     }
     private void UpdateLine(Vector3 currentPoint, Transform endPointTransform )
@@ -223,31 +280,81 @@ public class ModifyDistanceMeasurement : MonoBehaviour
 
         //increment line count
         measurementHandler.AddLine(currentLine.transform);
-        
-        measurementUI.transform.position = (currentLine.GetPosition(0) + currentLine.GetPosition(1)) / 2;
-        measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
-        measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " mètre";
+
+        string data = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " mètre";
+        spawnedUI.SetUIPositions((currentLine.GetPosition(0) + currentLine.GetPosition(1)) / 2, data, true);
 
         if (isDrawing || isModifyingEndPoint)
         {
+
+            Fusion.NetworkObject spawnNWObjEnd = null;
+            NetworkManager.Instance.Runner.Spawn(endPointPref, Vector3.zero, endPointPref.transform.rotation, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
+            {
+                spawnNWObjEnd = obj;
+            });
+
+
+            spawnRefEnd = spawnNWObjEnd.gameObject;
+            spawnRefEnd.transform.parent = lineObj.transform;
+            spawnRefEnd.transform.tag = "EndPoint";
+
+
+            NetworkObject networkObjStart = spawnRefEnd.GetComponent<NetworkObject>();
+                if (networkObjStart != null && networkObjStart.HasStateAuthority)
+                {
+                    // Use NetworkTransform if present
+                    NetworkTransform networkTransform = spawnRefEnd.GetComponent<NetworkTransform>();
+                    if (networkTransform != null)
+                    {
+                        networkTransform.Teleport(currentLine.GetPosition(1));
+                    }
+                    else
+                    {
+                    spawnRefEnd.transform.position = currentLine.GetPosition(1); // Fallback if no NetworkTransform
+                    }
+
+                    //Debug.Log($"Moved {obj.name} to {newPosition}");
+                }
+            
+
             Quaternion rotation = Quaternion.LookRotation((currentLine.GetPosition(1) - currentLine.GetPosition(0)).normalized);
             // Quaternion rotation = Quaternion.identity; // No rotation
-            GameObject instance = Instantiate(endPointPref);
-            instance.transform.position = currentLine.GetPosition(1);
-            
-            instance.transform.parent = currentLine.transform;
-            instance.transform.tag = "EndPoint";
-           
+                      
         }
         else if (isModifyingStartPoint)
         {
-            Quaternion rotation = Quaternion.LookRotation((currentLine.GetPosition(1) - currentLine.GetPosition(0)).normalized);
-            //Quaternion rotation = Quaternion.identity; // No rotation
-            GameObject instance = Instantiate(endPointPref);
-            instance.transform.position = currentLine.GetPosition(0);
 
-            instance.transform.parent = currentLine.transform;
-            instance.transform.tag = "StartPoint";
+
+
+            Fusion.NetworkObject spawnNWObjStart = null;
+            NetworkManager.Instance.Runner.Spawn(endPointPref, Vector3.zero, endPointPref.transform.rotation, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
+            {
+                spawnNWObjStart = obj;
+            });
+
+
+            spawnRefStart = spawnNWObjStart.gameObject;
+            spawnRefStart.transform.parent = lineObj.transform;
+            spawnRefStart.transform.tag = "StartPoint";
+
+
+            NetworkObject networkObjStart = spawnRefStart.GetComponent<NetworkObject>();
+            if (networkObjStart != null && networkObjStart.HasStateAuthority)
+            {
+                // Use NetworkTransform if present
+                NetworkTransform networkTransform = spawnRefStart.GetComponent<NetworkTransform>();
+                if (networkTransform != null)
+                {
+                    networkTransform.Teleport(currentLine.GetPosition(0));
+                }
+                else
+                {
+                    spawnRefStart.transform.position = currentLine.GetPosition(0); // Fallback if no NetworkTransform
+                }
+
+                //Debug.Log($"Moved {obj.name} to {newPosition}");
+            }
+
          }
 
         lastLine = currentLine.transform;
@@ -255,9 +362,9 @@ public class ModifyDistanceMeasurement : MonoBehaviour
         isModifyingEndPoint = false;
         isModifyingStartPoint = false;
         
-
+        spawnedUI = null;
         currentLine = null; // Reset currentLine to allow drawing a new one
-        measurementUI = null;
+        
         measureText = null;
 
 

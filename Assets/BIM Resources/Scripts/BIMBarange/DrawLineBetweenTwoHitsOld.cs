@@ -2,12 +2,9 @@ using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using Fusion;
 using UnityEngine.UIElements;
-using UnityEngine.EventSystems;
-using Meta.XR.MRUtilityKit;
 
-public class DrawLineBetweenTwoHitsNW : Fusion.NetworkBehaviour
+public class DrawLineBetweenTwoHits : MonoBehaviour
 {
     private XRIBIMInputActions playerInputActions;
     private PlayerInput playerInput;
@@ -19,29 +16,20 @@ public class DrawLineBetweenTwoHitsNW : Fusion.NetworkBehaviour
     public Material lineMaterial; // Material for the LineRenderer
     private GameObject lineObj;
 
-    public GameObject  lineObjNW;
 
     public GameObject spawnObj;
     private GameObject spawnRefStart;
     private GameObject spawnRefEnd;
 
-
+    public GameObject measurePref;
+    private GameObject measurementUI;
     private TMP_Text measureText;
-
-    public NetworkedLine linePrefab; // Assign this in the Inspector
-    private NetworkedLine spawnedLine;
-    private Vector3 pointA = new Vector3(0, 0, 2.36f); // Example position
-    private Vector3 pointB = new Vector3(0, 0, -1.4f); // Example position
-
 
     // Layer mask for raycast targets (optional)
     public LayerMask raycastLayerMask;
 
     private LineRenderer currentLine;
     private bool isDrawing = false;
-
-    public NetworkedMUI measureUI;
-    private NetworkedMUI spawnedUI;
 
     private int count = 0;
 
@@ -89,7 +77,6 @@ public class DrawLineBetweenTwoHitsNW : Fusion.NetworkBehaviour
         {
             isDrawing = false;
             currentLine = null;
-            spawnedLine = null;
             spawnRefStart = null;
             spawnRefEnd = null;
             if (lineObj.activeSelf)
@@ -99,7 +86,6 @@ public class DrawLineBetweenTwoHitsNW : Fusion.NetworkBehaviour
                 MeasurementHandler.Instance.lineCount++;
                // Destroy(lineObj);
             }
-            spawnedUI = null;
             lineObj = null;
             
         }
@@ -125,94 +111,33 @@ public class DrawLineBetweenTwoHitsNW : Fusion.NetworkBehaviour
         }
  */
     }
-    private void DrawUI()
-    {
-        Debug.LogError("Hurry it workds*************");
-        if (spawnedUI == null)
-        {
-
-            spawnedUI = NetworkManager.Instance.Runner.Spawn(measureUI, Vector3.zero, Quaternion.identity);
-        }
-        // Calculate midpoint between pointA and pointB
-        Vector3 midpoint = (currentLine.GetPosition(0) + currentLine.GetPosition(1)) / 2f;
-
-        spawnedUI.transform.parent = lineObj.transform;
-        spawnedUI.SetCameraRef(cameraRef);
-        // Set UI position at the midpoint
-        spawnedUI.SetUIPositions(midpoint, "Om Namah Shivay", true);
-
-        Debug.Log(" UI ");
-    }
 
     private void DrawLine()
     {
-        if (currentLine == null)
-        {
-            Fusion.NetworkObject spawnNWLine = null;
-            NetworkManager.Instance.Runner.Spawn(linePrefab, Vector3.zero, linePrefab.transform.rotation, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
-            {
-                spawnNWLine = obj;
-                spawnedLine = spawnNWLine.gameObject.GetComponent<NetworkedLine>();
-                lineObj = spawnNWLine.gameObject;
-                currentLine = lineObj.GetComponent<LineRenderer>();
-                updateLinePosition(pointA, pointB);
-                DrawUI();
+        //create new line and assign start point 
+        GameObject line = new GameObject("Line" + count++);
 
-            });
-
-
-            
-
-            // spawnedLine = NetworkManager.Instance.Runner.Spawn(linePrefab, Vector3.zero, Quaternion.identity);
-        }
-
-
-     /*   currentLine.material = lineMaterial;
+        lineObj = line;
+        currentLine = lineObj.AddComponent<LineRenderer>();
+        currentLine.material = lineMaterial;
         currentLine.startWidth = 0.01f;
         currentLine.endWidth = 0.01f;
         currentLine.positionCount = 2;
-     */
 
         currentLine.enabled = false; // Initially, the line is hidden
                                      //add endPointMarquers
-
-        Fusion.NetworkObject spawnNWObjStart = null;
-        NetworkManager.Instance.Runner.Spawn(spawnObj, Vector3.zero, spawnObj.transform.rotation, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
-        {
-            spawnNWObjStart = obj;
-        });
-
-
-        spawnRefStart = spawnNWObjStart.gameObject;
-        spawnRefStart.transform.parent = lineObj.transform;
-        spawnRefStart.transform.tag = "StartPoint";
-
-        /*
         spawnRefStart = Instantiate(spawnObj);
         spawnRefStart.transform.parent = lineObj.transform;
         spawnRefStart.transform.tag = "StartPoint";
-        */
 
-
-        Fusion.NetworkObject spawnNWObjEnd = null;
-        NetworkManager.Instance.Runner.Spawn(spawnObj, Vector3.zero, spawnObj.transform.rotation, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
-        {
-            spawnNWObjEnd = obj;
-        });
-
-        spawnRefEnd = spawnNWObjEnd.gameObject;
+        spawnRefEnd = Instantiate(spawnObj);
         spawnRefEnd.transform.parent = lineObj.transform;
         spawnRefEnd.transform.tag = "EndPoint";
 
-
+        measurementUI = Instantiate(measurePref);
+        measurementUI.transform.parent = currentLine.transform;        
+        measureText = measurementUI.GetComponentInChildren<TMP_Text>();
     }
-
-
-    private void updateLinePosition(Vector3 pointA, Vector3 pointB)
-    {
-        spawnedLine.SetLinePositions(pointA, pointB, true);
-    }
-
 
     private void UpdateLine()
     {
@@ -233,24 +158,6 @@ public class DrawLineBetweenTwoHitsNW : Fusion.NetworkBehaviour
             //Spawn marquer
             spawnRefStart.transform.position = firstPoint;
 
-            NetworkObject networkObjStart = spawnRefStart.GetComponent<NetworkObject>();
-            if (networkObjStart != null && networkObjStart.HasStateAuthority)
-            {
-                // Use NetworkTransform if present
-                NetworkTransform networkTransform = spawnRefStart.GetComponent<NetworkTransform>();
-                if (networkTransform != null)
-                {
-                    networkTransform.Teleport(firstPoint);
-                }
-                else
-                {
-                    spawnRefStart.transform.position = firstPoint; // Fallback if no NetworkTransform
-                }
-
-                //Debug.Log($"Moved {obj.name} to {newPosition}");
-            }
-
-
             // Calculate the tangent direction
             Vector3 tangent = Vector3.Cross(normal, Vector3.up).normalized;
 
@@ -267,46 +174,16 @@ public class DrawLineBetweenTwoHitsNW : Fusion.NetworkBehaviour
                 lineObj.SetActive(true);
                 Vector3 secondPoint = secondHit.point;
 
-                NetworkObject networkObjEnd = spawnRefEnd.GetComponent<NetworkObject>();
-                if (networkObjEnd != null && networkObjEnd.HasStateAuthority)
-                {
-                    // Use NetworkTransform if present
-                    NetworkTransform networkTransform = spawnRefEnd.GetComponent<NetworkTransform>();
-                    if (networkTransform != null)
-                    {
-                        networkTransform.Teleport(secondPoint);
-                    }
-                    else
-                    {
-                        spawnRefEnd.transform.position = secondPoint; // Fallback if no NetworkTransform
-                    }
+                spawnRefEnd.transform.position = secondPoint;
+                currentLine.enabled = true; // Initially, the line is hidden
 
-                    //Debug.Log($"Moved {obj.name} to {newPosition}");
-                }
+                currentLine.SetPosition(0, firstPoint);
+                currentLine.SetPosition(1, secondPoint);
 
-
-
-                NetworkObject networklineObj = lineObj.GetComponent<NetworkObject>();
-                if (networklineObj != null && networklineObj.HasStateAuthority)
-                {
-                    // Use NetworkTransform if present
-                    NetworkTransform networkTransform = lineObj.GetComponent<NetworkTransform>();
-                    if (networkTransform != null)
-                    {
-                        updateLinePosition(firstPoint, secondPoint);
-                        string data = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " mètre";
-
-                        spawnedUI.SetUIPositions((firstPoint + secondPoint) / 2, data, true);
-
-                    }
-
-
-                    //Debug.Log($"Moved {obj.name} to {newPosition}");
-                }
-
-
-
-                
+                measurementUI.transform.position = (firstPoint + secondPoint) / 2;
+                measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
+                measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " mètre";
+                Debug.Log("First Point: " + firstPoint + " | Second Point: " + secondPoint);
             }
         }
 
@@ -352,7 +229,6 @@ public class DrawLineBetweenTwoHitsNW : Fusion.NetworkBehaviour
     }
     private GameObject DrawLine(Vector3 p1, Vector3 p2)
     {
-
         GameObject directionLine = new GameObject("Line" + count++);
         LineRenderer dLine = directionLine.AddComponent<LineRenderer>();
         dLine.material = lineMaterial;
@@ -362,7 +238,12 @@ public class DrawLineBetweenTwoHitsNW : Fusion.NetworkBehaviour
         dLine.SetPosition(0, p1);
         dLine.SetPosition(1, p2);
 
-        
+        measurementUI = Instantiate(measurePref);
+        measurementUI.transform.parent = currentLine.transform;
+        measureText = measurementUI.GetComponentInChildren<TMP_Text>();
+        measurementUI.transform.position = (p1 + p2) / 2;
+        measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
+        measureText.text = (Vector3.Distance(dLine.GetPosition(0), dLine.GetPosition(1))).ToString("F2") + " mètre";
 
 
         return directionLine;
