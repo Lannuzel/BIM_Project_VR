@@ -17,7 +17,10 @@ public class ShowPersonalisedMenu : MonoBehaviour
         {
             foreach (GameObject item in lecteurItems)
             {
+                
                 item.SetActive(true);
+                if(item.name == "Arreter l'enregistrement")
+                    item.SetActive(false);
             }
         }
         else if (playerName == "Calculateur")
