@@ -6264,6 +6264,7 @@ MonoBehaviour:
   - {fileID: 1294848627}
   - {fileID: 505560282}
   - {fileID: 922142522}
+  tutorialItems: []
 --- !u!1 &246224201
 GameObject:
   m_ObjectHideFlags: 0
@@ -33144,6 +33145,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07fb5cb389b0d6a43be5023f695f4e57, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  inputField: {fileID: 0}
   distance: 1
   verticleOffset: -0.3
   positionSource: {fileID: 0}
@@ -61594,6 +61596,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07fb5cb389b0d6a43be5023f695f4e57, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  inputField: {fileID: 0}
   distance: 1
   verticleOffset: -0.3
   positionSource: {fileID: 0}
@@ -94233,6 +94236,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07fb5cb389b0d6a43be5023f695f4e57, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  inputField: {fileID: 0}
   distance: 1
   verticleOffset: -0.3
   positionSource: {fileID: 0}

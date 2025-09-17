@@ -82,7 +82,16 @@ public class ObjectInteractionHandler : NetworkBehaviour
         SelectObjects(spawnObj.gameObject);
         spawnedObject = null;
     }
-
+    public void SpawnObjectTutorial()
+    {
+        Vector3 spawnPosition = cameraTransform.transform.position + cameraTransform.forward * spawnDistance;
+        spawnPosition.y = 0;
+          spawnedObject = Instantiate(spawnedObjectPrefab, spawnPosition, Quaternion.identity);
+          spawnedObject.transform.rotation = spawnedObjectPrefab.transform.rotation;
+          spawnedObject.transform.parent = runTimeGeneratedResources;
+        SelectObjects(spawnedObject.gameObject);
+        spawnedObject = null;
+    }
     public void SelectObjects(GameObject hitObject)
     {
         if (!selectedObjects.Contains(hitObject))

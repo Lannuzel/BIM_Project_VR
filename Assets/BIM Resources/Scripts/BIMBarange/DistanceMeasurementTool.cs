@@ -277,7 +277,7 @@ public class DistanceMeasurementTool : NetworkBehaviour
 
         lineObj.SetActive(false);
         // Perform the first raycast
-        if (Physics.Raycast(ray, out RaycastHit secondHit, rayLength))
+        if (Physics.Raycast(ray, out RaycastHit secondHit, rayLength, raycastLayerMask))
         {
             lineObj.SetActive(true);
             secondPoint = secondHit.point;

@@ -8,6 +8,7 @@ public class MarkerManager : MonoBehaviour
     private List<EyeTrackingDataLogger> eyeLoggers = new List<EyeTrackingDataLogger>();
     private List<AudioTracker> audioTrackers = new List<AudioTracker>();
     private List<ChairPositionDataLogger> chairPositionLogger = new List<ChairPositionDataLogger>();
+    private List<ReservationPositionDataLogger> reservationPositionDataLoggers = new List<ReservationPositionDataLogger>();
 
     private bool successStatus = true;
     void Start()
@@ -18,6 +19,7 @@ public class MarkerManager : MonoBehaviour
         faceLoggers.AddRange(FindObjectsOfType<FaceTrackingRecorder>());
         eyeLoggers.AddRange(FindObjectsOfType<EyeTrackingDataLogger>());
         chairPositionLogger.AddRange(FindObjectsOfType<ChairPositionDataLogger>());
+        reservationPositionDataLoggers.AddRange (FindObjectsOfType<ReservationPositionDataLogger>());
     }
     public void StopAllRecordingsTimeOut()
     {
@@ -70,7 +72,13 @@ public class MarkerManager : MonoBehaviour
             Debug.Log("Enregistrement audio arrêté dans un audioTracker.");
         }
 
-
+        Debug.Log("Arrêt des enregistrements dans les reservationLoggers...");
+        foreach (var reservationLogger in reservationPositionDataLoggers)
+        {
+            reservationLogger.AddReservationPositionLog(successStatus);
+            reservationLogger.StopRecording();
+            Debug.LogError("Enregistrement ReservationLogs arrêté.");
+        }
 
 
         Debug.Log("Tous les enregistrements ont été arrêtés avec succès.");
@@ -114,6 +122,14 @@ public class MarkerManager : MonoBehaviour
         {
             audioTracker.AddAudioMarker();
             Debug.Log("Audio marker ajouté dans un audioTracker.");
+        }
+
+        // Ajoutez un marker dans les fichiers ReservationPosition
+        Debug.Log("Ajout du marker dans les ReservationLogger...");
+        foreach (var reservationLogger in reservationPositionDataLoggers)
+        {
+            reservationLogger.AddMarker();
+            Debug.LogError("marker ajouté dans une ReservationLogger.");
         }
 
         Debug.Log($"Ajout du marker terminé.");

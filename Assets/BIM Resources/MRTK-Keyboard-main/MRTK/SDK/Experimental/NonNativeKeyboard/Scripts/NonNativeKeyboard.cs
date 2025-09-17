@@ -251,32 +251,22 @@ namespace Microsoft.MixedReality.Toolkit.Experimental.UI
         {
             Instance = this;
 
-            m_StartingScale = transform.localScale;
-            Bounds canvasBounds = RectTransformUtility.CalculateRelativeRectTransformBounds(transform);
+            Instance = this;
 
-            RectTransform rect = GetComponent<RectTransform>();
-            m_ObjectBounds = new Vector3(canvasBounds.size.x * rect.localScale.x, canvasBounds.size.y * rect.localScale.y, canvasBounds.size.z * rect.localScale.z);
+            // Avoid Android select-all + soft keyboard
+            InputField.onFocusSelectAll = false;
+            InputField.shouldHideMobileInput = true;
+            InputField.keyboardType = (TouchScreenKeyboardType)(int.MaxValue); // already in your file :contentReference[oaicite:0]{index=0}
 
-            // Actually find microphone key in the keyboard
-            //var dictationButton = TransformExtensions.GetChildRecursive(gameObject.transform, "Dictation");
-            //if (dictationButton != null)
-            //{
-            //    var dictationIcon = dictationButton.Find("keyboard_closeIcon");
-            //    if (dictationIcon != null)
-            //    {
-            //        _recordImage = dictationIcon.GetComponentInChildren<Image>();
-            //        var material = new Material(_recordImage.material);
-            //        _defaultColor = material.color;
-            //        _recordImage.material = material;
-            //    }
-            //}
+            // --- CARET VISIBILITY ---
+            InputField.customCaretColor = true;
+            InputField.caretColor = Color.red;      // pick a high-contrast color
+            InputField.caretWidth = 4;                // bigger than 1px for world-space
+            InputField.caretBlinkRate = 0.6f;         // non-zero to ensure it draws
 
-            // Setting the keyboardType to an undefined TouchScreenKeyboardType,
-            // which prevents the MRTK keyboard from triggering the system keyboard itself.
-            InputField.keyboardType = (TouchScreenKeyboardType)(int.MaxValue);
+            // Selection highlight (optional, but helps confirm focus)
+            InputField.selectionColor = new Color(0.2f, 0.5f, 1f, 0.35f);
 
-            // Keep keyboard deactivated until needed
-            gameObject.SetActive(false);
         }
 
 
@@ -414,8 +404,21 @@ namespace Microsoft.MixedReality.Toolkit.Experimental.UI
             InputField.ActivateInputField();
 
             //SetMicrophoneDefault();
+            StartCoroutine(PlaceCaretAtEndNextFrame(InputField));
         }
 
+        private System.Collections.IEnumerator PlaceCaretAtEndNextFrame(TMP_InputField f)
+        {
+            yield return null; // or new WaitForEndOfFrame();
+            int pos = f.text.Length;
+            f.stringPosition = pos;
+            
+            f.caretPosition = pos;         // keep for older TMP safety
+                             
+            f.MoveTextEnd(false);                 // clears selection & places caret at end
+            f.ForceLabelUpdate();
+            f.ForceLabelUpdate();
+        }
 
         /// <summary>
         /// Presents the default keyboard to the camera, with start text.
@@ -436,6 +439,7 @@ namespace Microsoft.MixedReality.Toolkit.Experimental.UI
         {
             PresentKeyboard();
             ActivateSpecificKeyboard(keyboardType);
+            StartCoroutine(PlaceCaretAtEndNextFrame(InputField));
         }
 
         /// <summary>
@@ -447,6 +451,7 @@ namespace Microsoft.MixedReality.Toolkit.Experimental.UI
         {
             PresentKeyboard(startText);
             ActivateSpecificKeyboard(keyboardType);
+            StartCoroutine(PlaceCaretAtEndNextFrame(InputField));
         }
 
         #endregion Present Functions
@@ -603,34 +608,57 @@ namespace Microsoft.MixedReality.Toolkit.Experimental.UI
         /// Primary method for typing individual characters to a text field.
         /// </summary>
         /// <param name="valueKey">The valueKey of the pressed key.</param>
+        /*        public void AppendValue(KeyboardValueKey valueKey)
+                {
+                    IndicateActivity();
+                    string value = "";
+
+                    OnKeyboardValueKeyPressed(valueKey);
+
+                    // Shift value should only be applied if a shift value is present.
+                    if (m_IsShifted && !string.IsNullOrEmpty(valueKey.ShiftValue))
+                    {
+                        value = valueKey.ShiftValue;
+                    }
+                    else
+                    {
+                        value = valueKey.Value;
+                    }
+
+                    if (!m_IsCapslocked)
+                    {
+                        Shift(false);
+                    }
+
+                    m_CaretPosition = InputField.caretPosition;
+
+                    InputField.text = InputField.text.Insert(m_CaretPosition, value);
+                    m_CaretPosition += value.Length;
+
+                    UpdateCaretPosition(m_CaretPosition);
+                }
+        */
         public void AppendValue(KeyboardValueKey valueKey)
         {
             IndicateActivity();
-            string value = "";
 
-            OnKeyboardValueKeyPressed(valueKey);
+            string value = (m_IsShifted && !string.IsNullOrEmpty(valueKey.ShiftValue))
+                ? valueKey.ShiftValue : valueKey.Value;
+            if (!m_IsCapslocked) Shift(false);
 
-            // Shift value should only be applied if a shift value is present.
-            if (m_IsShifted && !string.IsNullOrEmpty(valueKey.ShiftValue))
-            {
-                value = valueKey.ShiftValue;
-            }
-            else
-            {
-                value = valueKey.Value;
-            }
+            int a = Mathf.Min(InputField.selectionAnchorPosition, InputField.selectionFocusPosition);
+            int b = Mathf.Max(InputField.selectionAnchorPosition, InputField.selectionFocusPosition);
 
-            if (!m_IsCapslocked)
-            {
-                Shift(false);
-            }
+            string t = InputField.text;
+            if (b > a) t = t.Remove(a, b - a);  // replace selection if any
+            t = t.Insert(a, value);
+            InputField.text = t;
 
-            m_CaretPosition = InputField.caretPosition;
-
-            InputField.text = InputField.text.Insert(m_CaretPosition, value);
-            m_CaretPosition += value.Length;
-
-            UpdateCaretPosition(m_CaretPosition);
+            int caret = a + value.Length;
+            InputField.caretPosition = caret;
+            InputField.selectionAnchorPosition = caret;
+            InputField.selectionFocusPosition = caret;
+            InputField.ForceLabelUpdate();
         }
 
         /// <summary>

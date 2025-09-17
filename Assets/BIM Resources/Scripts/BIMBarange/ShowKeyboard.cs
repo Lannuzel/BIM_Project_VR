@@ -6,7 +6,7 @@ using Microsoft.MixedReality.Toolkit.Experimental.UI;
 
 public class ShowKeyboard : MonoBehaviour
 {
-    private TMP_InputField inputField;
+    public TMP_InputField inputField;
     public float distance = 0.5f;
     public float verticleOffset = -0.5f;
     public Transform positionSource;
@@ -16,7 +16,7 @@ public class ShowKeyboard : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        inputField = GetComponent<TMP_InputField>();
+        inputField = transform.GetComponent<TMP_InputField>();
         inputField.onSelect.AddListener(x => OpenKeyboard());
     }
 
@@ -51,7 +51,7 @@ public class ShowKeyboard : MonoBehaviour
 
     public void AddNewLine()
     {
-        inputField = GetComponent<TMP_InputField>();
+       // inputField = transform.GetComponent<TMP_InputField>();
         if (inputField.text != "")
         {
             inputField.text = inputField.text + "\n";

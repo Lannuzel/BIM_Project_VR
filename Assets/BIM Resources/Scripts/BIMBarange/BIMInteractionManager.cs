@@ -6,8 +6,27 @@ public class BIMInteractionManager : MonoBehaviour
 {
     [SerializeField]
     private string userName;
+    public GameObject interactionMenu;
+    // Update is called once per frame
 
-    
+
+
+    void Update()
+    {
+        if (OVRInput.GetDown(OVRInput.Button.Three, OVRInput.Controller.LTouch))
+        {
+            if (interactionMenu != null)
+            {
+                interactionMenu.SetActive(!interactionMenu.activeSelf);
+            }
+            else
+            {
+                Debug.LogWarning("No menu assigend assigned!");
+            }
+        }
+
+    }
+
     public void ToggleActivation(GameObject gameObject)
     {
         if (gameObject.activeSelf) 

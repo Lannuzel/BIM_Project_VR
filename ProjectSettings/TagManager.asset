@@ -27,6 +27,10 @@ TagManager:
   - Line
   - Undefined
   - MeasureUI
+  - RingMenu
+  - Plane
+  - RingButton
+  - Reservation
   layers:
   - Default
   - TransparentFX
@@ -49,11 +53,11 @@ TagManager:
   - 
   - Chair
   - 
+  - Floor
+  - Reservation
   - 
   - 
-  - 
-  - 
-  - 
+  - HoleMask
   - 
   - 
   - 

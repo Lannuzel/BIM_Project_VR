@@ -8,6 +8,8 @@ public class ShowPersonalisedMenu : MonoBehaviour
     public List<GameObject> lecteurItems;
     public List<GameObject> calculateurItems;
     public List<GameObject> modelisateurItems;
+    public List<GameObject> tutorialItems;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -17,10 +19,10 @@ public class ShowPersonalisedMenu : MonoBehaviour
         {
             foreach (GameObject item in lecteurItems)
             {
-                
+
                 item.SetActive(true);
-                if(item.name == "Arreter l'enregistrement")
-                    item.SetActive(false);
+               // if (item.name == "Arreter l'enregistrement")
+               //     item.SetActive(false);
             }
         }
         else if (playerName == "Calculateur")
@@ -37,7 +39,21 @@ public class ShowPersonalisedMenu : MonoBehaviour
                 item.SetActive(true);
             }
         }
+        else if(playerName == "Blue")
+        {
+            foreach (GameObject item in modelisateurItems)
+            {
+                item.SetActive(true);
+            }
 
+        }
+        else if (playerName == "Red")
+        {
+            foreach (GameObject item in modelisateurItems)
+            {
+                item.SetActive(true);
+            }
+        }
 
     }
 
