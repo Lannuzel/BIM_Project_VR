@@ -12,7 +12,6 @@ public class UILookAt_V2: MonoBehaviour
 
     }
 
-
     private void OnEnable()
     {
         Vector3 targetPosition = positionCamera.position + positionCamera.forward * distance;

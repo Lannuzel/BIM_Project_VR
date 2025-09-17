@@ -346,7 +346,7 @@ MonoBehaviour:
   m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SortKey: 555311186
+  SortKey: 1612556109
   ObjectInterest: 1
   Flags: 131073
   NestedObjects: []
@@ -434,6 +434,8 @@ MonoBehaviour:
   thankGivingWindow: {fileID: 7339132711480263965, guid: a3b3535a94fa2ad4ca8c38cb08e95a01,
     type: 3}
   delay: 1800
+  distance: 1.2
+  verticalOffset: -0.1
 --- !u!114 &-1609552420710567778
 MonoBehaviour:
   m_ObjectHideFlags: 0
