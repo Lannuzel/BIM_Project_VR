@@ -40,15 +40,24 @@ public class RaycastSelectAndMoveNW : Fusion.NetworkBehaviour
     void Update()
     {
         // Select
-        if (OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger))
+        if (OVRInput.GetDown(OVRInput.Button.SecondaryHandTrigger))
         {
             Debug.Log("intex key pressed");
 
             TrySelectObject();
         }
         // Deselect
-        else if (OVRInput.GetUp(OVRInput.Button.SecondaryIndexTrigger))
+        else if (OVRInput.GetUp(OVRInput.Button.SecondaryHandTrigger))
         {
+            if (selectedObject != null)
+            {
+                NetworkObject networkObj = selectedObject.GetComponent<NetworkObject>();
+                if (networkObj != null && networkObj.HasStateAuthority)
+                {
+                    selectedObject.transform.GetComponent<TranslateGizmoDrawer>().enabled = false;
+                    selectedObject.transform.GetComponentInChildren<RotationGizmoDrawer>().enabled = false;
+                }
+            }
             selectedObject = null;
             cumulativeJoystickOffset = Vector3.zero;
         }
@@ -67,12 +76,25 @@ public class RaycastSelectAndMoveNW : Fusion.NetworkBehaviour
         {
             if (currentMode == ControlMode.Translate)
             {
+                NetworkObject networkObj = selectedObject.GetComponent<NetworkObject>();
+                if (networkObj != null && networkObj.HasStateAuthority)
+                {
+                    selectedObject.transform.GetComponent<TranslateGizmoDrawer>().enabled = true;
+                    selectedObject.transform.GetComponentInChildren<RotationGizmoDrawer>().enabled = false;
+                }
                 FollowControllerPosition();
             }
             else if (currentMode == ControlMode.Rotate)
             {
+                NetworkObject networkObj = selectedObject.GetComponent<NetworkObject>();
+                if (networkObj != null && networkObj.HasStateAuthority)
+                {
+                    selectedObject.transform.GetComponent<TranslateGizmoDrawer>().enabled = false;
+                    selectedObject.transform.GetComponentInChildren<RotationGizmoDrawer>().enabled = true;
+                }
                 ApplyControllerRotation();
             }
+            
         }
 
     }
@@ -106,6 +128,9 @@ public class RaycastSelectAndMoveNW : Fusion.NetworkBehaviour
 
                 Debug.LogError("Selected: " + selectedObject.name);
                 ReservationInteractionHandler.Instance.currentReservation = selectedObject;
+                currentMode = ControlMode.Translate;
+                aButtonWasPressed = false;
+                
             }
         }
     }

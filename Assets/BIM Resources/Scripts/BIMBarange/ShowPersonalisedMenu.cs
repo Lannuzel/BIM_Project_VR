@@ -21,8 +21,9 @@ public class ShowPersonalisedMenu : MonoBehaviour
             {
 
                 item.SetActive(true);
-               // if (item.name == "Arreter l'enregistrement")
-               //     item.SetActive(false);
+                if (item.name == "Arreter l'enregistrement")
+                    item.SetActive(false);
+                
             }
         }
         else if (playerName == "Calculateur")

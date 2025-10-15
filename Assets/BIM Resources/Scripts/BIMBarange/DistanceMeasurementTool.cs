@@ -90,6 +90,36 @@ public class DistanceMeasurementTool : NetworkBehaviour
         }
 
     }
+    private void DrawLine_performed()
+    {
+        if (!isDrawing)
+        {
+            DrawLine();
+            isDrawing = true;
+        }
+
+    }
+    private void DrawLine_endDrawing()
+    {
+        if (isDrawing)
+        {
+            isDrawing = false;
+            currentLine = null;
+            spawnedLine = null;
+            spawnRefStart = null;
+            spawnRefEnd = null;
+            if (lineObj.activeSelf)
+            {
+                MeasurementHandler.Instance.AddLine(lineObj);
+                lineObj = null;
+                MeasurementHandler.Instance.lineCount++;
+                // Destroy(lineObj);
+            }
+            spawnedUI = null;
+            lineObj = null;
+
+        }
+    }
 
     private void DrawLine_endDrawing(InputAction.CallbackContext context)
     {
@@ -102,7 +132,7 @@ public class DistanceMeasurementTool : NetworkBehaviour
             spawnRefEnd = null;
             if (lineObj.activeSelf)
             {
-                MeasurementHandler.Instance.AddLine(lineObj.transform);
+                MeasurementHandler.Instance.AddLine(lineObj);
                 lineObj = null;
                 MeasurementHandler.Instance.lineCount++;
                 // Destroy(lineObj);
@@ -119,6 +149,33 @@ public class DistanceMeasurementTool : NetworkBehaviour
 
     void Update()
     {
+
+        // ********************************
+        if (OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger))
+        {
+            Debug.Log("intex key pressed");
+            DrawLine_performed();
+        }
+        // Deselect
+        else if (OVRInput.GetUp(OVRInput.Button.SecondaryIndexTrigger))
+        {
+            Debug.Log("intex key removed");
+            DrawLine_endDrawing();
+        }
+
+        // Get right-hand trigger value (0.0f to 1.0f)
+        // Read right index trigger (mapped)
+        float triggerValue = OVRInput.Get(OVRInput.Axis1D.PrimaryIndexTrigger, OVRInput.Controller.RTouch);
+
+
+        if (triggerValue > 0.3f) // Small threshold to avoid accidental movement
+        {
+            if (isDrawing)
+            {
+                UpdateLine();
+            }
+        }
+
         if (playerInputActions.XRIRightInteraction.Select.ReadValue<float>() > 0.3)
         {
             if (isDrawing)
@@ -254,7 +311,7 @@ public class DistanceMeasurementTool : NetworkBehaviour
         spawnedUI.transform.parent = lineObj.transform;
         spawnedUI.SetCameraRef(cameraRef);
         // Set UI position at the midpoint
-        spawnedUI.SetUIPositions(midpoint, "Om Namah Shivay", true);
+        spawnedUI.SetUIPositions(midpoint, "", true);
 
         Debug.Log(" UI ");
     }

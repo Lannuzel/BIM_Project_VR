@@ -94,7 +94,7 @@ public class DrawLineBetweenTwoHitsNW : Fusion.NetworkBehaviour
             spawnRefEnd = null;
             if (lineObj.activeSelf)
             {
-                MeasurementHandler.Instance.AddLine(lineObj.transform);
+                MeasurementHandler.Instance.AddLine(lineObj);
                 lineObj = null;
                 MeasurementHandler.Instance.lineCount++;
                // Destroy(lineObj);
@@ -139,71 +139,72 @@ public class DrawLineBetweenTwoHitsNW : Fusion.NetworkBehaviour
         spawnedUI.transform.parent = lineObj.transform;
         spawnedUI.SetCameraRef(cameraRef);
         // Set UI position at the midpoint
-        spawnedUI.SetUIPositions(midpoint, "Om Namah Shivay", true);
+        spawnedUI.SetUIPositions(midpoint, "", true);
 
         Debug.Log(" UI ");
     }
 
     private void DrawLine()
     {
-        if (currentLine == null)
-        {
-            Fusion.NetworkObject spawnNWLine = null;
-            NetworkManager.Instance.Runner.Spawn(linePrefab, Vector3.zero, linePrefab.transform.rotation, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
+          {
+            if (currentLine == null)
             {
-                spawnNWLine = obj;
-                spawnedLine = spawnNWLine.gameObject.GetComponent<NetworkedLine>();
-                lineObj = spawnNWLine.gameObject;
-                currentLine = lineObj.GetComponent<LineRenderer>();
-                updateLinePosition(pointA, pointB);
-                DrawUI();
+                Fusion.NetworkObject spawnNWLine = null;
+                NetworkManager.Instance.Runner.Spawn(linePrefab, Vector3.zero, linePrefab.transform.rotation, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
+                {
+                    spawnNWLine = obj;
+                    spawnedLine = spawnNWLine.gameObject.GetComponent<NetworkedLine>();
+                    lineObj = spawnNWLine.gameObject;
+                    currentLine = lineObj.GetComponent<LineRenderer>();
+                    updateLinePosition(pointA, pointB);
+                    DrawUI();
 
+                });
+
+
+
+
+                // spawnedLine = NetworkManager.Instance.Runner.Spawn(linePrefab, Vector3.zero, Quaternion.identity);
+            }
+
+
+            /*   currentLine.material = lineMaterial;
+               currentLine.startWidth = 0.01f;
+               currentLine.endWidth = 0.01f;
+               currentLine.positionCount = 2;
+            */
+
+            currentLine.enabled = false; // Initially, the line is hidden
+                                         //add endPointMarquers
+
+            Fusion.NetworkObject spawnNWObjStart = null;
+            NetworkManager.Instance.Runner.Spawn(spawnObj, Vector3.zero, spawnObj.transform.rotation, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
+            {
+                spawnNWObjStart = obj;
             });
 
 
-            
+            spawnRefStart = spawnNWObjStart.gameObject;
+            spawnRefStart.transform.parent = lineObj.transform;
+            spawnRefStart.transform.tag = "StartPoint";
 
-            // spawnedLine = NetworkManager.Instance.Runner.Spawn(linePrefab, Vector3.zero, Quaternion.identity);
+            /*
+            spawnRefStart = Instantiate(spawnObj);
+            spawnRefStart.transform.parent = lineObj.transform;
+            spawnRefStart.transform.tag = "StartPoint";
+            */
+
+
+            Fusion.NetworkObject spawnNWObjEnd = null;
+            NetworkManager.Instance.Runner.Spawn(spawnObj, Vector3.zero, spawnObj.transform.rotation, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
+            {
+                spawnNWObjEnd = obj;
+            });
+
+            spawnRefEnd = spawnNWObjEnd.gameObject;
+            spawnRefEnd.transform.parent = lineObj.transform;
+            spawnRefEnd.transform.tag = "EndPoint";
         }
-
-
-     /*   currentLine.material = lineMaterial;
-        currentLine.startWidth = 0.01f;
-        currentLine.endWidth = 0.01f;
-        currentLine.positionCount = 2;
-     */
-
-        currentLine.enabled = false; // Initially, the line is hidden
-                                     //add endPointMarquers
-
-        Fusion.NetworkObject spawnNWObjStart = null;
-        NetworkManager.Instance.Runner.Spawn(spawnObj, Vector3.zero, spawnObj.transform.rotation, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
-        {
-            spawnNWObjStart = obj;
-        });
-
-
-        spawnRefStart = spawnNWObjStart.gameObject;
-        spawnRefStart.transform.parent = lineObj.transform;
-        spawnRefStart.transform.tag = "StartPoint";
-
-        /*
-        spawnRefStart = Instantiate(spawnObj);
-        spawnRefStart.transform.parent = lineObj.transform;
-        spawnRefStart.transform.tag = "StartPoint";
-        */
-
-
-        Fusion.NetworkObject spawnNWObjEnd = null;
-        NetworkManager.Instance.Runner.Spawn(spawnObj, Vector3.zero, spawnObj.transform.rotation, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
-        {
-            spawnNWObjEnd = obj;
-        });
-
-        spawnRefEnd = spawnNWObjEnd.gameObject;
-        spawnRefEnd.transform.parent = lineObj.transform;
-        spawnRefEnd.transform.tag = "EndPoint";
-
 
     }
 

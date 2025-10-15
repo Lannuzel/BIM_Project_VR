@@ -13,34 +13,15 @@ public class InteractionManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        Debug.LogError(" InteractionManager ********************"+ transform.name);
         
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-            if (OVRInput.GetDown(OVRInput.Button.Three))
-            {
-                if(!isActive)
-                  {
-                    isActive = true;
-                    interactionMenu.SetActive(true);
-                  }
-                  else {
-                    isActive = false;
-                    interactionMenu.SetActive(false);
-                  }
-                Debug.Log("X button pressed");
-            }
-    }
+
 
     public void ToggleMeasurement()
     {
-      LineScript lineCom = transform.GetComponent<LineScript>();
-      if( lineCom.isActiveAndEnabled)
-          lineCom.enabled = false;
-      else 
-          lineCom.enabled = true;
+
     
     }
 

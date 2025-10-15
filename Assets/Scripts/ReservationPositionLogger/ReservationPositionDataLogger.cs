@@ -77,15 +77,15 @@ public class ReservationPositionDataLogger : MonoBehaviour
                     float scaleX =0f, scaleY = 0f, scaleZ= 0f;
                     if (child.name.Contains("Hollow cylinder Reservation Sol"))
                     {
-                        scaleX = child.localScale.x / 3.85f; 
-                        scaleY = child.localScale.y / 31f;
-                        scaleZ = child.localScale.z / 3.85f;  
+                        scaleX = child.localScale.x / 1f; 
+                        scaleY = child.localScale.y / 0.495f;
+                        scaleZ = child.localScale.z / 1f;  
                     }
                     else if (child.name.Contains("Hollow cylinder Reservation Mur"))
                     {
-                        scaleX = child.localScale.x / 3.8499999f;
-                        scaleY = child.localScale.y / 3.8499999f;
-                        scaleZ = child.localScale.z / 31f;
+                        scaleX = child.localScale.x / 1f;
+                        scaleY = child.localScale.y / 1f;
+                        scaleZ = child.localScale.z / 0.495f;
                         
                     }
                     else if (child.name.Contains("SqureHoleWall"))

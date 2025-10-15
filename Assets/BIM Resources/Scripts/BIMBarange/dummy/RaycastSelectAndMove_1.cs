@@ -132,6 +132,20 @@ public class RaycastSelectAndMove : MonoBehaviour
                     );*/
                 }
             }
+            else
+            {
+                selectedObject.transform.position = Vector3.Lerp(
+                    selectedObject.transform.position,
+                    targetPosition,
+                    Time.deltaTime * objectFollowSpeed
+                );
+
+                /*   selectedObject.transform.rotation = Quaternion.Slerp(
+                       selectedObject.transform.rotation,
+                       targetRotation,
+                       Time.deltaTime * objectFollowSpeed
+                   );*/
+            }
         }
     }
 
@@ -190,6 +204,14 @@ public class RaycastSelectAndMove : MonoBehaviour
                     Time.deltaTime * objectFollowSpeed
                 );
             }
+        }
+        else
+        {
+            selectedObject.transform.rotation = Quaternion.Slerp(
+                selectedObject.transform.rotation,
+                totalRotation,
+                Time.deltaTime * objectFollowSpeed
+            );
         }
     }
 

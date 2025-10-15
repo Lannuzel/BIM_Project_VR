@@ -5,13 +5,16 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
-    path: Assets/Scenes/barange/MainGame_BIM-fusion.unity
-    guid: 1123e2476c4e5284d9ede151c1d850b0
-  - enabled: 0
-    path: Assets/EXP2/Scene/Exp2-V1-09-06-2025_shader.unity
-    guid: 6d1fdeeceabdfd44689b014fba3492b6
   - enabled: 1
+    path: Assets/EXP1/Scenes/Tutorial/BIM-EXP_Tutorial_test.unity
+    guid: c9d08ea226e2adc4f95c9a3236bc1d8b
+  - enabled: 1
+    path: Assets/EXP2/Scene/Exp2-V1-09-06-2025_EXP2_User.unity
+    guid: fd74bad6e50aa984abe7c6fe002342a1
+  - enabled: 0
+    path: Assets/EXP1/Scenes/Exp1_V3.unity
+    guid: 87a815ea869454249b02a2a19bbb3be9
+  - enabled: 0
     path: Assets/EXP2/Scene/Exp2-V1-09-06-2025_EXP2.unity
     guid: 92ecc780ed78a5247939ed3351edd87b
   m_configObjects:

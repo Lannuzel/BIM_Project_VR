@@ -311,6 +311,7 @@ GameObject:
   - component: {fileID: 2332383659668570618}
   - component: {fileID: -1609552420710567778}
   - component: {fileID: 1823465414780957231}
+  - component: {fileID: 7484224734215861}
   m_Layer: 0
   m_Name: PlayerPrefabMB
   m_TagString: Untagged
@@ -357,6 +358,7 @@ MonoBehaviour:
   - {fileID: 5099086575500472456}
   - {fileID: 2332383659668570618}
   - {fileID: -1609552420710567778}
+  - {fileID: 7484224734215861}
   - {fileID: 6576818316357926431}
   - {fileID: 1501131475953981466}
   - {fileID: 6820467114878353091}
@@ -431,11 +433,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6be74bc0142aa8443a8a6ce5e7f73982, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  thankGivingWindow: {fileID: 7339132711480263965, guid: a3b3535a94fa2ad4ca8c38cb08e95a01,
-    type: 3}
   delay: 1800
   distance: 1.2
   verticalOffset: -0.1
+  pinToCamera: 1
+  thankGivingWindow: {fileID: 7339132711480263965, guid: a3b3535a94fa2ad4ca8c38cb08e95a01,
+    type: 3}
+  exitDelay: 6
 --- !u!114 &-1609552420710567778
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -462,6 +466,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 477044492ac25da46b81fabddbf81e48, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &7484224734215861
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1018894126005618953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8cd1ef1de6208fb4fa33f839acbafebb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  defaultDelay: 2
 --- !u!1 &1079076540323930106
 GameObject:
   m_ObjectHideFlags: 0
@@ -1259,7 +1276,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3762648892375719527
 Transform:
   m_ObjectHideFlags: 0

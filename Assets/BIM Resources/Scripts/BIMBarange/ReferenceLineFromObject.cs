@@ -42,6 +42,7 @@ public class ReferenceLineFromObject : NetworkBehaviour
         selectedObjects = ObjectInteractionHandler.Instance.SelectedObjects();
     }
 
+
     public void Update()
     {
         if (showRefLines)

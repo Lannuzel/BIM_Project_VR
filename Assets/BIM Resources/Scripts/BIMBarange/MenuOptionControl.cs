@@ -15,9 +15,12 @@ public class MenuOptionControl : MonoBehaviour
 
     public void DisactivateAllOptions()
     {
-        foreach (Transform t in options)
+        if (options.Count > 0)
         {
-            t.gameObject.SetActive(false);
+            foreach (Transform t in options)
+            {
+                t.gameObject.SetActive(false);
+            }
         }
     }
     public void ActivateOption(Transform option)
@@ -30,9 +33,12 @@ public class MenuOptionControl : MonoBehaviour
     }
     public void ToggleActivation(Transform option)
     {
-      
+
         if (option.gameObject.activeSelf)
+        {
+            DisactivateAllOptions();
             option.gameObject.SetActive(false);
+        }
         else
         {
             DisactivateAllOptions();

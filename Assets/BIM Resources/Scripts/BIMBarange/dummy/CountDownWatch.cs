@@ -6,10 +6,10 @@ using UnityEngine;
 public class CountDownWatch : NetworkBehaviour
 {
     public GameObject clockPrefab;
-    
+    public GameObject interactionMenu;
     public float distance = 1.2f;       // meters in front of the user
     public float verticalOffset = -0.1f; // slightly below gaze
-
+    Fusion.NetworkObject NWClock = null;
     // Start is called before the first frame update
     void Start()
     {
@@ -26,7 +26,7 @@ public class CountDownWatch : NetworkBehaviour
         Vector3 spawnPos = cam.transform.position + forward.normalized * distance + up * verticalOffset;
         Quaternion spawnRot = Quaternion.LookRotation((spawnPos - cam.transform.position).normalized, Vector3.up);
 
-        Fusion.NetworkObject NWClock = null;
+       
 
         NetworkManager.Instance.Runner.Spawn(clockPrefab, clockPrefab.transform.position, clockPrefab.transform.rotation, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
         {
@@ -34,9 +34,18 @@ public class CountDownWatch : NetworkBehaviour
             
         });
         NWClock.transform.parent = transform;
+        interactionMenu.SetActive(true);
 
     }
 
+    public void DeleteClock()
+    {
+        if (NWClock != null)
+        {
+            NetworkManager.Instance.Runner.Despawn(NWClock);
+        }
+
+    }
 
     private static Camera GetPlayerCamera()
     {

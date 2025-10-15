@@ -38842,6 +38842,7 @@ MonoBehaviour:
   - {fileID: 464692858404395778}
   - {fileID: 4028203481009781340}
   - {fileID: 1694865937}
+  - {fileID: 2070880189}
 --- !u!114 &1122427875
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -59972,6 +59973,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   clockPrefab: {fileID: 7915663900211630124, guid: 67280b4d198bdeb4ab92e87215800092,
     type: 3}
+  interactionMenu: {fileID: 0}
   distance: 1.2
   verticalOffset: -0.1
 --- !u!4 &1785572877
@@ -70851,6 +70853,12 @@ MonoBehaviour:
   distance: 0.86
   heightOffset: -0.5
   applyRotation: 1
+--- !u!4 &2070880189 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7979916830513711551, guid: 4dfac36245beb8e4d884a833a5a0517f,
+    type: 3}
+  m_PrefabInstance: {fileID: 854355135}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2074200761
 GameObject:
   m_ObjectHideFlags: 0

@@ -7,6 +7,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
 using Fusion;
+using System.Net;
 
 public class ModifyDistanceMeasurement : NetworkBehaviour
 {
@@ -18,7 +19,7 @@ public class ModifyDistanceMeasurement : NetworkBehaviour
     public bool isMeasurementActive = true; // Tracks if the measurement tool is active
 
     private XRIBIMInputActions playerInputActions;
-    private MeasurementHandler measurementHandler;
+    private MeasurementHandlerV2 measurementHandler;
 
 
     private LineRenderer currentLine;
@@ -46,10 +47,10 @@ public class ModifyDistanceMeasurement : NetworkBehaviour
     private GameObject spawnRefEnd;
 
     private NetworkedMUI spawnedUI;
-
+    public float uiOffsetY = 0;
     private void Awake()
     {
-        measurementHandler = MeasurementHandler.Instance;
+        measurementHandler = MeasurementHandlerV2.Instance;
         playerInputActions = measurementHandler.playerInputActions;
         playerInputActions.XRIRightInteraction.Enable();
         playerInputActions.XRILeftInteraction.Enable(); 
@@ -63,7 +64,7 @@ public class ModifyDistanceMeasurement : NetworkBehaviour
     }
     private void OnEnable()
     {
-        measurementHandler = MeasurementHandler.Instance;
+        measurementHandler = MeasurementHandlerV2.Instance;
         playerInputActions = measurementHandler.playerInputActions;
         playerInputActions.XRIRightInteraction.Enable();
         playerInputActions.XRILeftInteraction.Enable();
@@ -108,8 +109,10 @@ public class ModifyDistanceMeasurement : NetworkBehaviour
                 {
                     if (currentLine != null)
                     {
+                        NetworkObject endPointNW = hit.transform.GetComponent<NetworkObject>();
                         isModifyingEndPoint = true;
-                        Destroy(hit.transform.gameObject);
+                        NetworkManager.Instance.Runner.Despawn(endPointNW);
+                       // Destroy(hit.transform.gameObject);
                     }
                 }
                 else if (hit.transform.tag == "StartPoint")
@@ -117,7 +120,9 @@ public class ModifyDistanceMeasurement : NetworkBehaviour
                     if (currentLine != null)
                     {
                         isModifyingStartPoint = true;
-                        Destroy(hit.transform.gameObject);
+                        NetworkObject startPointNW = hit.transform.GetComponent<NetworkObject>();
+                        NetworkManager.Instance.Runner.Despawn(startPointNW);
+                      //  Destroy(hit.transform.gameObject);
                     }
                 }
             }
@@ -275,14 +280,16 @@ public class ModifyDistanceMeasurement : NetworkBehaviour
         if (isModifyingEndPoint|| isModifyingStartPoint)
         {
             if(measurementHandler.LineCount() > 0)
-                measurementHandler.RemoveLine(currentLine.transform);            
+                measurementHandler.RemoveLine(currentLine.gameObject);            
         }
 
         //increment line count
-        measurementHandler.AddLine(currentLine.transform);
+        measurementHandler.AddLine(currentLine.gameObject);
 
         string data = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " mètre";
-        spawnedUI.SetUIPositions((currentLine.GetPosition(0) + currentLine.GetPosition(1)) / 2, data, true);
+        Vector3 tempPos = (currentLine.GetPosition(0) + currentLine.GetPosition(1)) / 2;
+        Vector3 newUIPos = new Vector3(tempPos.x, tempPos.y+ uiOffsetY, tempPos.z);    
+        spawnedUI.SetUIPositions(newUIPos, data, true);
 
         if (isDrawing || isModifyingEndPoint)
         {
@@ -366,6 +373,7 @@ public class ModifyDistanceMeasurement : NetworkBehaviour
         currentLine = null; // Reset currentLine to allow drawing a new one
         
         measureText = null;
+        spawnedLine = null;
 
 
     }

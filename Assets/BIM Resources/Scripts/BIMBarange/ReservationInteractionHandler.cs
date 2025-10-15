@@ -73,7 +73,7 @@ public class ReservationInteractionHandler : NetworkBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+
     }
 
     // Update is called once per frame
@@ -96,7 +96,7 @@ public class ReservationInteractionHandler : NetworkBehaviour
 
     public void SpawnCustomRectangleReservationSol()
     {
-        if (float.TryParse(rectangleLengthInput.text, out float length) &&  float.TryParse(rectangleWidthInput.text, out float width) && float.TryParse(rectangleHeightInput.text, out float height))
+        if (float.TryParse(rectangleLengthInput.text, out float length) && float.TryParse(rectangleWidthInput.text, out float width) && float.TryParse(rectangleHeightInput.text, out float height))
         {
             Debug.Log($"Reservation received: Width = {width}, Height = {height}");
             // You can now use width and height for your rectangle logic
@@ -125,7 +125,7 @@ public class ReservationInteractionHandler : NetworkBehaviour
 
     public void SpawnCustomRectangleReservation()
     {
-        if (float.TryParse(rectangleLengthInput.text, out float length)&& float.TryParse(rectangleWidthInput.text, out float width) && float.TryParse(rectangleHeightInput.text, out float height))
+        if (float.TryParse(rectangleLengthInput.text, out float length) && float.TryParse(rectangleWidthInput.text, out float width) && float.TryParse(rectangleHeightInput.text, out float height))
         {
             Debug.Log($"Reservation received: Width = {width}, Height = {height}");
             // You can now use width and height for your rectangle logic
@@ -135,7 +135,7 @@ public class ReservationInteractionHandler : NetworkBehaviour
         {
             Debug.LogWarning("Invalid input. Please enter numeric width and height.");
         }
-        
+
     }
     public void SpawnCircularReservation()
     {
@@ -164,7 +164,7 @@ public class ReservationInteractionHandler : NetworkBehaviour
             Debug.LogWarning("Invalid input. Please enter numeric width and height.");
         }
 
-        
+
     }
 
     public void SpawnCustomCircularReservationMur()
@@ -173,7 +173,7 @@ public class ReservationInteractionHandler : NetworkBehaviour
         {
             Debug.Log($"Reservation received: Length= Height = {diameter}, width = {width}");
             // You can now use width and height for your rectangle logic
-            SpawnCircleObject(spawnedCircularMurPrefab, diameter,  width, diameter);
+            SpawnCircleObject(spawnedCircularMurPrefab, diameter, width, diameter);
         }
         else
         {
@@ -204,30 +204,36 @@ public class ReservationInteractionHandler : NetworkBehaviour
 
         Quaternion faceUserRot = YawLookAtUser(cameraTransform, spawnPosition);
 
-        NetworkManager.Instance.Runner.Spawn(spawnedObjectPrefab, spawnPosition, faceUserRot, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
+        NetworkManager.Instance.Runner.Spawn(spawnedObjectPrefab, spawnPosition, Quaternion.identity, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
         {
             spawnObj = obj;
+            var scaler = obj.GetComponent<ScaleNetworked>();
+            if (scaler != null)
+            {
+                scaler.ScaleFactor = new Vector3(spawnObj.transform.localScale.x * width, spawnObj.transform.localScale.y * height, spawnObj.transform.localScale.z * length);
+
+            }
         });
         Debug.LogError("spawned obj :" + spawnObj.transform.localScale);
-        spawnObj.transform.localScale = new Vector3(spawnObj.transform.localScale.x * width , spawnObj.transform.localScale.y*height,  spawnObj.transform.localScale.z* length);
+       // spawnObj.transform.localScale = new Vector3(spawnObj.transform.localScale.x * width, spawnObj.transform.localScale.y * height, spawnObj.transform.localScale.z * length);
 
-       spawnObj.transform.position = spawnPosition;
-     /*   Vector3 targetPos = cameraTransform.position;
-        targetPos.y = transform.position.y; // lock Y-axis so no tilt up/down
-        spawnObj.transform.LookAt(targetPos);
+        spawnObj.transform.position = spawnPosition;
+        /*   Vector3 targetPos = cameraTransform.position;
+           targetPos.y = transform.position.y; // lock Y-axis so no tilt up/down
+           spawnObj.transform.LookAt(targetPos);
 
 
-        // spawnObj.transform.rotation = spawnedObjectPrefab.transform.rotation;
+           // spawnObj.transform.rotation = spawnedObjectPrefab.transform.rotation;
 
-        Vector3 toUser = (cameraTransform.position - spawnObj.transform.position);
-       
-        if (toUser.sqrMagnitude < 1e-4f) toUser = -forward;
-        Quaternion rotation = Quaternion.LookRotation(toUser.normalized, Vector3.up);
+           Vector3 toUser = (cameraTransform.position - spawnObj.transform.position);
 
-       // spawnObj.transform.rotation = rotation;
-     */
-       spawnObj.transform.parent = runTimeGeneratedResources;
-        RaycastSelectAndMove raycastSelectAndMove = spawnObj.GetComponent<RaycastSelectAndMove>();
+           if (toUser.sqrMagnitude < 1e-4f) toUser = -forward;
+           Quaternion rotation = Quaternion.LookRotation(toUser.normalized, Vector3.up);
+
+          // spawnObj.transform.rotation = rotation;
+        */
+        spawnObj.transform.parent = runTimeGeneratedResources;
+        RaycastSelectAndMove raycastSelectAndMove = spawnObj.GetComponentInChildren<RaycastSelectAndMove>();
         if (raycastSelectAndMove != null)
         {
             raycastSelectAndMove.cameraTransform = cameraTransform;
@@ -235,6 +241,17 @@ public class ReservationInteractionHandler : NetworkBehaviour
         }
 
         currentReservation = spawnObj.gameObject;
+        if (currentReservation != null)
+        {
+            NetworkObject networkObj = currentReservation.GetComponent<NetworkObject>();
+            if (networkObj != null && networkObj.HasStateAuthority)
+            {
+                currentReservation.transform.GetComponent<TranslateGizmoDrawer>().enabled = false;
+                currentReservation.transform.GetComponent<RotationGizmoDrawer>().enabled = false;
+              
+            }
+        }
+
         selectedReservations.Add(spawnObj.gameObject);
     }
     private void SpawnObject(GameObject spawnedObjectPrefab)
@@ -273,13 +290,23 @@ public class ReservationInteractionHandler : NetworkBehaviour
         NetworkManager.Instance.Runner.Spawn(spawnedObjectPrefab, spawnPosition, spawnedObjectPrefab.transform.rotation, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
         {
             spawnObj = obj;
+            var scaler = obj.GetComponent<ScaleNetworked>();
+            if (scaler != null)
+            {
+                scaler.ScaleFactor = new Vector3(spawnObj.transform.localScale.x * diameterX, spawnObj.transform.localScale.y * height, spawnObj.transform.localScale.z * diameterZ);
+
+            }
         });
+        NetworkObject networkObj = spawnObj.GetComponent<NetworkObject>();
+        if (networkObj != null && networkObj.HasStateAuthority)
+        {
 
-        spawnObj.transform.localScale = new Vector3(spawnObj.transform.localScale.x * diameterX, spawnObj.transform.localScale.y * height, spawnObj.transform.localScale.z * diameterZ);
+         //   spawnObj.transform.localScale = new Vector3(spawnObj.transform.localScale.x * diameterX, spawnObj.transform.localScale.y * height, spawnObj.transform.localScale.z * diameterZ);
 
-        spawnObj.transform.position = spawnPosition;
-        spawnObj.transform.rotation = spawnedObjectPrefab.transform.rotation;
-        spawnObj.transform.parent = runTimeGeneratedResources;
+            spawnObj.transform.position = spawnPosition;
+            spawnObj.transform.rotation = spawnedObjectPrefab.transform.rotation;
+            spawnObj.transform.parent = runTimeGeneratedResources;
+        }
         RaycastSelectAndMove raycastSelectAndMove = spawnObj.GetComponent<RaycastSelectAndMove>();
         if (raycastSelectAndMove != null)
         {
@@ -288,6 +315,15 @@ public class ReservationInteractionHandler : NetworkBehaviour
         }
 
         currentReservation = spawnObj.gameObject;
+        if (currentReservation != null)
+        {
+            NetworkObject networkObj1 = currentReservation.GetComponent<NetworkObject>();
+            if (networkObj1 != null && networkObj1.HasStateAuthority)
+            {
+                currentReservation.transform.GetComponent<TranslateGizmoDrawer>().enabled = false;
+                currentReservation.transform.GetComponent<RotationGizmoDrawer>().enabled = false;
+            }
+        }
         selectedReservations.Add(spawnObj.gameObject);
     }
 
@@ -308,14 +344,15 @@ public class ReservationInteractionHandler : NetworkBehaviour
     public void DeleteLastSelectedReservation()
     {
         if (selectedReservations.Count > 0)
-        {   if(currentReservation == null)
+        {
+            if (currentReservation == null)
             {
                 currentReservation = selectedReservations[selectedReservations.Count - 1];
             }
             selectedReservations.Remove(currentReservation);
             Destroy(currentReservation);
-            
-            
+
+
         }
     }
     public void DeselectAllObjects()

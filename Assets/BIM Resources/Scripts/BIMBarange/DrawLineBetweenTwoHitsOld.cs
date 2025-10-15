@@ -81,7 +81,7 @@ public class DrawLineBetweenTwoHits : MonoBehaviour
             spawnRefEnd = null;
             if (lineObj.activeSelf)
             {
-                MeasurementHandler.Instance.AddLine(lineObj.transform);
+                MeasurementHandler.Instance.AddLine(lineObj);
                 lineObj = null;
                 MeasurementHandler.Instance.lineCount++;
                // Destroy(lineObj);
