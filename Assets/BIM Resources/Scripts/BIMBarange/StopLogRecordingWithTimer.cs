@@ -22,6 +22,16 @@ public class StopLogRecordingWithTimer : NetworkBehaviour
     {
         yield return new WaitForSeconds(delay);
         Debug.LogError("Stop Log Recording TimeOut");
+
+        GameObject clockObject = GameObject.Find("CountDownWatch");
+        if (clockObject != null)
+        {
+            clockObject.SetActive(false);
+            CountDownWatch watch = clockObject.GetComponent<CountDownWatch>();
+            watch.DeleteClock(); 
+        }
+
+
         hostController.StoptLogSynchornisationTimeout();
     }
 }

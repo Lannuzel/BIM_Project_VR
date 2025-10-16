@@ -59,8 +59,10 @@ public class HostController : NetworkBehaviour
 
         // 1) Tell everyone to show the local window
         ShowThanksgivingCanvasForAll();
+        // After StartGame completes on host:
+        
 
-        ExitManager emr = transform.GetComponent<ExitManager>();
+        ExitManager emr = ExitManager.Instance;
         if (emr != null)
         {
             emr.BeginExit();

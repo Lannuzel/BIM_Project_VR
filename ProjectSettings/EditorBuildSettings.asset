@@ -14,9 +14,6 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/EXP1/Scenes/Exp1_V3.unity
     guid: 87a815ea869454249b02a2a19bbb3be9
-  - enabled: 0
-    path: Assets/EXP2/Scene/Exp2-V1-09-06-2025_EXP2.unity
-    guid: 92ecc780ed78a5247939ed3351edd87b
   m_configObjects:
     Unity.XR.Oculus.Settings: {fileID: 11400000, guid: b6fd7e6e7d07969419f9158f7c018cd3,
       type: 2}
