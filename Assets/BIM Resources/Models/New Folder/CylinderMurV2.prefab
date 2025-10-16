@@ -1903,10 +1903,9 @@ GameObject:
   - component: {fileID: 664944719464459474}
   - component: {fileID: 38038602524163541}
   - component: {fileID: 1443491929416281068}
-  - component: {fileID: 3468283292469938243}
   m_Layer: 22
   m_Name: CylinderMurV2
-  m_TagString: Reservation
+  m_TagString: cylinderReservationMur
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2104,20 +2103,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &3468283292469938243
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3182724433311174472}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1541381998, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Guid:
-    RawGuidValue: 0e9de13f4a966eb47a4e77ee9b29bdd9
 --- !u!1 &8230583606147210024
 GameObject:
   m_ObjectHideFlags: 0

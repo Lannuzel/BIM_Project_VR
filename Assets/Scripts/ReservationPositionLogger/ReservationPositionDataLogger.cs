@@ -68,44 +68,52 @@ public class ReservationPositionDataLogger : MonoBehaviour
         {   int count = 0;
             List<Transform> interactableChildren = new List<Transform>();
             Debug.LogError("::::::::::::::Chaire Position Log :::::::::::::");
-
+            bool childFlag = false;
             foreach (Transform child in instantiatedReservation.transform )
             {
-                if (child.CompareTag("Reservation")) // Check if the child has the tag
-                {
-                    interactableChildren.Add(child);
+                   
                     float scaleX =0f, scaleY = 0f, scaleZ= 0f;
-                    if (child.name.Contains("Hollow cylinder Reservation Sol"))
+                    if (child.tag.Contains("cylinderReservationSol"))
                     {
+                    childFlag = true;
+                        interactableChildren.Add(child);
                         scaleX = child.localScale.x / 1f; 
-                        scaleY = child.localScale.y / 0.495f;
+                        scaleY = child.localScale.y * 2f;
                         scaleZ = child.localScale.z / 1f;  
                     }
-                    else if (child.name.Contains("Hollow cylinder Reservation Mur"))
+                    else if (child.tag.Contains("cylinderReservationMur"))
                     {
+                    childFlag = true;
+                    interactableChildren.Add(child);
                         scaleX = child.localScale.x / 1f;
-                        scaleY = child.localScale.y / 1f;
-                        scaleZ = child.localScale.z / 0.495f;
+                        scaleY = child.localScale.y * 2f;
+                        scaleZ = child.localScale.z / 1f;
                         
                     }
-                    else if (child.name.Contains("SqureHoleWall"))
-                    {
-                        scaleX = child.localScale.x / 1.41f;
-                        scaleY = child.localScale.y / 1.41f;
-                        scaleZ = child.localScale.z / 4.97f;
+                    else if (child.tag.Contains("SquareReservationMur"))
+                {
+                    childFlag = true;
+                    interactableChildren.Add(child);
+                         scaleX = child.localScale.x ;
+                        scaleY = child.localScale.y ;
+                        scaleZ = child.localScale.z ;
                     }
-                    else if (child.name.Contains("SqureHoleFloor"))
-                    {
-                        scaleX = child.localScale.x / 1.41f;
-                        scaleY = child.localScale.y / 4.97f;
-                        scaleZ = child.localScale.z / 1.41f;
+                    else if (child.tag.Contains("SquareReservationSol"))
+                {
+                    childFlag = true;
+                    interactableChildren.Add(child);
+                        scaleX = child.localScale.x ;
+                        scaleY = child.localScale.y ;
+                        scaleZ = child.localScale.z ;
                     }
 
-
-                    writer.WriteLine(Time.time + ", " + child.name + ", " + child.position.x.ToString("F2") + ", " + child.position.y.ToString("F2") + ", " + child.position.z.ToString("F2") + ", " + child.rotation.x.ToString("F2") + ", " + child.rotation.y.ToString("F2") + ", " + child.rotation.z.ToString("F2") + ", " + child.rotation.w.ToString("F2")    + ", " + scaleX.ToString("F2") + ", " + scaleY.ToString("F2") + ", " + scaleZ.ToString("F2"));
-                    Debug.LogError("Reservation : " + child.name + "  " + child.position.ToString() +"   "+ child.rotation.ToString() +   "  "+ child.localScale.ToString());
+                if (childFlag == true)
+                {
+                    writer.WriteLine(Time.time + ", " + child.name + ", " + child.position.x.ToString("F2") + ", " + child.position.y.ToString("F2") + ", " + child.position.z.ToString("F2") + ", " + child.rotation.x.ToString("F2") + ", " + child.rotation.y.ToString("F2") + ", " + child.rotation.z.ToString("F2") + ", " + child.rotation.w.ToString("F2") + ", " + scaleX.ToString("F2") + ", " + scaleY.ToString("F2") + ", " + scaleZ.ToString("F2"));
+                    Debug.LogError("Reservation : " + child.name + "  " + child.position.ToString() + "   " + child.rotation.ToString() + "  " + child.localScale.ToString());
                     count++;
                 }
+                
             }
             writer.Flush();
             Debug.LogError("Number of Reservations : " + count);

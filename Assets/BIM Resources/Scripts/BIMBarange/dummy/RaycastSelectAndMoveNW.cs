@@ -112,7 +112,7 @@ public class RaycastSelectAndMoveNW : Fusion.NetworkBehaviour
         {
             Debug.LogError("Hit : " + hit.transform.name + "   :" + hit.collider.transform.name + " " + hit.transform.tag);
 
-            if (hit.collider.CompareTag("Reservation"))
+            if (hit.collider.tag.Contains("Reservation"))
             {
                 selectedObject = hit.collider.gameObject;
 

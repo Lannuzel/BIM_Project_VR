@@ -32,6 +32,10 @@ TagManager:
   - RingButton
   - Reservation
   - TutorialObject
+  - cylinderReservationSol
+  - cylinderReservationMur
+  - SquareReservationMur
+  - SquareReservationSol
   layers:
   - Default
   - TransparentFX

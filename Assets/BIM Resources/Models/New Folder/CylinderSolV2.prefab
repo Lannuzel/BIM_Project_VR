@@ -1884,7 +1884,7 @@ GameObject:
   - component: {fileID: 6219083929953691327}
   m_Layer: 22
   m_Name: CylinderSolV2
-  m_TagString: Reservation
+  m_TagString: cylinderReservationSol
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

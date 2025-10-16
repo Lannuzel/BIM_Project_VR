@@ -859,7 +859,7 @@ GameObject:
   - component: {fileID: -5899395249734475773}
   m_Layer: 22
   m_Name: SquareHoleFloorV2
-  m_TagString: Reservation
+  m_TagString: SquareReservationSol
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

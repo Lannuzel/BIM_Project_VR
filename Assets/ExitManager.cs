@@ -1,4 +1,5 @@
-using Fusion;
+﻿using Fusion;
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -53,21 +54,32 @@ public class ExitManager : NetworkBehaviour
     private void RPC_BeginExit(float delaySeconds)
     {
         Debug.LogError($"[ExitManager][ALL] Exit sequence received. Quitting in {delaySeconds:0.##}s.");
-        StartCoroutine(ExitAfterDelay(delaySeconds));
+        if (ExitManager.Instance == null)
+            ExitManager.Instance = this;
+
+        if (ExitManager.Instance == this)
+            ExitManager.Instance.StartCoroutine(ExitAfterDelay(delaySeconds));
+
+      //  Debug.LogError($"[ExitManager][ALL] Exit sequence received. Quitting in {delaySeconds:0.##}s.");
+      //  StartCoroutine(ExitAfterDelay(delaySeconds));
     }
-
-    // --- Impl ---
-
-    private IEnumerator ExitAfterDelay(float delaySeconds)
+private IEnumerator ExitAfterDelay(float delaySeconds)
     {
+        // This yield line is REQUIRED.
         yield return new WaitForSeconds(delaySeconds);
 
 #if UNITY_EDITOR
-        Debug.LogError("[ExitManager] Stopping play mode (Editor).");
+        Debug.Log("[ExitManager] Stopping play mode in Editor.");
         UnityEditor.EditorApplication.isPlaying = false;
 #else
-        Debug.Log("[ExitManager] Quitting application (Build).");
-        Application.Quit();
+    Debug.Log("[ExitManager] Quitting application (Build).");
+    Application.Quit();
 #endif
-    }
+    
+
+}
+
+
+// --- Impl ---
+
 }
