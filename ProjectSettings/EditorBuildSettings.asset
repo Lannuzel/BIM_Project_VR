@@ -6,11 +6,14 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/EXP1/Scenes/Tutorial/BIM-EXP_Tutorial_test.unity
-    guid: c9d08ea226e2adc4f95c9a3236bc1d8b
+    path: Assets/EXP1/Scenes/Tutorial/BIM-EXP_Tutorial_V2.unity
+    guid: ba72fc3c155a6cb4ea802bc3ae1ea707
   - enabled: 1
     path: Assets/EXP2/Scene/Exp2-V1-09-06-2025_EXP2_User.unity
     guid: fd74bad6e50aa984abe7c6fe002342a1
+  - enabled: 0
+    path: Assets/EXP1/Scenes/Tutorial/BIM-EXP_Tutorial_test.unity
+    guid: c9d08ea226e2adc4f95c9a3236bc1d8b
   - enabled: 0
     path: Assets/EXP1/Scenes/Exp1_V3.unity
     guid: 87a815ea869454249b02a2a19bbb3be9

@@ -8855,7 +8855,6 @@ MonoBehaviour:
   - {fileID: 23408629}
   - {fileID: 1294848627}
   - {fileID: 922142522}
-  - {fileID: 2040215506}
   tutorialItems: []
 --- !u!1 &238004609 stripped
 GameObject:
