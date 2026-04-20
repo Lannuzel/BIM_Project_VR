@@ -36,6 +36,8 @@ public class ReferenceLineFromObject : NetworkBehaviour
     public float networkedDistanceX { get; set; }
     public float networkedDistanceZ { get; set; }
 
+    public bool isReferingObject = false;
+
     // Start is called before the first frame update
     private void Start()
     {
@@ -78,6 +80,9 @@ public class ReferenceLineFromObject : NetworkBehaviour
     {
         RaycastHit hit;
         Vector3 transformPos = go.transform.position;
+        float xPosOffset = 0f;
+        float zPosOffset = 0f;
+
         Vector3 position = new Vector3(transformPos.x + posOffset.x, transformPos.y + posOffset.y, transformPos.z + posOffset.z);
 
         Transform DirectionLineZ = go.transform.Find("DirectionLineZ");
@@ -87,6 +92,10 @@ public class ReferenceLineFromObject : NetworkBehaviour
         if (DirectionLineZ != null)
         {
 
+            if(isReferingObject)
+            {   zPosOffset = go.GetComponent<Renderer>().bounds.size.z/2;
+                position = new Vector3(transformPos.x + posOffset.x, transformPos.y + posOffset.y, transformPos.z + posOffset.z+ zPosOffset);
+            }
             Transform spawnedUITransform = ObjectInteractionHandler.Instance.FindChildWithTagRecursive(DirectionLineZ, "MeasureUI");
             NetworkedMUI spawnedUI = spawnedUITransform.gameObject.GetComponent<NetworkedMUI>();
 
@@ -120,7 +129,7 @@ public class ReferenceLineFromObject : NetworkBehaviour
                             {
                                 networkTransform.Teleport((currentLine.GetPosition(0) + currentLine.GetPosition(1)) / 2);
 
-                                string data = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " mètre";
+                                string data = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " mÃ©tre";
                                 spawnedUI.SetUIPositions((currentLine.GetPosition(0) + currentLine.GetPosition(1)) / 2, data, true);
 
                                 
@@ -146,6 +155,11 @@ public class ReferenceLineFromObject : NetworkBehaviour
 
         if (DirectionLineX != null)
         {
+            if(isReferingObject)
+            {   xPosOffset = go.GetComponent<Renderer>().bounds.size.x/2;
+                position = new Vector3(transformPos.x + posOffset.x +xPosOffset, transformPos.y + posOffset.y, transformPos.z );
+            }
+
             Transform spawnedUITransform = ObjectInteractionHandler.Instance.FindChildWithTagRecursive(DirectionLineX, "MeasureUI");
             NetworkedMUI spawnedUI = spawnedUITransform.gameObject.GetComponent<NetworkedMUI>();
 
@@ -179,7 +193,7 @@ public class ReferenceLineFromObject : NetworkBehaviour
                             {
                                 networkTransform.Teleport((currentLine.GetPosition(0) + currentLine.GetPosition(1)) / 2);
 
-                                string data = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " mètre";
+                                string data = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " mÃ©tre";
                                 spawnedUI.SetUIPositions((currentLine.GetPosition(0) + currentLine.GetPosition(1)) / 2, data, true);
 
                             
@@ -266,6 +280,11 @@ public class ReferenceLineFromObject : NetworkBehaviour
 
     private GameObject DrawLine(GameObject go, Vector3 p1, Vector3 p2, string name)
     {
+
+
+
+
+
 
         Fusion.NetworkObject spawnNWLine = null;
         NetworkManager.Instance.Runner.Spawn(linePrefab, Vector3.zero, linePrefab.transform.rotation, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>

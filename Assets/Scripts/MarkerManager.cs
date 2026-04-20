@@ -10,6 +10,8 @@ public class MarkerManager : MonoBehaviour
     private List<ChairPositionDataLogger> chairPositionLogger = new List<ChairPositionDataLogger>();
     private List<ReservationPositionDataLogger> reservationPositionDataLoggers = new List<ReservationPositionDataLogger>();
 
+    private List<CalepinagePositionDataLogger> calepinagePositionDataLogger = new List<CalepinagePositionDataLogger>();
+
     private bool successStatus = true;
     void Start()
     {
@@ -20,6 +22,7 @@ public class MarkerManager : MonoBehaviour
         eyeLoggers.AddRange(FindObjectsOfType<EyeTrackingDataLogger>());
         chairPositionLogger.AddRange(FindObjectsOfType<ChairPositionDataLogger>());
         reservationPositionDataLoggers.AddRange (FindObjectsOfType<ReservationPositionDataLogger>());
+        calepinagePositionDataLogger.AddRange(FindObjectsOfType<CalepinagePositionDataLogger>());
     }
     public void StopAllRecordingsTimeOut()
     {
@@ -79,7 +82,13 @@ public class MarkerManager : MonoBehaviour
             reservationLogger.StopRecording();
             Debug.LogError("Enregistrement ReservationLogs arrêté.");
         }
-
+        Debug.Log("Arrêt des enregistrements dans les calepinagePositionDataLogger...");
+        foreach (var calepinageLogger in calepinagePositionDataLogger)
+        {
+            calepinageLogger.AddCalepinagePositionLog (successStatus);
+            calepinageLogger.StopRecording();
+            Debug.LogError("Enregistrement calepinageLogger arrêté.");
+        }
 
         Debug.Log("Tous les enregistrements ont été arrêtés avec succès.");
     }
@@ -131,7 +140,13 @@ public class MarkerManager : MonoBehaviour
             reservationLogger.AddMarker();
             Debug.LogError("marker ajouté dans une ReservationLogger.");
         }
-
+        // Ajoutez un marker dans les fichiers CSV
+        Debug.Log("Ajout du marker dans les calepinagePositionLogger...");
+        foreach (var calepinageLogger in calepinagePositionDataLogger)
+        {
+            calepinageLogger.AddMarker();
+            Debug.Log($"Marker ajouté dans un CalepinagepositionLogger.");
+        }
         Debug.Log($"Ajout du marker terminé.");
     }
 

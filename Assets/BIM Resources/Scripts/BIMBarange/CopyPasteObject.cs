@@ -38,8 +38,23 @@ public class CopyPasteObject : Fusion.NetworkBehaviour
             {
 
                 Vector3 spawnPosition = obj.transform.position + copyPasteOffset;
-                spawnPosition.y = 0;
+                spawnPosition.y = 2.126f;   // Set to fixed height for block;
+                // Adjust height based on object type :: specfic for the exp3 
+                if(obj.transform.name.Contains("Ventilator"))
+                {
+                    spawnPosition.y = 2.112f;   // Set to fixed height for ventilator
+                }
+                else if (obj.transform.name.Contains("Lumier"))
+                {
+                    spawnPosition.y = 2.11f;   // Set to fixed height for light
+                }
+                else if (obj.transform.name.Contains("AirTerminal"))
+                {
+                    spawnPosition.y = 2.11f;   // Set to fixed height for air terminal
+                }
 
+
+               
                 NetworkManager.Instance.Runner.Spawn(
                     obj,
                     spawnPosition,

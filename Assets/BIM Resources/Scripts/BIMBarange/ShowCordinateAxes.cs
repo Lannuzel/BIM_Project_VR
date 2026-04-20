@@ -73,7 +73,7 @@ public class ShowCoordinateAxes : MonoBehaviour
     private void UpdateAxes(Transform positionRef)
     {
         if (axisLines == null || axisLines.Length < 3) return;
-
+        /*
         // X-axis
         axisLines[0].SetPosition(0, positionRef.position+ axesOffset);
         axisLines[0].SetPosition(1, positionRef.position+ axesOffset + positionRef.right * axisLength);
@@ -85,6 +85,18 @@ public class ShowCoordinateAxes : MonoBehaviour
         // Z-axis
         axisLines[2].SetPosition(0, positionRef.position + axesOffset);
         axisLines[2].SetPosition(1, positionRef.position + axesOffset+ positionRef.forward * axisLength);
+*/
+        // X-axis
+        axisLines[0].SetPosition(0, positionRef.position+ axesOffset);
+        axisLines[0].SetPosition(1, positionRef.position+ axesOffset + positionRef.right * axisLength);
+
+        // Y-axis
+        axisLines[1].SetPosition(0, positionRef.position + axesOffset);
+        axisLines[1].SetPosition(1, positionRef.position + axesOffset + positionRef.forward  * axisLength);
+
+        // Z-axis
+        axisLines[2].SetPosition(0, positionRef.position + axesOffset);
+        axisLines[2].SetPosition(1, positionRef.position + axesOffset+ positionRef.up * axisLength);
 
         xAxisTextGo.transform.position = axisLines[0].GetPosition(1);
         zAxisTextGo.transform.position = axisLines[1].GetPosition(1);

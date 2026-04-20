@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using TMPro;
 
 public class ObjectInteractionHandler : NetworkBehaviour
 {
@@ -11,6 +12,14 @@ public class ObjectInteractionHandler : NetworkBehaviour
     private static ObjectInteractionHandler _instance;
     public float spawnDistance = 2.0f; // Distance at which the object spawns
     public GameObject spawnedObjectPrefab; // The prefab to spawn
+    public GameObject spawnedLumierPrefab; // The prefab to spawn
+    public GameObject spawnedAirTerminalPrefab; // The prefab to spawn
+    public GameObject spawnedVentilatorPrefab; // The prefab to spawn
+
+    public float spawnHeight = 0.0f; // Height at which the object spawns
+
+
+
     private GameObject spawnedObject;
 
     public List<GameObject> selectedObjects = new List<GameObject>(); // List of selected objects
@@ -20,7 +29,9 @@ public class ObjectInteractionHandler : NetworkBehaviour
     public Transform runTimeGeneratedResources;
     public Transform instantiatedChaires;
 
-
+    public Transform dalleReference; 
+     public TMP_InputField  pourcentageRepereInput; 
+    public TMP_InputField  tauxDeBrassageInput; 
 
     public static ObjectInteractionHandler Instance
     {
@@ -61,7 +72,10 @@ public class ObjectInteractionHandler : NetworkBehaviour
     public void SpawnObject()
     {
         Vector3 spawnPosition = cameraTransform.transform.position + cameraTransform.forward * spawnDistance;
-        spawnPosition.y = 0;
+        //spawnPosition.y = 0; // Set to ground level for chair
+
+        spawnPosition.y = 2.126f;   // Set to fixed height for block
+
         /*  spawnedObject = Instantiate(spawnedObjectPrefab, spawnPosition, Quaternion.identity);
           spawnedObject.transform.rotation = spawnedObjectPrefab.transform.rotation;
           spawnedObject.transform.parent = runTimeGeneratedResources;
@@ -82,6 +96,52 @@ public class ObjectInteractionHandler : NetworkBehaviour
         SelectObjects(spawnObj.gameObject);
         spawnedObject = null;
     }
+
+    //spawn light height 2.126f
+    //spawn ventilator height 2.0975  2.3318f
+    //spawn air terminal height 2.126f
+    public void SpawnObject(GameObject prefabToSpawn )
+    {
+        
+        Vector3 spawnPosition = cameraTransform.transform.position + cameraTransform.forward * spawnDistance;
+        spawnPosition.y = 0; // Set to ground level for chair
+        if(prefabToSpawn.transform.name.Contains("Ventilator"))
+        {
+            spawnPosition.y = 2.112f;   // Set to fixed height for ventilator
+        }
+        else if (prefabToSpawn.transform.name.Contains("Lumier"))
+        {
+            spawnPosition.y = 2.11f;   // Set to fixed height for light
+        }
+        else if (prefabToSpawn.transform.name.Contains("AirTerminal"))
+        {
+            spawnPosition.y = 2.11f;   // Set to fixed height for air terminal
+        }
+   // Set to fixed height for block
+
+        /*  spawnedObject = Instantiate(spawnedObjectPrefab, spawnPosition, Quaternion.identity);
+          spawnedObject.transform.rotation = spawnedObjectPrefab.transform.rotation;
+          spawnedObject.transform.parent = runTimeGeneratedResources;
+        */
+        Fusion.NetworkObject spawnObj = null;
+        NetworkManager.Instance.Runner.Spawn(prefabToSpawn, Vector3.zero, prefabToSpawn.transform.rotation, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
+        {
+            spawnObj = obj;
+        });
+
+
+        /*Fusion.NetworkObject spawnObj =  NetworkManager.Instance.Runner.Spawn(spawnedObjectPrefab);
+        spawnObj.AssignInputAuthority(NetworkManager.Instance.Runner.LocalPlayer);
+       */
+        spawnObj.transform.position = spawnPosition;
+        spawnObj.transform.rotation = prefabToSpawn.transform.rotation;
+        spawnObj.transform.parent = instantiatedChaires;
+        SelectObjects(spawnObj.gameObject);
+        spawnedObject = null;
+    }
+
+
+
     public void SpawnObjectTutorial()
     {
         Vector3 spawnPosition = cameraTransform.transform.position + cameraTransform.forward * spawnDistance;
@@ -98,10 +158,49 @@ public class ObjectInteractionHandler : NetworkBehaviour
         {
             objectOutliner.EnableOutLine(hitObject.transform);
             //HighlightObject(hitObject);
-            CreateBoundingBox(hitObject);
+            CreateNewRectangleBB(hitObject);
+           // CreateBoundingBox(hitObject);
             selectedObjects.Add(hitObject);
         }
 
+    }
+
+public void CreateNewRectangleBB(GameObject targetObject)
+    {
+        if (targetObject == null)
+        {
+            Debug.LogWarning("Reference rectangle is not assigned!");
+            return;
+        }
+
+        // Create a new cube (default size 1x1x1)
+        GameObject newRectangle = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        newRectangle.transform.name = "BoundingBox";
+        BoxCollider boxCollider = targetObject.GetComponent<BoxCollider>();
+
+        Vector3 worldSize = Vector3.Scale(boxCollider.size, targetObject.transform.lossyScale);
+
+        // Apply the size
+        newRectangle.transform.localScale = worldSize; 
+
+
+
+        // Match the position (optional)
+        newRectangle.transform.position = targetObject.transform.position + new Vector3(0f, 0.0f, 0f); // offset so it's not overlapping
+
+        // Copy rotation if desired (optional)
+        newRectangle.transform.rotation = targetObject.transform.rotation;
+
+        // Assign material if provided
+        if (boundingBoxMaterial != null)
+        {
+            Renderer renderer = newRectangle.GetComponent<Renderer>();
+            renderer.material = boundingBoxMaterial;
+        }
+        // Make the bounding box a child of the target object
+        newRectangle.transform.SetParent(targetObject.transform);
+
+        Debug.Log("New rectangle created with the same dimensions as the reference!");
     }
 
     public void CreateBoundingBox(GameObject targetObject)
@@ -272,5 +371,62 @@ public class ObjectInteractionHandler : NetworkBehaviour
             }
         }
         return null;
+    }
+
+    public void ScaleSelectedObjectsWithDalleReference()
+    { 
+        if (float.TryParse(pourcentageRepereInput.text, out float scale))
+        {
+            foreach (GameObject obj in selectedObjects)
+            {   
+                NetworkObject networkObj = obj.GetComponent<NetworkObject>();
+                if (networkObj != null && networkObj.HasStateAuthority)
+                {    
+                            Renderer rendA = dalleReference.GetComponent<Renderer>();
+                            Renderer rendB = obj.GetComponent<Renderer>();
+
+                            if (rendA == null || rendB == null)
+                            {
+                                Debug.LogError("Both objects must have a Renderer.");
+                                return;
+                            }
+
+                            // Use magnitude to handle any orientation
+                            float sizeA = rendA.bounds.size.magnitude;
+                            float sizeB = rendB.bounds.size.magnitude;
+
+                            // Scale factor needed
+                            float scaleFactor = (sizeA * scale/100) / sizeB;
+
+                            // Apply uniformly
+                            //objectB.localScale *= scaleFactor;
+                   
+                    ScaleNetworked scaleNetworked = obj.GetComponent<ScaleNetworked>();
+                    if (scaleNetworked != null)
+                    {  
+                        
+                        scaleNetworked.ScaleFactor *= scaleFactor;
+                        scaleNetworked.ApplyScale();
+                    }
+                }
+            }
+        }    
+    }
+
+    public void setTauxDeBrassage()
+    {
+        if (float.TryParse(tauxDeBrassageInput.text, out float taux))
+        {
+            foreach (GameObject obj in selectedObjects)
+            {   
+                ResourceProperties resourceProps = obj.GetComponent<ResourceProperties>();
+                if (resourceProps != null)
+                {  
+                    
+                    resourceProps.tauxDeBrassage = taux;
+                }
+            }
+        }
+        
     }
 }

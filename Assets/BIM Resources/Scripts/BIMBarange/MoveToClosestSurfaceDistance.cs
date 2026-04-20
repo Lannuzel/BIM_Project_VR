@@ -256,6 +256,21 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
             // newPosition = newPosition;
             newPosition.y = 0;
 
+
+                            // Adjust height based on object type :: specfic for the exp3 
+                if(objToMove.transform.name.Contains("Ventilator"))
+                {
+                    newPosition.y = 2.112f;   // Set to fixed height for ventilator
+                }
+                else if (objToMove.transform.name.Contains("Lumier"))
+                {
+                    newPosition.y = 2.1f;   // Set to fixed height for light
+                }
+                else if (objToMove.transform.name.Contains("AirTerminal"))
+                {
+                    newPosition.y = 2.108f;   // Set to fixed height for air terminal
+                }
+
             //Vector3 newPosition = objToMove.transform.position;
             Collider collider = objToMove.transform.GetComponent<Collider>();
             if (normal.x < 0)
