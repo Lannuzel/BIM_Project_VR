@@ -1,0 +1,54 @@
+{
+    "name": "XRIBIMInputActions",
+    "maps": [
+        {
+            "name": "XRIBIMInputActions",
+            "id": "61e83f5f-e552-4bf9-9992-f8e6a2803b03",
+            "actions": [
+                {
+                    "name": "Select",
+                    "type": "Button",
+                    "id": "f491498c-43d3-48ce-8904-aaf2164a0661",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Grip",
+                    "type": "Button",
+                    "id": "7c1da92b-5e7f-446c-973f-43d0d4205db2",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "ca61155c-4fbb-4203-b6ad-01beab65235f",
+                    "path": "<XRController>{RightHand}/triggerPressed",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Select",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "4ccfe25b-26b4-4983-ba87-dac3f843d1d8",
+                    "path": "<XRController>{RightHand}/gripPressed",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Grip",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}

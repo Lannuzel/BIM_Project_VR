@@ -9274,7 +9274,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   eyeTrackingRay: {fileID: 8961301539984056978}
-  csvFilePath: ./Data/EyeTrackingData.csv
 --- !u!114 &8096608835332839779
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9288,7 +9287,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   faceExpressions: {fileID: 494176028428605401}
-  csvFilePath: ./Data/FaceTrackingData.csv
 --- !u!114 &4895252439112364143
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9301,7 +9299,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d12c71db8b85ce41bca26dc08af425d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fileName: ./Data/UserPositions.csv
   logInterval: 0.5
 --- !u!1 &4158409086097618108
 GameObject:
@@ -21841,6 +21838,18 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 8138384286166402689}
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7681372687013864540, guid: d93b7e04b48cd7b4fa849695dba2ce9c,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5494277660761248800}
+    - targetCorrespondingSourceObject: {fileID: 7681372687013864540, guid: d93b7e04b48cd7b4fa849695dba2ce9c,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6764199792002050214}
+    - targetCorrespondingSourceObject: {fileID: 7681372687013864540, guid: d93b7e04b48cd7b4fa849695dba2ce9c,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5819108335333201631}
     - targetCorrespondingSourceObject: {fileID: 4919022601422764147, guid: d93b7e04b48cd7b4fa849695dba2ce9c,
         type: 3}
       insertIndex: 1
@@ -21948,6 +21957,78 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 3697781295462640805}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &6469596502069807353 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7681372687013864540, guid: d93b7e04b48cd7b4fa849695dba2ce9c,
+    type: 3}
+  m_PrefabInstance: {fileID: 3697781295462640805}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5494277660761248800
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6469596502069807353}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52533ce298297d445af44231c38bcf5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerTransform: {fileID: 6469596502069807352}
+  headTransform: {fileID: 8580140698396657904}
+  leftHandTransform: {fileID: 8580140698396739872}
+  rightHandTransform: {fileID: 8580140698396753188}
+--- !u!136 &6764199792002050214
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6469596502069807353}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.2
+  m_Height: 0
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.6, z: 0}
+--- !u!54 &5819108335333201631
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6469596502069807353}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 112
+  m_CollisionDetection: 0
 --- !u!114 &6731046622936174093 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7942189488813793960, guid: d93b7e04b48cd7b4fa849695dba2ce9c,
@@ -22155,7 +22236,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a951bec8847cf444913cde9c6aed63b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  userName: User_test
 --- !u!1 &8580140698396366034 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4919022601422764151, guid: d93b7e04b48cd7b4fa849695dba2ce9c,
