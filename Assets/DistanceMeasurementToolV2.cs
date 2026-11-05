@@ -60,11 +60,7 @@ public class DistanceMeasurementToolV2 : NetworkBehaviour
         playerInputActions = MeasurementHandlerV2.Instance.playerInputActions;
         playerInputActions.XRIRightInteraction.Enable();
 
-        //adding actionListeners
-        playerInputActions.XRIRightInteraction.Select.performed += DrawLine_performed;
-        playerInputActions.XRIRightInteraction.Select.canceled += DrawLine_endDrawing;
-
-        playerInputActions.XRILeftInteraction.Delete.performed += DeleteLastLine_performed;
+        // N5 : abonnements faits dans OnEnable uniquement (Awake + OnEnable doublait chaque appui).
     }
     private void OnEnable()
     {
@@ -111,9 +107,9 @@ public class DistanceMeasurementToolV2 : NetworkBehaviour
             spawnedLine = null;
             spawnRefStart = null;
             spawnRefEnd = null;
-            if (lineObj.activeSelf)
+            if (lineObj != null && lineObj.activeSelf)
             {
-             //   MeasurementHandler.Instance.AddLine(lineObj.transform);
+                UndoManager.RecordSpawn("Tracer une mesure", lineObj);
                 lineObj = null;
              //   MeasurementHandler.Instance.lineCount++;
                 // Destroy(lineObj);
@@ -132,9 +128,9 @@ public class DistanceMeasurementToolV2 : NetworkBehaviour
             spawnedLine = null;
             spawnRefStart = null;
             spawnRefEnd = null;
-            if (lineObj.activeSelf)
+            if (lineObj != null && lineObj.activeSelf)
             {
-              //  MeasurementHandler.Instance.AddLine(lineObj);
+                UndoManager.RecordSpawn("Tracer une mesure", lineObj);
                 lineObj = null;
              //   MeasurementHandler.Instance.lineCount++;
                 // Destroy(lineObj);
@@ -262,7 +258,7 @@ public class DistanceMeasurementToolV2 : NetworkBehaviour
 
         lineObj.SetActive(false);
         // Perform the first raycast
-        if (Physics.Raycast(ray, out RaycastHit firstHit, rayLength))
+        if (Physics.Raycast(ray, out RaycastHit firstHit, rayLength, raycastLayerMask))
         {
             firstPoint = firstHit.point;
             Vector3 normal = firstHit.normal;

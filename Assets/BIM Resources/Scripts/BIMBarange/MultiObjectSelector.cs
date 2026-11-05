@@ -50,14 +50,7 @@ public class MultiObjectSelector : Fusion.NetworkBehaviour
         playerInputActions.XRIRightInteraction.Enable();
         playerInputActions.XRILeftInteraction.Enable();
 
-        //adding actionListeners
-        playerInputActions.XRIRightInteraction.Select.performed += SelectObject_performed;
-     //   playerInputActions.XRIRightInteraction.CopyPaste.performed += CopyPaste_performed;
-     //   playerInputActions.XRIRightInteraction.Spawn.performed += SpawnObject_performed;
-  
-        // playerInputActions.XRIRightInteraction.Activate.canceled += DrawLine_endDrawing;
-
-        playerInputActions.XRILeftInteraction.Delete.performed += DeleteSelectedObjects_performed;
+        // N5 : abonnements faits dans OnEnable uniquement (Awake + OnEnable doublait chaque appui).
     }
     private void OnEnable()
     {
@@ -303,9 +296,20 @@ public class MultiObjectSelector : Fusion.NetworkBehaviour
         }
     }
 
+    private UndoManager.PoseSnapshot joystickMoveUndo;
+
     public void  MoveObjectsXZ()
     {
         Vector2 movementInput = playerInputActions.XRIRightInteraction.Move.ReadValue<Vector2>();
+        bool moving = movementInput.sqrMagnitude > 0.0001f;
+        if (moving && joystickMoveUndo == null)
+            joystickMoveUndo = UndoManager.CapturePoses(selectedObjects);
+        else if (!moving && joystickMoveUndo != null)
+        {
+            UndoManager.RecordPoseChange("Deplacer au joystick", joystickMoveUndo);
+            joystickMoveUndo = null;
+        }
+        if (!moving) return;
         Vector3 forward = cameraTransform.forward;
         Vector3 right = cameraTransform.right;
 

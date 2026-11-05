@@ -55,12 +55,7 @@ public class ModifyDistanceMeasurement : NetworkBehaviour
         playerInputActions.XRIRightInteraction.Enable();
         playerInputActions.XRILeftInteraction.Enable(); 
 
-        //adding actionListeners
-        playerInputActions.XRIRightInteraction.Select.performed += DrawLine_performed;
-        playerInputActions.XRIRightInteraction.Select.canceled += DrawLine_endDrawing;
-
-        playerInputActions.XRILeftInteraction.Delete.performed += DeleteLastLine_performed;
-
+        // N5 : abonnements faits dans OnEnable uniquement (Awake + OnEnable doublait chaque appui).
     }
     private void OnEnable()
     {
