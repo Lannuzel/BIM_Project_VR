@@ -12,6 +12,8 @@ public class RaycastSelectAndMoveNW : Fusion.NetworkBehaviour
     public float moveSpeed = 10.0f;
     public float rayDistance = 10f;
     public float objectFollowSpeed = 10f;   // How fast the object follows
+    [Tooltip("F8 : vitesse de rotation au joystick (degres par seconde).")]
+    public float rotationSpeed = 180f;
 
     private GameObject selectedObject;
     private float grabDistance = 3f;
@@ -240,7 +242,7 @@ public class RaycastSelectAndMoveNW : Fusion.NetworkBehaviour
 
         if (selectedObject == null) return;
 
-        float rotationSpeed = 90f; // degrees/sec
+        float rotationSpeed = this.rotationSpeed; // F8 : degres/s, reglable dans l'inspecteur
         float yaw = 0f;
         float pitch = 0f;
 
@@ -289,11 +291,8 @@ public class RaycastSelectAndMoveNW : Fusion.NetworkBehaviour
             }
             else
             {
-                selectedObject.transform.rotation = Quaternion.Slerp(
-                    selectedObject.transform.rotation,
-                    totalRotation,
-                    Time.deltaTime * objectFollowSpeed
-                );
+                // F8 : rotation appliquee directement (le Slerp precedent divisait la vitesse effective).
+                selectedObject.transform.rotation = totalRotation;
             }
         }
         Debug.LogError("trying to rotate object");

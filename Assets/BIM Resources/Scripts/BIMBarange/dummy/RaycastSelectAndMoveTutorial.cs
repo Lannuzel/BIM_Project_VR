@@ -18,6 +18,8 @@ public class RaycastSelectAndMoveTutorial : MonoBehaviour
     public float moveSpeed = 1.0f;
     public float rayDistance = 10f;
     public float objectFollowSpeed = 10f;   // How fast the object follows
+    [Tooltip("F8 : vitesse de rotation au joystick (degres par seconde).")]
+    public float rotationSpeed = 180f;
 
     public Material highlightMaterial;     // Material to highlight selected line
 
@@ -230,7 +232,6 @@ public class RaycastSelectAndMoveTutorial : MonoBehaviour
 
         if (selectedObject == null) return;
 
-        float rotationSpeed = 90f; // degrees/sec
         float yaw = 0f;
 
         // Joystick horizontal : rotation autour de l'axe vertical
@@ -248,12 +249,8 @@ public class RaycastSelectAndMoveTutorial : MonoBehaviour
         float deltaRoll = Mathf.DeltaAngle(previousControllerRoll, currentRoll);
         previousControllerRoll = currentRoll;
 
-        Quaternion totalRotation = selectedObject.transform.rotation * deltaJoystickRotation;
-        selectedObject.transform.rotation = Quaternion.Slerp(
-            selectedObject.transform.rotation,
-            totalRotation,
-            Time.deltaTime * objectFollowSpeed
-        );
+        // F8 : rotation appliquee directement (le Slerp precedent divisait la vitesse effective).
+        selectedObject.transform.rotation = selectedObject.transform.rotation * deltaJoystickRotation;
     }
 
     private void TrySelectObject()
