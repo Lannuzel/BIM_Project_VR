@@ -209,8 +209,9 @@ public class ReferenceLineFromObject : NetworkBehaviour
 
     private GameObject DrawLine(GameObject go, Vector3 p1, Vector3 p2, string name)
     {
-        Fusion.NetworkObject spawnNWLine = NetworkObjectUtils.Runner.Spawn(linePrefab, Vector3.zero, linePrefab.transform.rotation, NetworkObjectUtils.Runner.LocalPlayer);
-        if (spawnNWLine == null) return null;
+        NetworkedLine spawnedLineComponent = NetworkObjectUtils.Runner.Spawn(linePrefab, Vector3.zero, linePrefab.transform.rotation, NetworkObjectUtils.Runner.LocalPlayer);
+        if (spawnedLineComponent == null) return null;
+        Fusion.NetworkObject spawnNWLine = spawnedLineComponent.Object;
 
         spawnNWLine.transform.name = name;
         spawnNWLine.transform.parent = go.transform;
