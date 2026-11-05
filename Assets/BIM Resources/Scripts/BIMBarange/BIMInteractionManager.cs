@@ -36,7 +36,7 @@ public class BIMInteractionManager : MonoBehaviour
 
     public void ActiveLogRecorder(GameObject gameObject)
     {
-        string playerName = PlayerPrefs.GetString("PlayerName", $"Player {NetworkManager.Instance.Runner.LocalPlayer.PlayerId}");
+        string playerName = NetworkManager.GetLocalPlayerName();
         if(playerName == userName)
         {
             ToggleActivation(gameObject);   

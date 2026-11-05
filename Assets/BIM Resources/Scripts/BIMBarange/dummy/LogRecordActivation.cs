@@ -20,7 +20,7 @@ public class LogRecordActivation : MonoBehaviour
 
     public void ActiveLogRecorder(GameObject go)
     {
-        string playerName = PlayerPrefs.GetString("PlayerName", $"Player {NetworkManager.Instance.Runner.LocalPlayer.PlayerId}");
+        string playerName = NetworkManager.GetLocalPlayerName();
         if (playerName == userName)
         {
             go.SetActive(true);

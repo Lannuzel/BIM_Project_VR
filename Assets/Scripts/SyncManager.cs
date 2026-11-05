@@ -64,7 +64,7 @@ public class SyncManager : NetworkBehaviour
     }
     private void StartRecording()
     {
-        string playerName = PlayerPrefs.GetString("PlayerName", $"Player {NetworkManager.Instance.Runner.LocalPlayer.PlayerId}");
+        string playerName = NetworkManager.GetLocalPlayerName();
         markerManager.AddMarkerToAllLogs();
         Debug.LogError("Recording started for all trackers: ! : "+ playerName);
         IsRecordingStarted = true;
@@ -79,7 +79,7 @@ public class SyncManager : NetworkBehaviour
 
     private void StopRecording()
     {
-        string playerName = PlayerPrefs.GetString("PlayerName", $"Player {NetworkManager.Instance.Runner.LocalPlayer.PlayerId}");
+        string playerName = NetworkManager.GetLocalPlayerName();
         Debug.LogError("Runner.SimulationTime : " + NetworkManager.Instance.Runner.SimulationTime +  "SyncStart : " + syncStartTime + "  SyncEnd : " + syncEndTime + "  difference : " + (syncEndTime - syncStartTime));
 
             markerManager.StopAllRecordings();
@@ -100,7 +100,7 @@ public class SyncManager : NetworkBehaviour
     }
     private void StopRecordingTimeout()
     {
-        string playerName = PlayerPrefs.GetString("PlayerName", $"Player {NetworkManager.Instance.Runner.LocalPlayer.PlayerId}");
+        string playerName = NetworkManager.GetLocalPlayerName();
         Debug.LogError("Runner.SimulationTime : " + NetworkManager.Instance.Runner.SimulationTime + "SyncStart : " + syncStartTime + "  SyncEnd : " + syncEndTime + "  difference : " + (syncEndTime - syncStartTime));
 
         markerManager.StopAllRecordingsTimeOut();

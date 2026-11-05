@@ -11,7 +11,7 @@ public class RawImageTextureLoader : MonoBehaviour
 
     public void Awake()
     {
-        string playerName = PlayerPrefs.GetString("PlayerName", $"Player {NetworkManager.Instance.Runner.LocalPlayer.PlayerId}");
+        string playerName = NetworkManager.GetLocalPlayerName();
         if (playerName == "Lecteur")
         {
             rawImage.texture = userDocuments[0];

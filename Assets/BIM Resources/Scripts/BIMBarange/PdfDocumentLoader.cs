@@ -16,7 +16,7 @@ public class PdfDocumentLoader : MonoBehaviour
 
     public void Awake()
     {
-        string playerName = PlayerPrefs.GetString("PlayerName", $"Player {NetworkManager.Instance.Runner.LocalPlayer.PlayerId}");
+        string playerName = NetworkManager.GetLocalPlayerName();
         if (playerName == "Lecteur")
         {
             ShowPdfFromStreamingAssets(pdfRoleDocs[0]);
@@ -112,7 +112,7 @@ public class PdfDocumentLoader : MonoBehaviour
         }
 
 
-        /*  string playerName = PlayerPrefs.GetString("PlayerName", $"Player {NetworkManager.Instance.Runner.LocalPlayer.PlayerId}");
+        /*  string playerName = NetworkManager.GetLocalPlayerName();
           if (playerName == "Lecteur")
           {
               string fullPath = Path.Combine(UnityEngine.Application.streamingAssetsPath, pdfRoleDocs[0]);

@@ -13,7 +13,7 @@ public class ShowPersonalisedMenu : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        string playerName = PlayerPrefs.GetString("PlayerName", $"Player {NetworkManager.Instance.Runner.LocalPlayer.PlayerId}");
+        string playerName = NetworkManager.GetLocalPlayerName();
 
         if (playerName == "Lecteur")
         {

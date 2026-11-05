@@ -30,7 +30,7 @@ public class HostController : NetworkBehaviour
     void Update()
     {
         // Appuyer sur la touche "Space" pour démarrer la synchronisation
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Space) && NetworkManager.Instance.IsRunning && SyncManager.Instance != null)
         {
             float currentNetworkTime = NetworkManager.Instance.Runner.SimulationTime; // Récupérer l'heure réseau actuelle
             SyncManager.Instance.RPC_StartSynchronization(currentNetworkTime);
@@ -45,6 +45,12 @@ public class HostController : NetworkBehaviour
 
     public void StartLogSynchornisation()
     {
+        if (!NetworkManager.Instance.IsRunning || SyncManager.Instance == null)
+        {
+            Debug.LogError("[HostController] Impossible de lancer la synchronisation : session réseau inactive.");
+            NetworkStatusPanel.Show("Session réseau inactive : impossible de lancer l'activité.", 5f);
+            return;
+        }
         float currentNetworkTime = NetworkManager.Instance.Runner.SimulationTime; // Récupérer l'heure réseau actuelle
         SyncManager.Instance.RPC_StartSynchronization(currentNetworkTime);
 
@@ -53,6 +59,13 @@ public class HostController : NetworkBehaviour
     }
     public void StoptLogSynchornisation()
     {
+        if (!NetworkManager.Instance.IsRunning || SyncManager.Instance == null)
+        {
+            Debug.LogError("[HostController] Session réseau inactive : arrêt local des enregistrements.");
+            var marker = FindObjectOfType<MarkerManager>();
+            if (marker != null) marker.StopAllRecordings();
+            return;
+        }
         float currentNetworkTime = NetworkManager.Instance.Runner.SimulationTime; // Récupérer l'heure réseau actuelle
         SyncManager.Instance.RPC_StopSynchronization(currentNetworkTime);
         Debug.LogError("Sent synchronization Stop signal to all clients.");
