@@ -1,13 +1,14 @@
+using System;
+using TMPro;
 using UnityEngine;
-using OVR;
-using UnityEngine.Animations.Rigging;
-using Oculus.Interaction;
-using Fusion;
-using UnityEngine.InputSystem;
-using System.IO.MemoryMappedFiles;
-using Meta.WitAi;
-using Oculus.Interaction.DebugTree;
 
+/// <summary>
+/// Étape « déplacer un objet » du tutoriel (F5).
+/// Sélection au grip droit (gâchette intérieure) en pointant l'objet marqué « TutorialObject »,
+/// déplacement au joystick droit, bascule déplacement / rotation avec le bouton A.
+/// L'étape est validée quand l'objet est posé à moins de <see cref="positionTolerance"/> de sa cible
+/// (l'ombre bleue, <see cref="targetTransform"/>).
+/// </summary>
 public class RaycastSelectAndMoveTutorial : MonoBehaviour
 {
     public Transform cameraTransform;
@@ -18,14 +19,34 @@ public class RaycastSelectAndMoveTutorial : MonoBehaviour
     public float rayDistance = 10f;
     public float objectFollowSpeed = 10f;   // How fast the object follows
 
-    private GameObject selectedObject;
-    private float grabDistance = 3f;
-    private Vector3 initialLocalOffset; // Local offset from controller to object when selected
+    public Material highlightMaterial;     // Material to highlight selected line
 
-    private XRIBIMInputActions playerInputActions;
-    private ObjectInteractionHandler objectInteractionHandler;
+    [Header("Validation (F5)")]
+    [Tooltip("Cible à atteindre (l'ombre bleue). Si vide : l'enfant nommé « Cylinder (1) ».")]
+    public Transform targetTransform;
+    [Tooltip("Objet à déplacer. Si vide : le premier enfant portant le tag « TutorialObject ».")]
+    public Transform tutorialObject;
+    [Tooltip("Écart de position toléré (m) entre l'objet et sa cible.")]
+    public float positionTolerance = 0.05f;
+    [Tooltip("Vérifier aussi l'orientation (inutile pour un cylindre symétrique).")]
+    public bool checkRotation = false;
+    [Tooltip("Écart d'orientation toléré (degrés) si checkRotation est actif.")]
+    public float angleTolerance = 15f;
+    [Tooltip("Texte optionnel d'état pour le tutoriel.")]
+    public TMP_Text statusText;
+
+    /// <summary>Vrai quand l'objet est posé sur sa cible (dans la tolérance) et relâché.</summary>
+    public bool IsCompleted { get; private set; }
+
+    /// <summary>Déclenché quand l'état de validation change.</summary>
+    public event Action<bool> CompletionChanged;
+
+    /// <summary>Dernier message d'aide affiché (écart restant, conseil).</summary>
+    public string LastMessage { get; private set; } = string.Empty;
+
+    private GameObject selectedObject;
+    private Vector3 initialLocalOffset; // Local offset from controller to object when selected
     private Vector3 cumulativeJoystickOffset = Vector3.zero;
-    private Quaternion initialRotationOffset;
 
     private enum ControlMode { Translate, Rotate }
     private ControlMode currentMode = ControlMode.Translate;
@@ -33,39 +54,51 @@ public class RaycastSelectAndMoveTutorial : MonoBehaviour
 
     private float previousControllerRoll = 0f;
 
-
-    public Material highlightMaterial;     // Material to highlight selected line
     private Material originalMaterial;
+    private Renderer objectRenderer; // Renderer of the selected object
 
-    private Renderer objectRenderer; // Renderer of the GameObject
-    private void Start()
+    private void Awake()
     {
-       
+        if (targetTransform == null)
+            targetTransform = transform.Find("Cylinder (1)");
+
+        if (tutorialObject == null)
+        {
+            foreach (Transform child in GetComponentsInChildren<Transform>(true))
+            {
+                if (child != transform && child.CompareTag("TutorialObject"))
+                {
+                    tutorialObject = child;
+                    break;
+                }
+            }
+        }
     }
 
+    private void OnEnable()
+    {
+        UpdateStatus();
+    }
+
+    private void OnDisable()
+    {
+        Deselect();
+    }
 
     void Update()
     {
+        if (rightController == null)
+            return;
+
         // Select
         if (OVRInput.GetDown(OVRInput.Button.SecondaryHandTrigger))
         {
-            Debug.LogError("intex key pressed");
-
             TrySelectObject();
         }
         // Deselect
         else if (OVRInput.GetUp(OVRInput.Button.SecondaryHandTrigger))
         {
-            if(objectRenderer != null)
-            {
-                objectRenderer.material = originalMaterial;
-            }
-           
-            objectRenderer = null;
-            selectedObject = null;
-            cumulativeJoystickOffset = Vector3.zero;
-            
-            originalMaterial = null;
+            Deselect();
         }
 
         // Toggle mode with A button (button one)
@@ -89,6 +122,8 @@ public class RaycastSelectAndMoveTutorial : MonoBehaviour
                 ApplyControllerRotation();
             }
         }
+
+        EvaluateCompletion();
     }
 
     private void FollowControllerPosition()
@@ -115,26 +150,11 @@ public class RaycastSelectAndMoveTutorial : MonoBehaviour
 
         Vector3 targetPosition = controllerPosition + cumulativeJoystickOffset;
 
-        // Step 3: Rotation from controller
-       // Quaternion targetRotation = rightController.rotation * initialRotationOffset;
-
-        // Step 4: Apply to object
-        if (selectedObject != null)
-        {
-           
-                selectedObject.transform.position = Vector3.Lerp(
-                    selectedObject.transform.position,
-                    targetPosition,
-                    Time.deltaTime * objectFollowSpeed
-                );
-
-                /*   selectedObject.transform.rotation = Quaternion.Slerp(
-                       selectedObject.transform.rotation,
-                       targetRotation,
-                       Time.deltaTime * objectFollowSpeed
-                   );*/
-            
-        }
+        selectedObject.transform.position = Vector3.Lerp(
+            selectedObject.transform.position,
+            targetPosition,
+            Time.deltaTime * objectFollowSpeed
+        );
     }
 
     private void ApplyControllerRotation()
@@ -145,42 +165,28 @@ public class RaycastSelectAndMoveTutorial : MonoBehaviour
 
         float rotationSpeed = 90f; // degrees/sec
         float yaw = 0f;
-        float pitch = 0f;
 
-        // Step 1: Apply joystick-based pitch or yaw � only one at a time
+        // Joystick horizontal : rotation autour de l'axe vertical
         if (input.sqrMagnitude > 0.01f)
         {
             if (Mathf.Abs(input.x) > Mathf.Abs(input.y))
             {
                 yaw = input.x * rotationSpeed * Time.deltaTime; // Right = +Y, Left = -Y
             }
-         /*   else
-            {
-                pitch = input.y * rotationSpeed * Time.deltaTime; // Up = +X, Down = -X
-            }*/
         }
 
         Quaternion deltaJoystickRotation = Quaternion.Euler(0f, 0f, yaw);
 
-        // Step 2: Controller Z rotation (roll)
-
-        // Step 2: Controller Z rotation (roll)
         float currentRoll = rightController.rotation.eulerAngles.x;
         float deltaRoll = Mathf.DeltaAngle(previousControllerRoll, currentRoll);
         previousControllerRoll = currentRoll;
 
-        Quaternion deltaRollRotation = Quaternion.Euler(0, deltaRoll,0 );
-
-;
-
-        // Step 3: Combine and apply
-        Quaternion totalRotation = selectedObject.transform.rotation * deltaJoystickRotation; // * deltaRollRotation;
-      selectedObject.transform.rotation = Quaternion.Slerp(
-                selectedObject.transform.rotation,
-                totalRotation,
-                Time.deltaTime * objectFollowSpeed
-            );
-        
+        Quaternion totalRotation = selectedObject.transform.rotation * deltaJoystickRotation;
+        selectedObject.transform.rotation = Quaternion.Slerp(
+            selectedObject.transform.rotation,
+            totalRotation,
+            Time.deltaTime * objectFollowSpeed
+        );
     }
 
     private void TrySelectObject()
@@ -189,313 +195,109 @@ public class RaycastSelectAndMoveTutorial : MonoBehaviour
         Vector3 rayDirection = rightController.forward;
 
         Ray ray = new Ray(rayOrigin, rayDirection);
-        RaycastHit hit;
+        int mask = selectableLayer.value != 0 ? selectableLayer.value : Physics.DefaultRaycastLayers;
 
-        if (Physics.Raycast(ray, out hit, selectableLayer))
+        // Le masque de calques est maintenant passé comme masque (et non comme distance).
+        if (Physics.Raycast(ray, out RaycastHit hit, maxRayDistance, mask))
         {
             if (hit.collider.CompareTag("TutorialObject"))
             {
                 selectedObject = hit.collider.gameObject;
-                Debug.LogError("Selected: object" + selectedObject.name);
+
                 // Save position offset
                 Vector3 worldOffset = selectedObject.transform.position - rightController.position;
                 initialLocalOffset = Quaternion.Inverse(rightController.rotation) * worldOffset;
 
-                previousControllerRoll = rightController.rotation.eulerAngles.z;
-                // Save rotation offset
-                //  initialRotationOffset = Quaternion.Inverse(rightController.rotation) * selectedObject.transform.rotation;
-
+                previousControllerRoll = rightController.rotation.eulerAngles.x;
                 cumulativeJoystickOffset = Vector3.zero;
 
-                objectRenderer = GetComponent<Renderer>();
-                if (objectRenderer != null)
+                // Surbrillance de l'objet sélectionné (et non de l'objet porteur du script)
+                objectRenderer = selectedObject.GetComponent<Renderer>();
+                if (objectRenderer != null && highlightMaterial != null)
                 {
-                    Debug.LogError("Found renderer");
                     originalMaterial = objectRenderer.material;
                     objectRenderer.material = highlightMaterial;
                 }
 
+                SetMessage(string.Empty);
                 Debug.Log("Selected: " + selectedObject.name);
-             
-            }
-        }
-    }
-
-
-
-  
-    private void MoveSelectedObject(Vector2 input)
-    {
-        Vector3 movement = Vector3.zero;
-
-        // Determine base movement directions from controller orientation
-        Vector3 forward = rightController.forward;
-        Vector3 right = rightController.right;
-
-        forward.y = 0;
-        right.y = 0;
-        forward.Normalize();
-        right.Normalize();
-
-        // Use joystick normally unless the grip button is held
-        if (OVRInput.Get(OVRInput.Button.SecondaryHandTrigger)) // e.g., Grip button
-        {
-            // Up/Down movement mode using joystick Y axis
-            Vector3 rayDirection = rightController.forward.normalized;
-            movement = rayDirection * input.y * moveSpeed * Time.deltaTime;
-        }
-        else
-        {
-            // Standard movement along horizontal plane
-            movement = (right * input.x + forward * input.y) * moveSpeed * Time.deltaTime;
-        }
-
-        Vector3 newPosition = selectedObject.transform.position + movement;
-
-        // Move using network logic
-        NetworkObject networkObj = selectedObject.GetComponent<NetworkObject>();
-        if (networkObj != null && networkObj.HasStateAuthority)
-        {
-            NetworkTransform networkTransform = selectedObject.GetComponent<NetworkTransform>();
-            if (networkTransform != null)
-            {
-                networkTransform.Teleport(newPosition);
             }
             else
             {
-                selectedObject.transform.position = newPosition;
+                SetMessage("Pointez l'objet vert, puis maintenez la gâchette intérieure.");
             }
         }
         else
         {
-            Debug.LogWarning($"Cannot move {selectedObject.name}. No State Authority!");
+            SetMessage("Pointez l'objet vert, puis maintenez la gâchette intérieure.");
         }
     }
 
-
-
-
-    private void DeleteSelectedObjects_performed(InputAction.CallbackContext context)
+    private void Deselect()
     {
+        if (objectRenderer != null && originalMaterial != null)
+        {
+            objectRenderer.material = originalMaterial;
+        }
+
+        objectRenderer = null;
+        originalMaterial = null;
         selectedObject = null;
-        grabDistance = 0;
-    }
-    private void SelectObject_performed(InputAction.CallbackContext context)
-    {
-        // Step 1: Raycast selection using index trigger
-    //    if (OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger))
-        {
-            Vector3 controllerPosition = rightController.position;
-            Quaternion controllerRotation = rightController.rotation;
-            Vector3 rayDirection = controllerRotation * Vector3.forward;
-
-            // Raycast logic
-            Ray ray = new Ray(controllerPosition, rayDirection);
-            RaycastHit hit;
-            if (Physics.Raycast(ray, out hit))
-            {
-                if (hit.collider.gameObject.tag == "Reservation")
-                {
-                    selectedObject = hit.collider.gameObject;
-                    grabDistance = Vector3.Distance(rightController.position, hit.point);
-                    Debug.Log("Selected: " + selectedObject.name);
-                }
-            }
-        }
+        cumulativeJoystickOffset = Vector3.zero;
     }
 
-
-    void Update1()
+    /// <summary>Écart de position actuel (m) entre l'objet et sa cible, ou -1 si inconnu.</summary>
+    public float CurrentPositionError()
     {
-        if (OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger))
-        {
-            Vector3 controllerPosition = rightController.position;
-            Quaternion controllerRotation = rightController.rotation;
-            Vector3 rayDirection = controllerRotation * Vector3.forward;
+        if (tutorialObject == null || targetTransform == null)
+            return -1f;
+        return Vector3.Distance(tutorialObject.position, targetTransform.position);
+    }
 
-            // Raycast logic
-            Ray ray = new Ray(controllerPosition, rayDirection);
-            RaycastHit hit;
-            if (Physics.Raycast(ray, out hit))
-            {
-                if (hit.collider.gameObject.tag == "Reservation")
-                {
-                    selectedObject = hit.collider.gameObject;
-                    grabDistance = Vector3.Distance(rightController.position, hit.point);
-                    Debug.Log("Selected: " + selectedObject.name);
-                }
-            }
+    private void EvaluateCompletion()
+    {
+        if (tutorialObject == null || targetTransform == null)
+            return;
+
+        float error = CurrentPositionError();
+        bool positionOk = error <= positionTolerance;
+        bool rotationOk = !checkRotation
+                          || Quaternion.Angle(tutorialObject.rotation, targetTransform.rotation) <= angleTolerance;
+
+        // L'objet doit être relâché sur la cible.
+        bool completed = positionOk && rotationOk && selectedObject == null;
+
+        if (completed != IsCompleted)
+        {
+            IsCompleted = completed;
+            CompletionChanged?.Invoke(IsCompleted);
         }
 
-
-         // Step 2: Deselect on trigger release
-         else if (OVRInput.GetUp(OVRInput.Button.SecondaryIndexTrigger))
-               {
-                   selectedObject = null;
-           
-               }
-      
-
-        // Step 3: Move object in 3D space relative to controller orientation
         if (selectedObject != null)
         {
-             Vector2 input = OVRInput.Get(OVRInput.Axis2D.SecondaryThumbstick);
-            if (input.sqrMagnitude > 0.01f)
-            {
-                Transform cam = Camera.main.transform;
-                Vector3 forward = -cam.forward;
-                Vector3 right = cam.right;
-                forward.y = 0; right.y = 0;
-                forward.Normalize(); right.Normalize();
-                Vector3 movement = (forward * input.y + right * input.x) * moveSpeed * Time.deltaTime;
-                NetworkObject networkObj = selectedObject.GetComponent<NetworkObject>();
-                if (networkObj != null && networkObj.HasStateAuthority)
-                {
-                    Vector3 newPosition = selectedObject.transform.position + movement;
-
-                    // Use NetworkTransform if present
-                    NetworkTransform networkTransform = selectedObject.GetComponent<NetworkTransform>();
-                    if (networkTransform != null)
-                    {
-                        networkTransform.Teleport(newPosition);
-                    }
-                    else
-                    {
-                        selectedObject.transform.position = newPosition; // Fallback if no NetworkTransform
-                    }
-
-                    //Debug.Log($"Moved {obj.name} to {newPosition}");
-                }
-                else
-                {
-                    Debug.LogWarning($"Cannot move {selectedObject.name}. No State Authority!");
-                }
-                                
-                
-            }
-            else
-            {                // Full movement in controller-relative direction
-                
-                NetworkObject networkObj = selectedObject.GetComponent<NetworkObject>();
-                if (networkObj != null && networkObj.HasStateAuthority)
-                {
-                    Vector3 targetPosition = rightController.position + rightController.forward * grabDistance;
-
-                    Collider collider = selectedObject.GetComponent<Collider>();
-
-                    Vector3 newPosition = rightController.position + rightController.forward * grabDistance + new Vector3(collider.bounds.size.x / 2, 0, 0);
-                
-
-                    // Use NetworkTransform if present
-                    NetworkTransform networkTransform = selectedObject.GetComponent<NetworkTransform>();
-                    if (networkTransform != null)
-                    {
-                        networkTransform.Teleport(newPosition);
-                    }
-                    else
-                    {
-                       
-                            selectedObject.transform.position = Vector3.Lerp(
-                            selectedObject.transform.position,
-                            targetPosition,
-                            Time.deltaTime * objectFollowSpeed
-                        );
-                    }
-
-                    //Debug.Log($"Moved {obj.name} to {newPosition}");
-                }
-                else
-                {
-                    Debug.LogWarning($"Cannot move {selectedObject.name}. No State Authority!");
-                }
-
-
-          }
-        
+            SetMessage($"Écart avec la cible : {error * 100f:0} cm");
+        }
+        else if (completed)
+        {
+            SetMessage("Objet placé sur sa cible. Cliquez sur OK.");
+        }
+        else if (string.IsNullOrEmpty(LastMessage) || LastMessage.StartsWith("Écart"))
+        {
+            SetMessage($"Posez l'objet vert sur l'ombre bleue (écart actuel : {error * 100f:0} cm).");
         }
     }
 
-   
-
-    public void moveXYZ()
+    private void SetMessage(string message)
     {
-        Vector2 movementInput = playerInputActions.XRIRightInteraction.Move.ReadValue<Vector2>();
-
-        Vector3 forward = cameraTransform.forward;
-        Vector3 right = cameraTransform.right;
-        Vector3 newPosition;
-        Debug.Log("movemen input : " + movementInput);
-
-        // Flatten the vectors to avoid vertical movement
-        forward.y = 0;
-        right.y = 0;
-
-        forward.Normalize();
-        right.Normalize();
-        float x = Mathf.Abs(movementInput.y);
-        float z = Mathf.Abs(movementInput.x);
-       
-        if (movementInput.sqrMagnitude > 0.01f)
-        {
-            // movement = (forward * movementInput.y + right * movementInput.x) * moveSpeed * Time.deltaTime;   
-            Vector3 movement;
-            if (x > z)
-                movement = (forward * movementInput.y) * moveSpeed * Time.deltaTime;
-            else
-                movement = (right * movementInput.x) * moveSpeed * Time.deltaTime;
-
-            newPosition = selectedObject.transform.position + movement;
-
-
-
-            //  Vector3 moveDirection = new Vector3(joystickInput.x, 0, joystickInput.y) * moveSpeed * Time.deltaTime;
-            if (selectedObject != null)
-            {
-                NetworkObject networkObj = selectedObject.GetComponent<NetworkObject>();
-                if (networkObj != null && networkObj.HasStateAuthority)
-                {
-
-                    // Use NetworkTransform if present
-                    NetworkTransform networkTransform = selectedObject.GetComponent<NetworkTransform>();
-                    if (networkTransform != null)
-                    {
-                        networkTransform.Teleport(newPosition);
-                    }
-                    //Debug.Log($"Moved {obj.name} to {newPosition}");
-                }
-                else
-                {
-                    Debug.LogWarning($"Cannot move {selectedObject.name}. No State Authority!");
-                }
-            }
-        }
-
-        else
-        {
-                  
-            Vector3 targetPosition = rightController.position + rightController.forward * grabDistance;
-            NetworkObject networkObj = selectedObject.GetComponent<NetworkObject>();
-            if (networkObj != null && networkObj.HasStateAuthority)
-            {
-
-
-                // Use NetworkTransform if present
-                NetworkTransform networkTransform = selectedObject.GetComponent<NetworkTransform>();
-                if (networkTransform != null)
-                {
-                    networkTransform.Teleport(targetPosition);
-                }
-                //Debug.Log($"Moved {obj.name} to {newPosition}");
-            }
-            else
-            {
-                Debug.LogWarning($"Cannot move {selectedObject.name}. No State Authority!");
-            }
-
-        }
-
+        if (message == LastMessage)
+            return;
+        LastMessage = message;
+        UpdateStatus();
     }
 
-    
-    
+    private void UpdateStatus()
+    {
+        if (statusText != null)
+            statusText.text = LastMessage;
+    }
 }
