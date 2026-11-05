@@ -1,90 +1,94 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Fusion;
 using UnityEngine;
-using UnityEngine.InputSystem.HID;
 
+/// <summary>
+/// Journal des positions finales des objets (chaises, tables) de XP1.
+/// N5 : tous les objets rÃ©seau portant le tag Â« Interactable Â» sont consignÃ©s, y compris ceux crÃ©Ã©s
+/// par les autres casques (ils ne sont pas parentÃ©s localement) ; l'enregistrement est bien marquÃ©
+/// comme actif pour que la ligne END soit Ã©crite Ã  l'arrÃªt.
+/// </summary>
 public class ChairPositionDataLogger : MonoBehaviour
 {
     private string folderName = "Data";
-    private string filePath;  
+    private string filePath;
     private StreamWriter writer;
-    private bool isRecording = false; // Contrôle l'état de l'enregistrement
+    private bool isRecording = false; // ContrÃ´le l'Ã©tat de l'enregistrement
+
+    [Tooltip("Tag des objets Ã  consigner.")]
+    public string objectTag = "Interactable";
+
+    public bool IsRecording => isRecording;
 
     void Start()
     {
-        // Combine correctement les chemins
         string folderPath = Path.Combine(Application.persistentDataPath, folderName);
-
-        // Crée le dossier si nécessaire
         if (!Directory.Exists(folderPath))
-        {
             Directory.CreateDirectory(folderPath);
-        }
 
-        // Crée le nom du fichier au format date_heure + type de tracker
         string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
         string fileName = $"{timestamp}_ChairePositionData.csv";
-
-        // Chemin complet du fichier
         filePath = Path.Combine(folderPath, fileName);
 
-        // Initialise le StreamWriter
-        writer = new StreamWriter(filePath, false);  // false écrase le fichier existant
+        writer = new StreamWriter(filePath, false) { AutoFlush = true };
         writer.WriteLine("Time; ID ; Position");
         writer.WriteLine();
+        isRecording = true;
         Debug.Log("Recording started: " + filePath);
     }
-
-
 
     public void AddMarker()
     {
         if (writer != null)
         {
             writer.WriteLine($"{Time.time};MARKER");
-            writer.Flush(); // Ensure data is written to file immediately
-            Debug.Log($"Marker ajouté dans le fichier CSV : {filePath}");
+            writer.Flush();
+            Debug.Log($"Marker ajoutÃ© dans le fichier CSV : {filePath}");
         }
         else
         {
-            Debug.LogError($"issue in adding marker at PositionLogger");
+            Debug.LogError($"issue in adding marker at ChairPositionDataLogger");
         }
     }
+
+    /// <summary>Objets Ã  consigner : objets rÃ©seau valides portant le tag, sinon enfants du conteneur InstantiatedChaires.</summary>
+    private List<Transform> CollectObjects()
+    {
+        var result = new List<Transform>();
+        foreach (var no in FindObjectsOfType<NetworkObject>())
+        {
+            if (no != null && no.IsValid && no.CompareTag(objectTag))
+                result.Add(no.transform);
+        }
+        if (result.Count == 0)
+        {
+            GameObject container = GameObject.Find("InstantiatedChaires");
+            if (container != null)
+                foreach (Transform child in container.transform)
+                    if (child.CompareTag(objectTag)) result.Add(child);
+        }
+        return result;
+    }
+
     public void AddChairPositionLog(bool status)
     {
-        if(status)
-            writer.WriteLine("Task Status , Succeed");
-        else
-            writer.WriteLine("Task Status , TimeOut");
+        if (writer == null) return;
 
+        writer.WriteLine(status ? "Task Status , Succeed" : "Task Status , TimeOut");
         writer.WriteLine();
-        Debug.LogError("Task Status : " +  status);
-        GameObject instantiatedChaires = GameObject.Find("InstantiatedChaires");
-        if (instantiatedChaires != null)
-        {   int count = 0;
-            List<Transform> interactableChildren = new List<Transform>();
+        Debug.Log("Task Status : " + status);
 
-            Debug.LogError("::::::::::::::Chaire Position Log :::::::::::::");
-
-            foreach (Transform child in instantiatedChaires.transform )
-            {
-                if (child.CompareTag("Interactable")) // Check if the child has the tag
-                {
-                    interactableChildren.Add(child);
-                    writer.WriteLine(Time.time + ", " + child.name + ", " + child.position.ToString());
-                    Debug.LogError("chair : " + child.name + "  " + child.position.ToString());
-                    count++;
-                }
-            }
-            writer.Flush();
-            Debug.LogError("Number of Chaires : " + count);
-
+        writer.WriteLine("time, name, position.x, position.y, position.z, rotation.y");
+        int count = 0;
+        foreach (var t in CollectObjects())
+        {
+            writer.WriteLine(Time.time + ", " + t.name + ", " + t.position.x.ToString("F3") + ", " + t.position.y.ToString("F3") + ", " + t.position.z.ToString("F3") + ", " + t.eulerAngles.y.ToString("F1"));
+            count++;
         }
-        
-        Debug.Log($"log ajouté dans le fichier CSV : {filePath}");
+        writer.Flush();
+        Debug.Log("Number of Chaires : " + count);
     }
-
 
     public void StopRecording()
     {
@@ -97,35 +101,22 @@ public class ChairPositionDataLogger : MonoBehaviour
         isRecording = false;
         if (writer != null)
         {
-            writer.Write($"END");
-            writer.Flush(); // Ensure all data is written to disk
+            writer.Write("END");
+            writer.Flush();
             writer.Close();
-            writer.Dispose(); // Ensure file is properly closed
+            writer.Dispose();
             writer = null;
         }
         Debug.Log("Recording stopped.");
     }
 
-
     private void OnDestroy()
     {
-        Debug.Log("Application quittée sur OnDestroy. Arrêt de l'enregistremen Eye.");
-        StopRecording(); // Assure que l'enregistrement est arrêté proprement
+        StopRecording();
     }
 
     private void OnApplicationQuit()
     {
-        Debug.Log("Application quittée. Arrêt de l'enregistrement EyeTracker.");
         StopRecording();
     }
-
-    // private void OnApplicationPause(bool isPaused)
-    // {
-    //     if (isPaused)
-    //     {
-    //         Debug.Log("Application quittée sur OnApplicationPause. Arrêt de l'enregistremen Eye.");
-    //         StopRecording(); // Assure que l'enregistrement est arrêté proprement
-    //     }
-    // }
-
 }
