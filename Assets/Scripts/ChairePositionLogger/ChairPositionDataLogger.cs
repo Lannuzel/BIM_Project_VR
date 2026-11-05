@@ -20,6 +20,9 @@ public class ChairPositionDataLogger : MonoBehaviour
     public string objectTag = "Interactable";
 
     public bool IsRecording => isRecording;
+    public string FilePath => filePath;
+    /// <summary>Nombre d'objets consignés au dernier bilan.</summary>
+    public int EntryCount { get; private set; }
 
     void Start()
     {
@@ -87,6 +90,7 @@ public class ChairPositionDataLogger : MonoBehaviour
             count++;
         }
         writer.Flush();
+        EntryCount = count;
         Debug.Log("Number of Chaires : " + count);
     }
 

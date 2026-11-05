@@ -8,6 +8,8 @@ public class EyeTrackingDataLogger : MonoBehaviour
     [SerializeField] private EyeTrackingRay eyeTrackingRay;
     private StreamWriter writer;
     public bool IsRecording => isRecording;
+    public string FilePath => filePath;
+    public int SampleCount { get; private set; }
     private bool isRecording = false; // Contrôle l'état de l'enregistrement
 
     void Start()
@@ -53,6 +55,7 @@ public class EyeTrackingDataLogger : MonoBehaviour
         {
             writer.WriteLine($"{Time.time};{eyeTrackingRay.transform.position.x};{eyeTrackingRay.transform.position.y};{eyeTrackingRay.transform.position.z};" +
                                 $"{hit.point.x};{hit.point.y};{hit.point.z};{hit.transform.name}");
+            SampleCount++;
         }
     }
 

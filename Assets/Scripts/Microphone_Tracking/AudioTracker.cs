@@ -37,6 +37,9 @@ public class AudioTracker : MonoBehaviour
     /// <summary>Chemin du fichier WAV en cours (vide tant que l'enregistrement n'a pas démarré).</summary>
     public string FilePath => filePath;
 
+    /// <summary>Durée (s) d'audio déjà écrite sur disque.</summary>
+    public float RecordedSeconds => fileStream != null ? Mathf.Max(0f, (fileStream.Length - 44) / (float)(sampleRate * 2)) : 0f;
+
     void Start()
     {
         // Combine correctement les chemins

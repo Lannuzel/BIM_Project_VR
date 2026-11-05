@@ -42,7 +42,7 @@ public class ExperimenterPanel : MonoBehaviour
         gameObject.AddComponent<TrackedDeviceGraphicRaycaster>();
 
         var rect = canvas.GetComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(Width, 980f);
+        rect.sizeDelta = new Vector2(Width, 1180f);
         rect.localScale = Vector3.one / PixelsPerMeter;
 
         var bg = new GameObject("Background", typeof(RectTransform), typeof(Image));
@@ -129,8 +129,9 @@ public class ExperimenterPanel : MonoBehaviour
 
     private float AddButton(string label, Color color, float y, UnityEngine.Events.UnityAction action)
     {
-        CreateButton(label, color, new Vector2(0f, y), new Vector2(Width - 50f, 56f), new Vector2(0.5f, 1f), action);
-        return y - 64f;
+        var text = CreateButton(label, color, new Vector2(0f, y), new Vector2(Width - 50f, 64f), new Vector2(0.5f, 1f), action);
+        if (action == (UnityEngine.Events.UnityAction)ForceExit) exitButtonLabel = text;
+        return y - 76f;
     }
 
     private float AddButtonRow((string label, UnityEngine.Events.UnityAction action)[] buttons, Color color, float y)
@@ -146,7 +147,7 @@ public class ExperimenterPanel : MonoBehaviour
         return y - 64f;
     }
 
-    private void CreateButton(string label, Color color, Vector2 anchoredPos, Vector2 size, Vector2 pivot, UnityEngine.Events.UnityAction action)
+    private TextMeshProUGUI CreateButton(string label, Color color, Vector2 anchoredPos, Vector2 size, Vector2 pivot, UnityEngine.Events.UnityAction action)
     {
         var go = new GameObject("Button_" + label, typeof(RectTransform), typeof(Image), typeof(Button));
         go.transform.SetParent(transform, false);
@@ -163,6 +164,7 @@ public class ExperimenterPanel : MonoBehaviour
         var tr = text.GetComponent<RectTransform>();
         tr.anchorMin = Vector2.zero; tr.anchorMax = Vector2.one;
         tr.offsetMin = new Vector2(4f, 0f); tr.offsetMax = new Vector2(-4f, 0f);
+        return text;
     }
 
     private void PlaceInFrontOfCamera()
@@ -177,6 +179,7 @@ public class ExperimenterPanel : MonoBehaviour
 
     private void Update()
     {
+        Update_ExitLabel();
         if (Time.unscaledTime < nextRefresh) return;
         nextRefresh = Time.unscaledTime + 0.5f;
         RefreshStatus();
@@ -201,8 +204,19 @@ public class ExperimenterPanel : MonoBehaviour
         var sb = new StringBuilder();
         sb.AppendLine($"Session réseau : {session}   Joueurs : {players} réel(s) + {simulated} simulé(s)");
         sb.AppendLine($"Mon rôle : {AdminTools.LocalRole}   Enregistrement synchronisé : {recording}");
-        sb.AppendLine($"Audio : {(audio.Any(a => a.IsRecording) ? "actif" : "inactif")}   Regard : {(eye.Any(e => e.IsRecording) ? "actif" : "inactif")}   " +
-                      $"Visage : {(face.Any(f => f.IsRecording) ? "actif" : "inactif")}   Positions : {(pos.Any(p => p.IsRecording) ? "actif" : "inactif")}");
+        sb.AppendLine("Enregistrements (mis à jour en continu) :");
+        foreach (var a in audio)
+            sb.AppendLine($"  • Audio : {(a.IsRecording ? $"actif, {a.RecordedSeconds / 60f:0.0} min" : "en attente du lancement")}  {ShortName(a.FilePath)}");
+        foreach (var e in eye)
+            sb.AppendLine($"  • Regard : {(e.IsRecording ? "actif" : "arrêté")}, {e.SampleCount:n0} éch.  {ShortName(e.FilePath)}");
+        foreach (var f in face)
+            sb.AppendLine($"  • Visage : {(f.IsRecording ? "actif" : "arrêté")}, {f.SampleCount:n0} éch.  {ShortName(f.FilePath)}");
+        foreach (var p in pos)
+            sb.AppendLine($"  • Positions : {(p.IsRecording ? "actif" : "arrêté")}, {p.SampleCount:n0} éch.  {ShortName(p.FilePath)}");
+        foreach (var c in FindObjectsOfType<ChairPositionDataLogger>())
+            sb.AppendLine($"  • Objets (bilan de fin) : {(c.IsRecording ? "ouvert" : "fermé")}, {c.EntryCount} objet(s)  {ShortName(c.FilePath)}");
+        foreach (var r in FindObjectsOfType<ReservationPositionDataLogger>())
+            sb.AppendLine($"  • Réservations (bilan de fin) : {(r.IsRecording ? "ouvert" : "fermé")}, {r.EntryCount} réservation(s)  {ShortName(r.FilePath)}");
         sb.AppendLine("Avatars :");
         foreach (var p in AdminTools.AllAvatars().OrderBy(p => p.IsSimulated ? 1 : 0).ThenBy(p => p.PlayerName))
         {
@@ -213,11 +227,26 @@ public class ExperimenterPanel : MonoBehaviour
         statusText.text = sb.ToString();
     }
 
+    private static string ShortName(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return "";
+        return System.IO.Path.GetFileName(path);
+    }
+
     private static HostController LocalHost()
     {
         if (HostController.instance != null) return HostController.instance;
         return FindObjectsOfType<HostController>().FirstOrDefault(h => h.Object != null && h.Object.HasStateAuthority && !AdminTools.IsSimulated(h.Object));
     }
+
+    private static ExitManager LocalExit()
+    {
+        if (ExitManager.Instance != null) return ExitManager.Instance;
+        return FindObjectsOfType<ExitManager>().FirstOrDefault(e => e.Object != null && e.Object.IsValid && !AdminTools.IsSimulated(e.Object));
+    }
+
+    private float exitConfirmUntil = -1f;
+    private TextMeshProUGUI exitButtonLabel;
 
     private void StartRecording()
     {
@@ -235,9 +264,33 @@ public class ExperimenterPanel : MonoBehaviour
 
     private void ForceExit()
     {
-        if (ExitManager.Instance != null)
-            ExitManager.Instance.BeginExit();
+        // Confirmation en deux clics (4 s) : évite une fermeture de tous les casques par un clic mal placé.
+        if (Time.unscaledTime > exitConfirmUntil)
+        {
+            exitConfirmUntil = Time.unscaledTime + 4f;
+            if (exitButtonLabel != null) exitButtonLabel.text = "Confirmer la fin de session ? (cliquez à nouveau)";
+            NetworkStatusPanel.Show("Cliquez à nouveau pour fermer tous les casques.", 4f);
+            return;
+        }
+        exitConfirmUntil = -1f;
+        if (exitButtonLabel != null) exitButtonLabel.text = "Forcer la fin de session (tous les casques)";
+
+        var exit = LocalExit();
+        if (exit != null)
+            exit.BeginExit();
         else
-            NetworkStatusPanel.Show("ExitManager introuvable : fin de session impossible.", 4f);
+        {
+            NetworkStatusPanel.Show("ExitManager introuvable : fermeture locale seulement.", 4f);
+            ExitManager.QuitLocallyAfter(2f);
+        }
+    }
+
+    private void Update_ExitLabel()
+    {
+        if (exitButtonLabel != null && exitConfirmUntil > 0f && Time.unscaledTime > exitConfirmUntil)
+        {
+            exitConfirmUntil = -1f;
+            exitButtonLabel.text = "Forcer la fin de session (tous les casques)";
+        }
     }
 }

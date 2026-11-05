@@ -10,6 +10,8 @@ public class FaceTrackingRecorder : MonoBehaviour
     private StreamWriter writer;
     private bool isRecording = false;
     public bool IsRecording => isRecording;
+    public string FilePath => filePath;
+    public int SampleCount { get; private set; }
     void Start()
     {
         // Combine correctement les chemins
@@ -97,6 +99,7 @@ public class FaceTrackingRecorder : MonoBehaviour
                 writer.Write($";{weight:F4}"); // Valeur formatée
             }
 
+            SampleCount++;
             writer.WriteLine(); // Nouvelle ligne pour la prochaine itération
         }
     }

@@ -20,6 +20,9 @@ public class ReservationPositionDataLogger : MonoBehaviour
     public List<string> reservationTagParts = new List<string> { "cylinderReservationSol", "cylinderReservationMur", "SquareReservationMur", "SquareReservationSol", "Reservation" };
 
     public bool IsRecording => isRecording;
+    public string FilePath => filePath;
+    /// <summary>Nombre de réservations consignées au dernier bilan.</summary>
+    public int EntryCount { get; private set; }
 
     void Start()
     {
@@ -94,6 +97,7 @@ public class ReservationPositionDataLogger : MonoBehaviour
             count++;
         }
         writer.Flush();
+        EntryCount = count;
         Debug.Log("Number of Reservations : " + count);
     }
 

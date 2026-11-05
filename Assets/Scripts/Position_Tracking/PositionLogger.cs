@@ -11,6 +11,8 @@ public class PositionLogger : MonoBehaviour
     private StreamWriter writer;
     private bool isRecording = false;
     public bool IsRecording => isRecording;
+    public string FilePath => filePath;
+    public int SampleCount { get; private set; }
 
     private float nextLogTime = 0f;
 
@@ -85,6 +87,7 @@ public class PositionLogger : MonoBehaviour
             }
         }
 
+        SampleCount++;
         writer.WriteLine(); // Passe à la ligne suivante
         writer.Flush(); // Écrire immédiatement les données
     }
