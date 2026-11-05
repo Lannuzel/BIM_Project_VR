@@ -31,10 +31,10 @@ public class WallHelpPanel : MonoBehaviour
     public LayerMask wallLayers = ~0;
 
     [Header("Apparence")]
-    public Vector2 sizeMeters = new Vector2(1.2f, 0.6f);
-    public float titleFontSize = 64f;
-    public float bodyFontSize = 44f;
-    public Color backgroundColor = new Color(0.08f, 0.1f, 0.16f, 0.92f);
+    public Vector2 sizeMeters = new Vector2(2.0f, 1.0f);
+    public float titleFontSize = 96f;
+    public float bodyFontSize = 64f;
+    public Color backgroundColor = new Color(0.05f, 0.08f, 0.2f, 0.96f);
     public Color textColor = Color.white;
 
     private GameObject panel;
