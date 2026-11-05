@@ -9,11 +9,9 @@ public class NetworkedMUI : NetworkBehaviour
 
     [Networked] public Vector3 networkedPosition { get; set; }
     [Networked] public bool isLineActive { get; set; }
-    [Networked] public int networkedCounter { get; set; }
     [Networked] public string networkedTextData { get; set; } // No OnChanged
-    private Transform camRef {  get; set; }  
+    private Transform camRef {  get; set; }
 
-    private float xRange = 0.5f; // ±0.5m movement range
     private string lastText = ""; // Tracks previous text state
 
     private void Awake()
@@ -23,36 +21,17 @@ public class NetworkedMUI : NetworkBehaviour
 
     public override void Spawned()
     {
+        // N5 : le compteur de test (« Counter: N » toutes les 5 s, décalage aléatoire en X) est supprimé :
+        // il écrasait la valeur de mesure affichée sur tous les casques.
         if (HasStateAuthority)
         {
-            SetUIPositions(Vector3.zero, "Counter: 0", false);
-            networkedCounter = 0;
-            StartCoroutine(IncrementCounter());
+            SetUIPositions(Vector3.zero, "", false);
         }
     }
     public void SetCameraRef(Transform cameraRef)
     {
         camRef = cameraRef;
 
-    }
-    private IEnumerator IncrementCounter()
-    {
-        while (true)
-        {
-            yield return new WaitForSeconds(5f);
-
-            if (HasStateAuthority)
-            {
-                networkedCounter++;
-
-                // ✅ Randomly move UI along X-axis (within ±0.5m)
-                float randomX = Random.Range(-xRange, xRange);
-                networkedPosition = new Vector3(networkedPosition.x + randomX, networkedPosition.y, networkedPosition.z);
-
-                // ✅ Update text so all clients see the change
-                networkedTextData = "Counter: " + networkedCounter.ToString();
-            }
-        }
     }
 
     public void SetUIPositions(Vector3 position, string data, bool active)
@@ -73,16 +52,18 @@ public class NetworkedMUI : NetworkBehaviour
         {
             transform.position = networkedPosition;
 
-            // ✅ Manually check if text changed
             if (networkedTextData != lastText)
             {
                 textMeshPro.text = networkedTextData;
                 lastText = networkedTextData; // Store last updated value
             }
-            // ✅ Make UI always face the camera
+
+            if (camRef == null && Camera.main != null)
+                camRef = Camera.main.transform;
+
+            // Make UI always face the camera
             if (camRef != null)
             {
-                transform.LookAt(camRef.transform);
                 transform.rotation = Quaternion.LookRotation(transform.position - camRef.transform.position);
             }
         }
