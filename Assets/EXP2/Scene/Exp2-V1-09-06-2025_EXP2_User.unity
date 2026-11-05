@@ -191795,6 +191795,7 @@ GameObject:
   - component: {fileID: 809205707}
   - component: {fileID: 422362169}
   - component: {fileID: 1976818181}
+  - component: {fileID: 202357962}
   m_Layer: 0
   m_Name: SceneExtras
   m_TagString: Untagged
@@ -191851,5 +191852,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e7c09bc420684feda8e2ba3629bdda73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &202357962
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790752295}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de911458e78c47a09e513b0710b0aeb2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
