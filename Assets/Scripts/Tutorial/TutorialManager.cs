@@ -51,12 +51,17 @@ public class TutorialManager : MonoBehaviour
     [Header("Panneau de progression (F2)")]
     [Tooltip("Ancre du panneau. Si vide : à droite du canvas d'accueil (WecomeCanvas).")]
     public Transform progressAnchor;
-    public Vector3 progressOffset = new Vector3(1.3f, 0f, 0f);
-    public float panelScale = 0.0015f;
-    public Color pendingColor = new Color(0.55f, 0.55f, 0.55f, 1f);
-    public Color activeColor = Color.white;
-    public Color doneColor = new Color(0.45f, 0.9f, 0.45f, 1f);
+    public Vector3 progressOffset = new Vector3(1.6f, 0f, 0f);
+    [Tooltip("Échelle du panneau (unités canvas -> mètres). 0,0025 donne environ 1,7 m de large.")]
+    public float panelScale = 0.0025f;
+    public float progressTitleFontSize = 44f;
+    public float progressLineFontSize = 36f;
+    public Color pendingColor = new Color(0.62f, 0.62f, 0.62f, 1f);
+    public Color activeColor = new Color(1f, 0.9f, 0.3f, 1f);
+    public Color doneColor = new Color(0.45f, 0.95f, 0.45f, 1f);
     public Color warningColor = new Color(1f, 0.35f, 0.3f, 1f);
+    public Color progressBackground = new Color(0.05f, 0.08f, 0.2f, 0.96f);
+    public Color progressTitleBar = new Color(0.15f, 0.45f, 0.95f, 1f);
 
     private DrawLineTutorial drawLine;
     private RaycastSelectAndMoveTutorial moveObject;
@@ -317,6 +322,7 @@ public class TutorialManager : MonoBehaviour
         tmp.alignment = TextAlignmentOptions.MidlineLeft;
         tmp.enableWordWrapping = false;
         tmp.raycastTarget = false;
+        MakeNonBlocking(go);
         go.SetActive(false);
         return tmp;
     }
@@ -345,14 +351,34 @@ public class TutorialManager : MonoBehaviour
         }
     }
 
+    [Header("Bande d'aide sous les panneaux")]
+    [Tooltip("Hauteur (unités canvas) ajoutée en bas de chaque panneau d'étape pour accueillir le texte d'aide, sans recouvrir le bouton OK.")]
+    public float hintBandHeight = 130f;
+    public float hintFontSize = 28f;
+
+    /// <summary>Empêche un texte créé en code d'intercepter les rayons de la manette (le bouton OK restait masqué).</summary>
+    private static void MakeNonBlocking(GameObject go)
+    {
+        var group = go.GetComponent<CanvasGroup>();
+        if (group == null) group = go.AddComponent<CanvasGroup>();
+        group.blocksRaycasts = false;
+        group.interactable = false;
+    }
+
     private void ShowHint(Step step, string message, bool isWarning)
     {
         if (step == null || step.root == null) return;
 
         if (step.hintText == null)
         {
-            // Sous le bouton OK du panneau de l'étape
+            // Le panneau est agrandi vers le bas d'une bande dédiée : le texte d'aide n'y recouvre ni le
+            // bouton OK ni le texte de consigne (les enfants sont ancrés au centre, ils ne bougent pas).
             Transform parent = step.okButton != null ? step.okButton.transform.parent : step.root.transform;
+            var canvas = parent.GetComponentInParent<Canvas>();
+            var canvasRect = canvas != null ? canvas.GetComponent<RectTransform>() : null;
+            if (canvasRect != null)
+                canvasRect.sizeDelta += new Vector2(0f, hintBandHeight);
+
             var go = new GameObject("TutorialHint", typeof(RectTransform));
             go.transform.SetParent(parent, false);
             var rect = go.GetComponent<RectTransform>();
@@ -360,12 +386,14 @@ public class TutorialManager : MonoBehaviour
             rect.anchorMax = new Vector2(1f, 0f);
             rect.pivot = new Vector2(0.5f, 0f);
             rect.anchoredPosition = new Vector2(0f, 8f);
-            rect.sizeDelta = new Vector2(-40f, 90f);
+            rect.sizeDelta = new Vector2(-40f, hintBandHeight - 16f);
             var tmp = go.AddComponent<TextMeshProUGUI>();
-            tmp.fontSize = 22f;
+            tmp.fontSize = hintFontSize;
+            tmp.fontStyle = FontStyles.Bold;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.enableWordWrapping = true;
             tmp.raycastTarget = false;
+            MakeNonBlocking(go);
             step.hintText = tmp;
         }
 
@@ -385,7 +413,7 @@ public class TutorialManager : MonoBehaviour
         progressPanel.AddComponent<CanvasScaler>();
 
         var rect = canvas.GetComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(620f, 60f + 70f * steps.Count);
+        rect.sizeDelta = new Vector2(700f, 90f + 80f * steps.Count);
         rect.localScale = Vector3.one * panelScale;
 
         var bg = new GameObject("Background", typeof(RectTransform), typeof(Image));
@@ -393,16 +421,28 @@ public class TutorialManager : MonoBehaviour
         var bgRect = bg.GetComponent<RectTransform>();
         bgRect.anchorMin = Vector2.zero; bgRect.anchorMax = Vector2.one;
         bgRect.offsetMin = Vector2.zero; bgRect.offsetMax = Vector2.zero;
-        bg.GetComponent<Image>().color = new Color(0.08f, 0.08f, 0.12f, 0.85f);
+        bg.GetComponent<Image>().color = progressBackground;
 
-        var title = CreateLine(progressPanel.transform, "Étapes du tutoriel", 34f, 0);
-        title.color = activeColor;
+        // Bandeau de titre coloré pour que le panneau soit repérable de loin
+        var bar = new GameObject("TitleBar", typeof(RectTransform), typeof(Image));
+        bar.transform.SetParent(progressPanel.transform, false);
+        var barRect = bar.GetComponent<RectTransform>();
+        barRect.anchorMin = new Vector2(0f, 1f); barRect.anchorMax = new Vector2(1f, 1f);
+        barRect.pivot = new Vector2(0.5f, 1f);
+        barRect.anchoredPosition = Vector2.zero;
+        barRect.sizeDelta = new Vector2(0f, 80f);
+        bar.GetComponent<Image>().color = progressTitleBar;
+
+        var title = CreateLine(progressPanel.transform, "Étapes du tutoriel", progressTitleFontSize, 0);
+        title.color = Color.white;
         title.fontStyle = FontStyles.Bold;
+        title.alignment = TextAlignmentOptions.Center;
 
         for (int i = 0; i < steps.Count; i++)
         {
-            steps[i].progressLine = CreateLine(progressPanel.transform, $"{i + 1}. {steps[i].label}", 28f, i + 1);
+            steps[i].progressLine = CreateLine(progressPanel.transform, $"{i + 1}. {steps[i].label}", progressLineFontSize, i + 1);
         }
+        MakeNonBlocking(progressPanel);
 
         // Placement : ancre explicite, sinon à droite du canvas d'accueil.
         Transform anchor = progressAnchor;
@@ -435,8 +475,8 @@ public class TutorialManager : MonoBehaviour
         rect.anchorMin = new Vector2(0f, 1f);
         rect.anchorMax = new Vector2(1f, 1f);
         rect.pivot = new Vector2(0.5f, 1f);
-        rect.anchoredPosition = new Vector2(0f, -20f - 70f * index);
-        rect.sizeDelta = new Vector2(-40f, 60f);
+        rect.anchoredPosition = new Vector2(0f, (index == 0 ? -10f : -100f) - 80f * Mathf.Max(0, index - 1));
+        rect.sizeDelta = new Vector2(-40f, index == 0 ? 60f : 76f);
         var tmp = go.AddComponent<TextMeshProUGUI>();
         tmp.text = text;
         tmp.fontSize = fontSize;
