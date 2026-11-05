@@ -38,8 +38,7 @@ public class ExperimenterPanel : MonoBehaviour
         var canvas = gameObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.WorldSpace;
         gameObject.AddComponent<CanvasScaler>();
-        gameObject.AddComponent<GraphicRaycaster>();
-        gameObject.AddComponent<TrackedDeviceGraphicRaycaster>();
+        XRUiCanvas.MakeInteractive(canvas); // pointeur laser Meta (OVRRaycaster) + XRI
 
         var rect = canvas.GetComponent<RectTransform>();
         rect.sizeDelta = new Vector2(Width, 1180f);

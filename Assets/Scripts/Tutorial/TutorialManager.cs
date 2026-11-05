@@ -99,8 +99,7 @@ public class TutorialManager : MonoBehaviour
         var canvas = quickPanel.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.WorldSpace;
         quickPanel.AddComponent<CanvasScaler>();
-        quickPanel.AddComponent<GraphicRaycaster>();
-        quickPanel.AddComponent<UnityEngine.XR.Interaction.Toolkit.UI.TrackedDeviceGraphicRaycaster>();
+        XRUiCanvas.MakeInteractive(canvas); // pointeur laser Meta (OVRRaycaster) + XRI
 
         var rect = canvas.GetComponent<RectTransform>();
         rect.sizeDelta = new Vector2(700f, 250f);
