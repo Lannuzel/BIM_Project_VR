@@ -51,11 +51,16 @@ public class ShowKeyboard : MonoBehaviour
 
     public void AddNewLine()
     {
-       // inputField = transform.GetComponent<TMP_InputField>();
+        // F13 : un retour à la ligne n'a de sens que dans un champ multiligne (bloc-notes).
+        // Pour les champs de saisie de valeur, Entrée valide : rien à ajouter.
+        if (inputField == null)
+            inputField = transform.GetComponent<TMP_InputField>();
+        if (inputField == null || inputField.lineType != TMP_InputField.LineType.MultiLineNewline)
+            return;
+
         if (inputField.text != "")
         {
             inputField.text = inputField.text + "\n";
         }
-
     }
 }

@@ -405,21 +405,52 @@ namespace UnityEngine.XR.Interaction.Toolkit.Samples.SpatialKeyboard
 
         void OnTextSubmit(KeyboardTextEventArgs args)
         {
-            // Treat Enter as "insert newline at caret" (don't overwrite the field)
-            _isApplyingFromKeyboard = true;
-            try
+            if (m_InputField == null)
+                return;
+
+            // F13 : Entrée insère un retour à la ligne uniquement dans un champ multiligne (bloc-notes).
+            // Pour tout autre champ (tutoriel, dimensions des outils), Entrée valide la saisie et ferme le clavier.
+            if (m_InputField.lineType == TMP_InputField.LineType.MultiLineNewline)
             {
-                InsertAtCaret("\n");           // <-- newline
-                _prevKeyboardText = (args.keyboardText ?? string.Empty).Replace("\r\n", "\n");
+                _isApplyingFromKeyboard = true;
+                try
+                {
+                    InsertAtCaret("\n");
+                    _prevKeyboardText = (args.keyboardText ?? string.Empty).Replace("\r\n", "\n");
+                    m_InputField.ForceLabelUpdate();
+                }
+                finally { _isApplyingFromKeyboard = false; }
 
-                m_InputField.ForceLabelUpdate();
+                m_OnTextSubmitted?.Invoke(m_InputField.text);
+                return;
             }
-            finally { _isApplyingFromKeyboard = false; }
 
-            // Optionally still forward the submit event to listeners
-            m_OnTextSubmitted?.Invoke(m_InputField.text);
+            SubmitAndClose();
+        }
 
+        /// <summary>
+        /// Valide le champ : déclenche onSubmit / onEndEdit du TMP_InputField, désactive le champ et ferme le clavier.
+        /// </summary>
+        void SubmitAndClose()
+        {
+            string text = m_InputField.text;
 
+            if (m_ClearTextOnSubmit)
+            {
+                m_InputField.SetTextWithoutNotify(string.Empty);
+                m_InputField.caretPosition = 0;
+                m_InputField.selectionAnchorPosition = 0;
+                m_InputField.selectionFocusPosition = 0;
+                _prevKeyboardText = "";
+            }
+
+            m_OnTextSubmitted?.Invoke(text);
+            m_InputField.onSubmit?.Invoke(text);
+            m_InputField.onEndEdit?.Invoke(text);
+            m_InputField.DeactivateInputField();
+
+            if (m_ActiveKeyboard != null && m_ActiveKeyboard.isOpen)
+                m_ActiveKeyboard.Close();
         }
 
     /*    void OnTextSubmit(KeyboardTextEventArgs args)
