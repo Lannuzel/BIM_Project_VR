@@ -48,7 +48,7 @@ namespace XRMultiplayer
                 m_Dropdown.onValueChanged.AddListener(PickVideo);
             }
 
-            Hide();
+          //  Hide();
         }
 
         void PickVideo(int index)
@@ -150,7 +150,7 @@ namespace XRMultiplayer
                 yield return null;
             }
 
-            Hide();
+           // Hide();
             m_VideoPlayer.targetTexture.Release();
 
         }

@@ -7,6 +7,19 @@ public class LobbyManager : MonoBehaviour
 {
     [SerializeField] public TMP_Dropdown dropdown;
 
+    private void Start()
+    {
+        // F18 : rôle choisi dès le tutoriel (ou lors d'une session précédente) présélectionné dans la liste.
+        string saved = PlayerPrefs.GetString("PlayerName", string.Empty);
+        if (dropdown == null || string.IsNullOrEmpty(saved)) return;
+        int index = dropdown.options.FindIndex(o => o.text == saved);
+        if (index >= 0)
+        {
+            dropdown.SetValueWithoutNotify(index);
+            dropdown.RefreshShownValue();
+        }
+    }
+
     public void SavePlayerName()
     {
         string selectedName = dropdown.options[dropdown.value].text;
@@ -21,19 +34,6 @@ public class LobbyManager : MonoBehaviour
         else
         {
             Debug.LogWarning("Veuillez sélectionner un nom valide !");
-        }
-    }
-
-    public void OnNameSubmit()
-    {
-        string playerName = dropdown.options[dropdown.value].text;
-        if (!string.IsNullOrEmpty(playerName))
-        {
-            PlayerPrefs.SetString("PlayerName", playerName);
-        }
-        else
-        {
-            Debug.LogWarning("Veuillez entrer un nom !");
         }
     }
     

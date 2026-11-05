@@ -1,0 +1,419 @@
+using System;
+using TMPro;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using Fusion;
+using UnityEngine.UIElements;
+using UnityEngine.EventSystems;
+using System.Net;
+using ExitGames.Client.Photon.StructWrapping;
+using Meta.XR.MRUtilityKit;
+
+public class DistanceMeasurementToolV2 : NetworkBehaviour
+{
+    private XRIBIMInputActions playerInputActions;
+    private PlayerInput playerInput;
+    public Transform cameraRef;
+
+    public Transform controller;
+    public Camera mainCamera; // Assign the main camera or the camera used for raycasting
+    public float rayLength = 30f; // Length of the raycast
+    public Material lineMaterial; // Material for the LineRenderer
+    private GameObject lineObj;
+
+    public GameObject lineObjNW;
+
+    public GameObject spawnObj;
+    private GameObject spawnRefStart;
+    private GameObject spawnRefEnd;
+
+   
+
+    private TMP_Text measureText;
+
+    public NetworkedLine linePrefab; // Assign this in the Inspector
+    private NetworkedLine spawnedLine;
+    private Vector3 pointA = new Vector3(0, 0, 2.36f); // Example position
+    private Vector3 pointB = new Vector3(0, 0, -1.4f); // Example position
+
+
+    // Layer mask for raycast targets (optional)
+    public LayerMask raycastLayerMask;
+
+    private LineRenderer currentLine;
+    private bool isDrawing = false;
+
+    private int count = 0;
+    
+    private Vector3 firstPoint;
+    private Vector3 secondPoint;
+
+
+    public NetworkedMUI measureUI;
+    private NetworkedMUI spawnedUI;
+    public float uiOffsetY = 0f;
+
+    public GameObject runTimeGeneratedObjects;
+
+    private void Awake()
+    {
+        playerInputActions = MeasurementHandlerV2.Instance.playerInputActions;
+        playerInputActions.XRIRightInteraction.Enable();
+
+        // N5 : abonnements faits dans OnEnable uniquement (Awake + OnEnable doublait chaque appui).
+    }
+    private void OnEnable()
+    {
+        playerInputActions = MeasurementHandlerV2.Instance.playerInputActions;
+        playerInputActions.XRIRightInteraction.Enable();
+
+        //adding actionListeners
+        playerInputActions.XRIRightInteraction.Select.performed += DrawLine_performed;
+        playerInputActions.XRIRightInteraction.Select.canceled += DrawLine_endDrawing;
+        playerInputActions.XRILeftInteraction.Delete.performed += DeleteLastLine_performed;
+    }
+    private void OnDisable()
+    {
+        playerInputActions.XRIRightInteraction.Select.performed -= DrawLine_performed;
+        playerInputActions.XRIRightInteraction.Select.canceled -= DrawLine_endDrawing;
+        playerInputActions.XRILeftInteraction.Delete.performed -= DeleteLastLine_performed;
+
+    }
+
+    private void DrawLine_performed(InputAction.CallbackContext context)
+    {
+        if (!isDrawing)
+        {
+            DrawLine();
+            isDrawing = true;
+        }
+
+    }
+    private void DrawLine_performed()
+    {
+        if (!isDrawing)
+        {
+            DrawLine();
+            isDrawing = true;
+        }
+
+    }
+    private void DrawLine_endDrawing()
+    {
+        if (isDrawing)
+        {
+            isDrawing = false;
+            currentLine = null;
+            spawnedLine = null;
+            spawnRefStart = null;
+            spawnRefEnd = null;
+            if (lineObj != null && lineObj.activeSelf)
+            {
+                lineObj = null;
+             //   MeasurementHandler.Instance.lineCount++;
+                // Destroy(lineObj);
+            }
+            spawnedUI = null;
+            lineObj = null;
+
+        }
+    }
+    private void DrawLine_endDrawing(InputAction.CallbackContext context)
+    {
+        if (isDrawing)
+        {
+            isDrawing = false;
+            currentLine = null;
+            spawnedLine = null;
+            spawnRefStart = null;
+            spawnRefEnd = null;
+            if (lineObj != null && lineObj.activeSelf)
+            {
+                lineObj = null;
+             //   MeasurementHandler.Instance.lineCount++;
+                // Destroy(lineObj);
+            }
+            spawnedUI = null;
+           lineObj = null;
+
+        }
+    }
+    private void DeleteLastLine_performed(InputAction.CallbackContext context)
+    {
+        MeasurementHandlerV2.Instance.DeleteLastLine();
+    }
+
+    void Update()
+    {
+       
+    /* if (OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger))
+        {
+            Debug.Log("intex key pressed");
+            DrawLine_performed();
+        }
+        // Deselect
+        else if (OVRInput.GetUp(OVRInput.Button.SecondaryIndexTrigger))
+        {
+            Debug.Log("intex key removed");
+            DrawLine_endDrawing();
+        }
+    
+        // Get right-hand trigger value (0.0f to 1.0f)
+        // Read right index trigger (mapped)
+         float triggerValue = OVRInput.Get(OVRInput.Axis1D.PrimaryIndexTrigger, OVRInput.Controller.RTouch);
+
+
+        if (triggerValue > 0.3f) // Small threshold to avoid accidental movement
+        {
+            if (isDrawing)
+            {
+                UpdateLine();
+            }
+        }
+    */
+     
+            if (playerInputActions.XRIRightInteraction.Select.ReadValue<float>() > 0.3)
+            {
+                if (isDrawing)
+                {
+                    UpdateLine();
+                }
+
+            }
+        /*       if (Input.GetMouseButtonUp(1))
+               {
+                   DrawPositionIndicator();
+               }
+        */
+    }
+
+    private void DrawLine()
+    {
+        
+        if (currentLine == null)
+        {
+            Fusion.NetworkObject spawnNWLine = null;
+            NetworkManager.Instance.Runner.Spawn(linePrefab, Vector3.zero, linePrefab.transform.rotation, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
+            {
+                spawnNWLine = obj;
+                spawnedLine = spawnNWLine.gameObject.GetComponent<NetworkedLine>();
+
+
+                lineObj = spawnNWLine.gameObject;
+                lineObj.transform.name = "Line" + count++;
+                lineObj.transform.SetParent(runTimeGeneratedObjects.transform);
+                currentLine = lineObj.GetComponent<LineRenderer>();
+
+                MeasurementHandlerV2.Instance.AddLine(spawnNWLine.gameObject);
+                
+                MeasurementHandlerV2.Instance.lineCount++;
+                UndoManager.RecordSpawn("Tracer une mesure", lineObj); // F19
+                 updateLinePosition(pointA, pointB);
+                 DrawUI();
+                  
+
+            });
+
+
+            // spawnedLine = NetworkManager.Instance.Runner.Spawn(linePrefab, Vector3.zero, Quaternion.identity);
+        }
+
+
+        /*   currentLine.material = lineMaterial;
+           currentLine.startWidth = 0.01f;
+           currentLine.endWidth = 0.01f;
+           currentLine.positionCount = 2;
+        */
+
+        currentLine.enabled = false; // Initially, the line is hidden
+                                     //add endPointMarquers
+
+        Fusion.NetworkObject spawnNWObjStart = null;
+        NetworkManager.Instance.Runner.Spawn(spawnObj, Vector3.zero, spawnObj.transform.rotation, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
+        {
+            spawnNWObjStart = obj;
+        });
+
+
+        spawnRefStart = spawnNWObjStart.gameObject;
+        spawnRefStart.transform.parent = lineObj.transform;
+        spawnRefStart.transform.tag = "StartPoint";
+
+        /*
+        spawnRefStart = Instantiate(spawnObj);
+        spawnRefStart.transform.parent = lineObj.transform;
+        spawnRefStart.transform.tag = "StartPoint";
+        */
+
+
+
+        // Get the controller's position and orientation
+        Vector3 controllerPosition = controller.position;
+        Quaternion controllerRotation = controller.rotation;
+        Vector3 rayDirection = controllerRotation * Vector3.forward;
+
+        // Raycast logic
+        Ray ray = new Ray(controllerPosition, rayDirection);
+
+        lineObj.SetActive(false);
+        // Perform the first raycast
+        if (Physics.Raycast(ray, out RaycastHit firstHit, rayLength, raycastLayerMask))
+        {
+            firstPoint = firstHit.point;
+            Vector3 normal = firstHit.normal;
+            //Spawn marquer
+            spawnRefStart.transform.position = firstPoint;
+
+            NetworkObject networkObjStart = spawnRefStart.GetComponent<NetworkObject>();
+            if (networkObjStart != null && networkObjStart.HasStateAuthority)
+            {
+                // Use NetworkTransform if present
+                NetworkTransform networkTransform = spawnRefStart.GetComponent<NetworkTransform>();
+                if (networkTransform != null)
+                {
+                    networkTransform.Teleport(firstPoint);
+                }
+                else
+                {
+                    spawnRefStart.transform.position = firstPoint; // Fallback if no NetworkTransform
+                }
+
+                //Debug.Log($"Moved {obj.name} to {newPosition}");
+            }
+        }
+
+        Fusion.NetworkObject spawnNWObjEnd = null;
+        NetworkManager.Instance.Runner.Spawn(spawnObj, Vector3.zero, spawnObj.transform.rotation, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
+        {
+            spawnNWObjEnd = obj;
+        });
+
+        spawnRefEnd = spawnNWObjEnd.gameObject;
+        spawnRefEnd.transform.parent = lineObj.transform;
+        spawnRefEnd.transform.tag = "EndPoint";
+
+
+}
+
+    private Transform FindChildWithTagRecursive(Transform parent, string tag)
+    {
+        foreach (Transform child in parent)
+        {
+            if (child.CompareTag(tag))
+            {
+                return child;
+            }
+            Transform found = FindChildWithTagRecursive(child, tag);
+            if (found != null)
+            {
+                return found;
+            }
+        }
+        return null;
+    }
+
+
+    private void DrawUI()
+    {
+        Debug.LogError("Hurry it workds*************");
+        if (spawnedUI == null)
+        {
+
+            spawnedUI = NetworkManager.Instance.Runner.Spawn(measureUI, Vector3.zero, Quaternion.identity);
+        }
+        // Calculate midpoint between pointA and pointB
+        Vector3 midpoint = (currentLine.GetPosition(0) + currentLine.GetPosition(1)) / 2f;
+
+        spawnedUI.transform.parent = lineObj.transform;
+        spawnedUI.SetCameraRef(cameraRef);
+        // Set UI position at the midpoint
+
+        Vector3 newUIPos = new Vector3(midpoint.x, midpoint.y + uiOffsetY, midpoint.z);
+
+
+        spawnedUI.SetUIPositions(newUIPos, "", true);
+
+        Debug.Log(" UI ");
+    }
+
+    private void updateLinePosition(Vector3 pointA, Vector3 pointB)
+    {
+        spawnedLine.SetLinePositions(pointA, pointB, true);
+    }
+
+
+    private void UpdateLine()
+    {
+        // Get the controller's position and orientation
+        Vector3 controllerPosition = controller.position;
+        Quaternion controllerRotation = controller.rotation;
+        Vector3 rayDirection = controllerRotation * Vector3.forward;
+
+        // Raycast logic
+        Ray ray = new Ray(controllerPosition, rayDirection);
+
+        lineObj.SetActive(false);
+        // Perform the first raycast
+        if (Physics.Raycast(ray, out RaycastHit secondHit, rayLength, raycastLayerMask))
+        {
+            lineObj.SetActive(true);
+            secondPoint = secondHit.point;
+
+            NetworkObject networkObjEnd = spawnRefEnd.GetComponent<NetworkObject>();
+            if (networkObjEnd != null && networkObjEnd.HasStateAuthority)
+            {
+                // Use NetworkTransform if present
+                NetworkTransform networkTransform = spawnRefEnd.GetComponent<NetworkTransform>();
+                if (networkTransform != null)
+                {
+                    networkTransform.Teleport(secondPoint);
+                }
+                else
+                {
+                    spawnRefEnd.transform.position = secondPoint; // Fallback if no NetworkTransform
+                }
+
+                //Debug.Log($"Moved {obj.name} to {newPosition}");
+            }
+
+
+
+            NetworkObject networklineObj = lineObj.GetComponent<NetworkObject>();
+            if (networklineObj != null && networklineObj.HasStateAuthority)
+            {
+                // Use NetworkTransform if present
+                NetworkTransform networkTransform = lineObj.GetComponent<NetworkTransform>();
+                if (networkTransform != null)
+                {
+                    updateLinePosition(firstPoint, secondPoint);
+                    string data = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " mètre";
+
+                    Vector3 tempPos = (currentLine.GetPosition(0) + currentLine.GetPosition(1)) / 2;
+                    Vector3 newUIPos = new Vector3(tempPos.x, tempPos.y + uiOffsetY, tempPos.z);
+
+                    spawnedUI.SetUIPositions(newUIPos, data, true);
+
+                }
+
+
+                //Debug.Log($"Moved {obj.name} to {newPosition}");
+            }
+
+
+
+
+
+
+
+        }
+
+    }
+
+
+
+
+}
+
+
+
+

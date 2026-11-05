@@ -17,13 +17,23 @@ public class HardwareRig : MonoBehaviour, INetworkRunnerCallbacks
 
     void Start()
     {
-        NetworkManager.Instance.Runner.AddCallbacks(this);
+        if (NetworkManager.Instance == null)
+        {
+            Debug.LogError("NetworkManager.Instance est NULL !");
+            return;
+        }
+
+        // N4 : enregistrement persistant, ré-attaché automatiquement au nouveau runner après une reconnexion.
+        NetworkManager.Instance.RegisterPersistentCallbacks(this);
     }
 
 
     #region INetworkRunnerCallbacks
     void INetworkRunnerCallbacks.OnInput(NetworkRunner runner, NetworkInput input)
     {
+        if (headTransform == null || playerTransform == null || leftHandTransform == null || rightHandTransform == null)
+            return;
+
         RigState xrRigState = new RigState();
 
         xrRigState.HeadsetPosition = headTransform.position;
@@ -41,6 +51,12 @@ public class HardwareRig : MonoBehaviour, INetworkRunnerCallbacks
         input.Set(xrRigState);
     }
     #endregion
+
+    private void OnDestroy()
+    {
+        if (NetworkManager.Instance != null)
+            NetworkManager.Instance.UnregisterPersistentCallbacks(this);
+    }
 
     #region Unused INetworkRunnerCallbacks
     public void OnConnectedToServer(NetworkRunner runner)

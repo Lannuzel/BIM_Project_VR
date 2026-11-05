@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-using UnityEngine.XR.Interaction.Toolkit.Samples.StarterAssets;
+using UnityEngine.XR.Interaction.Toolkit;
 
 namespace XRMultiplayer
 {
@@ -173,7 +173,7 @@ namespace XRMultiplayer
 
             if (m_CharacterController != null)
             {
-                m_CharacterController.GetComponentInChildren<DynamicMoveProvider>().useGravity = true;
+              //  m_CharacterController.GetComponentInChildren<DynamicMoveProvider>().useGravity = true;
                 m_CharacterController = null;
             }
 
@@ -273,7 +273,7 @@ namespace XRMultiplayer
                 if (other.TryGetComponent(out CharacterController controller))
                 {
                     m_CharacterController = controller;
-                    m_CharacterController.GetComponentInChildren<DynamicMoveProvider>().useGravity = false;
+                  //  m_CharacterController.GetComponentInChildren<DynamicMoveProvider>().useGravity = false;
                 }
             }
         }
@@ -296,7 +296,7 @@ namespace XRMultiplayer
             {
                 if (other.TryGetComponent(out CharacterController controller))
                 {
-                    controller.GetComponentInChildren<DynamicMoveProvider>().useGravity = true;
+                 //   controller.GetComponentInChildren<DynamicMoveProvider>().useGravity = true;
                     m_CharacterController = null;
                 }
             }

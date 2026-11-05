@@ -9,12 +9,12 @@ public class ConnectionManager : MonoBehaviour
 
     public void CreateRoom()
     {
-        NetworkManager.Instance.CreateSession(inputField.text);
+        NetworkManager.Instance.CreateSession("Modelisateur");
     }
 
     public void JoinRoom()
     {
-        NetworkManager.Instance.JoinSession(inputField.text);
+        NetworkManager.Instance.JoinSession("Modelisateur");
 
     }
 }

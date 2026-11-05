@@ -1,0 +1,39 @@
+using UnityEngine;
+using UnityEngine.UI;
+using System.Collections.Generic;
+
+public class RawImageTextureLoader : MonoBehaviour
+{
+    public RawImage rawImage; // Assign the RawImage in the Inspector
+    public List<Texture2D> userDocuments;
+
+    public void Awake()
+    {
+        ApplyRole(NetworkManager.GetLocalPlayerName());
+    }
+
+    /// <summary>Charge le document du rôle (F18 : réappliqué lors d'un changement de rôle).</summary>
+    public void ApplyRole(string playerName)
+    {
+        if (rawImage == null || userDocuments == null) return;
+
+        int index = -1;
+        if (playerName == "Lecteur") index = 0;
+        else if (playerName == "Calculateur") index = 1;
+        else if (playerName == "Modelisateur") index = 2;
+
+        if (index >= 0 && index < userDocuments.Count)
+            rawImage.texture = userDocuments[index];
+        AdjustHeightToAspectRatio();
+    }
+
+    public void AdjustHeightToAspectRatio()
+    {
+        if (rawImage != null && rawImage.texture != null)
+        {
+            float aspectRatio = (float)rawImage.texture.height / rawImage.texture.width;
+            RectTransform rt = rawImage.GetComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(rt.sizeDelta.x, rt.sizeDelta.x * aspectRatio);
+        }
+    }
+}

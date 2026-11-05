@@ -5,7 +5,7 @@ using TMPro;
 using System;
 using Unity.Netcode;
 using UnityEngine.UI;
-using UnityEngine.XR.Interaction.Toolkit.Samples.StarterAssets;
+using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.InputSystem;
 using UnityEngine.XR.Interaction.Toolkit.Locomotion.Turning;
 using UnityEngine.Android;
@@ -49,7 +49,7 @@ namespace XRMultiplayer
         [SerializeField] float m_SnapTurnUpdateAmount = 15.0f;
 
         VoiceChatManager m_VoiceChatManager;
-        DynamicMoveProvider m_MoveProvider;
+      //  DynamicMoveProvider m_MoveProvider;
         SnapTurnProvider m_TurnProvider;
         UnityEngine.XR.Interaction.Toolkit.Locomotion.Comfort.TunnelingVignetteController m_TunnelingVignetteController;
 
@@ -58,7 +58,7 @@ namespace XRMultiplayer
         private void Awake()
         {
             m_VoiceChatManager = FindFirstObjectByType<VoiceChatManager>();
-            m_MoveProvider = FindFirstObjectByType<DynamicMoveProvider>();
+            //m_MoveProvider = FindFirstObjectByType<DynamicMoveProvider>();
             m_TurnProvider = FindFirstObjectByType<SnapTurnProvider>();
             m_TunnelingVignetteController = FindFirstObjectByType<UnityEngine.XR.Interaction.Toolkit.Locomotion.Comfort.TunnelingVignetteController>();
 
@@ -268,19 +268,19 @@ namespace XRMultiplayer
         {
             if (toggle)
             {
-                m_MoveProvider.leftHandMovementDirection = DynamicMoveProvider.MovementDirection.HandRelative;
+         //       m_MoveProvider.leftHandMovementDirection = DynamicMoveProvider.MovementDirection.HandRelative;
             }
         }
         public void SetHeadOrientation(bool toggle)
         {
             if (toggle)
             {
-                m_MoveProvider.leftHandMovementDirection = DynamicMoveProvider.MovementDirection.HeadRelative;
+       //         m_MoveProvider.leftHandMovementDirection = DynamicMoveProvider.MovementDirection.HeadRelative;
             }
         }
         public void SetMoveSpeed(float speedPercent)
         {
-            m_MoveProvider.moveSpeed = Mathf.Lerp(m_MinMaxMoveSpeed.x, m_MinMaxMoveSpeed.y, speedPercent);
+         //   m_MoveProvider.moveSpeed = Mathf.Lerp(m_MinMaxMoveSpeed.x, m_MinMaxMoveSpeed.y, speedPercent);
         }
 
         public void UpdateSnapTurn(int dir)
@@ -297,8 +297,8 @@ namespace XRMultiplayer
 
         public void ToggleFlight(bool toggle)
         {
-            m_MoveProvider.useGravity = !toggle;
-            m_MoveProvider.enableFly = toggle;
+        //    m_MoveProvider.useGravity = !toggle;
+         //   m_MoveProvider.enableFly = toggle;
         }
     }
 }

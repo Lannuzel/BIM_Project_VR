@@ -9,6 +9,33 @@ TagManager:
   - Anchor
   - PlayerHand
   - Destroyer
+  - CinemachineTarget
+  - Win10StyleMenu
+  - DefaultMenu
+  - MenuTitle
+  - ButtonPanel
+  - Win10StyleButton
+  - DefaultButton
+  - ButtonIcon
+  - ButtonText
+  - Measure
+  - Interactable
+  - StartPoint
+  - EndPoint
+  - Floor
+  - Wall
+  - Line
+  - Undefined
+  - MeasureUI
+  - RingMenu
+  - Plane
+  - RingButton
+  - Reservation
+  - TutorialObject
+  - cylinderReservationSol
+  - cylinderReservationMur
+  - SquareReservationMur
+  - SquareReservationSol
   layers:
   - Default
   - TransparentFX
@@ -27,18 +54,18 @@ TagManager:
   - 
   - 
   - 
+  - Wall
+  - 
+  - Chair
+  - 
+  - Floor
+  - Reservation
   - 
   - 
+  - HoleMask
   - 
   - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - Tutorial
   - 
   - 
   - 
