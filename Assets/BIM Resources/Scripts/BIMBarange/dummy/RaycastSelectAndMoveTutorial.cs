@@ -35,6 +35,22 @@ public class RaycastSelectAndMoveTutorial : MonoBehaviour
     [Tooltip("Texte optionnel d'état pour le tutoriel.")]
     public TMP_Text statusText;
 
+    [Header("Indicateur de mode (F6)")]
+    [Tooltip("Texte optionnel du panneau indiquant le mode courant.")]
+    public TMP_Text modeText;
+    [Tooltip("Afficher une étiquette flottante « Mode : ... » au-dessus de l'objet.")]
+    public bool showFloatingModeLabel = true;
+    [Tooltip("Hauteur (m) de l'étiquette au-dessus de l'objet.")]
+    public float labelHeight = 0.3f;
+
+    /// <summary>Libellé du mode courant : « déplacement » ou « rotation ».</summary>
+    public string CurrentModeLabel => currentMode == ControlMode.Rotate ? "rotation" : "déplacement";
+
+    /// <summary>Déclenché à chaque bascule de mode (bouton A).</summary>
+    public event Action<string> ModeChanged;
+
+    private TextMeshPro floatingLabel;
+
     /// <summary>Vrai quand l'objet est posé sur sa cible (dans la tolérance) et relâché.</summary>
     public bool IsCompleted { get; private set; }
 
@@ -78,11 +94,60 @@ public class RaycastSelectAndMoveTutorial : MonoBehaviour
     private void OnEnable()
     {
         UpdateStatus();
+        UpdateModeLabel();
     }
 
     private void OnDisable()
     {
         Deselect();
+        if (floatingLabel != null)
+            floatingLabel.gameObject.SetActive(false);
+    }
+
+    private void LateUpdate()
+    {
+        if (floatingLabel == null || tutorialObject == null)
+            return;
+
+        floatingLabel.transform.position = tutorialObject.position + Vector3.up * labelHeight;
+        Transform cam = cameraTransform != null ? cameraTransform : (Camera.main != null ? Camera.main.transform : null);
+        if (cam != null)
+        {
+            Vector3 toLabel = floatingLabel.transform.position - cam.position;
+            toLabel.y = 0f;
+            if (toLabel.sqrMagnitude > 0.0001f)
+                floatingLabel.transform.rotation = Quaternion.LookRotation(toLabel.normalized, Vector3.up);
+        }
+    }
+
+    /// <summary>Met à jour le texte du panneau et l'étiquette flottante (F6).</summary>
+    private void UpdateModeLabel()
+    {
+        string label = "Mode : " + CurrentModeLabel + "  (bouton A pour changer)";
+
+        if (modeText != null)
+            modeText.text = label;
+
+        if (!showFloatingModeLabel)
+            return;
+
+        if (floatingLabel == null)
+        {
+            var go = new GameObject("ModeLabel");
+            go.transform.SetParent(transform, false);
+            floatingLabel = go.AddComponent<TextMeshPro>();
+            floatingLabel.fontSize = 1.5f;
+            floatingLabel.alignment = TextAlignmentOptions.Center;
+            floatingLabel.color = Color.white;
+            floatingLabel.outlineWidth = 0.2f;
+            floatingLabel.outlineColor = Color.black;
+            var rect = floatingLabel.GetComponent<RectTransform>();
+            rect.sizeDelta = new Vector2(1.2f, 0.3f);
+        }
+
+        floatingLabel.gameObject.SetActive(true);
+        floatingLabel.text = label;
+        floatingLabel.color = currentMode == ControlMode.Rotate ? new Color(1f, 0.75f, 0.2f) : new Color(0.5f, 0.9f, 1f);
     }
 
     void Update()
@@ -107,6 +172,8 @@ public class RaycastSelectAndMoveTutorial : MonoBehaviour
         {
             currentMode = currentMode == ControlMode.Translate ? ControlMode.Rotate : ControlMode.Translate;
             Debug.Log("Mode switched to: " + currentMode);
+            UpdateModeLabel();
+            ModeChanged?.Invoke(CurrentModeLabel);
         }
         aButtonWasPressed = aButton;
 
