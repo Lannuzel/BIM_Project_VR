@@ -40,7 +40,7 @@ public class EyeTrackingDataLogger : MonoBehaviour
         filePath = Path.Combine(folderPath, fileName);
         
         // Initialise le StreamWriter
-        writer = new StreamWriter(filePath, false);  // false écrase le fichier existant
+        writer = new StreamWriter(filePath, false) { AutoFlush = true }; // N2 : rien ne reste en memoire  // false écrase le fichier existant
         writer.WriteLine("Time;RayOriginX;RayOriginY;RayOriginZ;HitPointX;HitPointY;HitPointZ;ObjectHit");
 
         isRecording = true;

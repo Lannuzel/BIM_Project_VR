@@ -47,7 +47,7 @@ public class FaceTrackingRecorder : MonoBehaviour
 
     public void StartRecording()
     {
-        writer = new StreamWriter(filePath, false); //ecrase fichier existant
+        writer = new StreamWriter(filePath, false) { AutoFlush = true }; // N2 : rien ne reste en memoire //ecrase fichier existant
 
         // Écrire l'en-tête (noms des colonnes)
         writer.Write("Timestamp");

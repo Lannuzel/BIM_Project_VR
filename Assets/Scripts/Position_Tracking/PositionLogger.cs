@@ -44,7 +44,7 @@ public class PositionLogger : MonoBehaviour
     public void StartLogging()
     {
 
-        writer = new StreamWriter(filePath, false); // Ouvre en écrasant le fichier existant
+        writer = new StreamWriter(filePath, false) { AutoFlush = true }; // N2 : rien ne reste en memoire // Ouvre en écrasant le fichier existant
 
         // Écrire l'en-tête (une colonne pour chaque utilisateur avec ses coordonnées)
         writer.Write("Timestamp");

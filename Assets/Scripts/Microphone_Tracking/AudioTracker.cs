@@ -13,7 +13,7 @@ public class AudioTracker : MonoBehaviour
     private AudioSource audioSource;
     private bool isRecording = false;
     private int sampleRate = 44100; // Fréquence d'échantillonnage standard
-    private MemoryStream memoryStream;
+    private FileStream fileStream;     // N2 : écriture en flux sur disque (plus de tampon mémoire de 30 min)
     private BinaryWriter binaryWriter;
     private int lastSamplePosition = 0; // Position précédente dans le clip audio
     private string micDevice;
@@ -26,7 +26,16 @@ public class AudioTracker : MonoBehaviour
     [Tooltip("Délai maximal (s) d'attente du démarrage du micro avant de signaler une erreur.")]
     [SerializeField] private float micStartTimeout = 3f;
 
+    [Tooltip("N2 : intervalle (s) entre deux écritures effectives sur disque (flush).")]
+    [SerializeField] private float flushInterval = 2f;
+
+    private float nextFlushTime;
+    private float[] sampleBuffer = new float[0];
+
     public bool IsRecording => isRecording;
+
+    /// <summary>Chemin du fichier WAV en cours (vide tant que l'enregistrement n'a pas démarré).</summary>
+    public string FilePath => filePath;
 
     void Start()
     {
@@ -110,11 +119,13 @@ public class AudioTracker : MonoBehaviour
         filePath = BuildFilePath();
         Debug.Log($"Chemin du fichier audio : {filePath}");
 
+        if (!InitWAV())
+            return;
+
         audioSource.clip = Microphone.Start(micDevice, true, 10, sampleRate);
         audioSource.mute = true;
         lastSamplePosition = 0;
-
-        InitWAV();
+        nextFlushTime = Time.realtimeSinceStartup + flushInterval;
         isRecording = true;
 
         // Attente non bloquante du démarrage effectif du micro (l'ancienne boucle while gelait l'application).
@@ -142,16 +153,33 @@ public class AudioTracker : MonoBehaviour
         if (isRecording)
         {
             SaveNewAudioData();
+
+            if (Time.realtimeSinceStartup >= nextFlushTime)
+            {
+                nextFlushTime = Time.realtimeSinceStartup + flushInterval;
+                Flush();
+            }
         }
     }
 
-    private void InitWAV()
+    private bool InitWAV()
     {
-        memoryStream = new MemoryStream();
-        binaryWriter = new BinaryWriter(memoryStream);
+        try
+        {
+            fileStream = new FileStream(filePath, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+            binaryWriter = new BinaryWriter(fileStream);
 
-        // Écrire un en-tête WAV vide, à remplir plus tard
-        binaryWriter.Write(new char[44]); // Réserve 44 octets pour l'en-tête WAV
+            // Écrire un en-tête WAV vide, à remplir lors de l'arrêt (ou à chaque flush pour rester lisible).
+            binaryWriter.Write(new byte[44]); // Réserve 44 octets pour l'en-tête WAV
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[AudioTracker] Impossible de créer le fichier audio {filePath} : {e.Message}");
+            binaryWriter = null;
+            fileStream = null;
+            return false;
+        }
     }
 
     private float[] GetSamplesFromAudioClip(AudioClip clip)
@@ -193,18 +221,15 @@ public class AudioTracker : MonoBehaviour
         }
 
         // Convertir les échantillons en données audio et les insérer dans le flux
-        foreach (float sample in markerSamples)
-        {
-            short intData = (short)(sample * short.MaxValue); // Convertir en PCM 16 bits
-            binaryWriter.Write(intData);
-        }
+        WriteSamples(markerSamples, markerSamples.Length);
+        Flush();
 
         Debug.Log("Signal sonore inséré dans le fichier audio.");
     }
 
     private void SaveNewAudioData()
     {
-        if (audioSource.clip == null)
+        if (audioSource.clip == null || binaryWriter == null)
             return;
 
         int currentPosition = Microphone.GetPosition(micDevice);
@@ -214,16 +239,54 @@ public class AudioTracker : MonoBehaviour
                 ? currentPosition - lastSamplePosition
                 : audioSource.clip.samples - lastSamplePosition + currentPosition;
 
-            float[] samples = new float[samplesToRead];
-            audioSource.clip.GetData(samples, lastSamplePosition);
+            if (sampleBuffer.Length < samplesToRead)
+                sampleBuffer = new float[samplesToRead];
 
-            foreach (float sample in samples)
+            if (currentPosition > lastSamplePosition)
             {
-                short intData = (short)(sample * short.MaxValue);
-                binaryWriter.Write(intData);
+                audioSource.clip.GetData(sampleBuffer, lastSamplePosition);
+                WriteSamples(sampleBuffer, samplesToRead);
+            }
+            else
+            {
+                // Le clip a bouclé : fin du tampon puis début.
+                int tail = audioSource.clip.samples - lastSamplePosition;
+                audioSource.clip.GetData(sampleBuffer, lastSamplePosition);
+                WriteSamples(sampleBuffer, tail);
+                audioSource.clip.GetData(sampleBuffer, 0);
+                WriteSamples(sampleBuffer, currentPosition);
             }
 
             lastSamplePosition = currentPosition; // Mise à jour de la dernière position
+        }
+    }
+
+    private void WriteSamples(float[] samples, int count)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            short intData = (short)(Mathf.Clamp(samples[i], -1f, 1f) * short.MaxValue);
+            binaryWriter.Write(intData);
+        }
+    }
+
+    /// <summary>Écrit l'en-tête courant et vide les tampons : le fichier reste lisible même en cas de crash.</summary>
+    private void Flush()
+    {
+        if (binaryWriter == null || fileStream == null)
+            return;
+
+        try
+        {
+            long end = fileStream.Position;
+            WriteWAVHeader();
+            fileStream.Position = end;
+            binaryWriter.Flush();
+            fileStream.Flush(true);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[AudioTracker] Erreur d'écriture audio : {e.Message}");
         }
     }
 
@@ -233,16 +296,17 @@ public class AudioTracker : MonoBehaviour
         {
             isRecording = false;
 
+            SaveNewAudioData();
             Microphone.End(micDevice);
             audioSource.Stop();
 
             WriteWAVHeader();
-            SaveToFile();
 
+            binaryWriter?.Flush();
             binaryWriter?.Close();
-            memoryStream?.Close();
+            fileStream?.Close();
             binaryWriter = null;
-            memoryStream = null;
+            fileStream = null;
 
             Debug.Log($"Audio recording stopped.");
         }
@@ -250,10 +314,12 @@ public class AudioTracker : MonoBehaviour
 
     private void WriteWAVHeader()
     {
-        memoryStream.Seek(0, SeekOrigin.Begin);
+        if (binaryWriter == null || fileStream == null)
+            return;
 
         // Calcul de la taille finale et écriture de l'en-tête WAV
-        int fileSize = (int)memoryStream.Length;
+        int fileSize = (int)fileStream.Length;
+        fileStream.Seek(0, SeekOrigin.Begin);
         binaryWriter.Write("RIFF".ToCharArray());
         binaryWriter.Write(fileSize - 8);
         binaryWriter.Write("WAVE".ToCharArray());
@@ -269,11 +335,6 @@ public class AudioTracker : MonoBehaviour
         binaryWriter.Write(fileSize - 44); // Subchunk2Size
     }
 
-    private void SaveToFile()
-    {
-        File.WriteAllBytes(filePath, memoryStream.ToArray());
-    }
-
     private void OnDestroy()
     {
         Debug.Log("Application quittée sur OnDestroy. Arrêt de l'enregistremen Audio.");
@@ -286,13 +347,11 @@ public class AudioTracker : MonoBehaviour
         StopRecording();
     }
 
-    // private void OnApplicationPause(bool isPaused)
-    // {
-    //     if (isPaused)
-    //     {
-    //         Debug.Log("Application quittée sur OnApplicationPause. Arrêt de l'enregistremen Audio.");
-    //         StopRecording(); // Assure que l'enregistrement est arrêté proprement
-    //     }
-    // }
+    private void OnApplicationPause(bool isPaused)
+    {
+        // Casque retiré ou application en arrière-plan : on sécurise ce qui est déjà capté.
+        if (isPaused && isRecording)
+            Flush();
+    }
 
 }
