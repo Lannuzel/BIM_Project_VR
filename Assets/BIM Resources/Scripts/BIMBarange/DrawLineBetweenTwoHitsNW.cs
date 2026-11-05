@@ -153,6 +153,7 @@ public class DrawLineBetweenTwoHitsNW : Fusion.NetworkBehaviour
                     spawnedLine = spawnNWLine.gameObject.GetComponent<NetworkedLine>();
                     lineObj = spawnNWLine.gameObject;
                     currentLine = lineObj.GetComponent<LineRenderer>();
+                    UndoManager.RecordSpawn("Tracer une ligne entre deux points", lineObj); // F19
                     updateLinePosition(pointA, pointB);
                     DrawUI();
 

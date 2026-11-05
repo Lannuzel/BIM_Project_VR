@@ -239,6 +239,76 @@ public class UndoManager : MonoBehaviour
         }
     }
 
+    /// <summary>État d'une mesure (ligne réseau + étiquette + marqueurs) avant une modification d'extrémité.</summary>
+    public static MeasurementState CaptureMeasurement(GameObject line)
+    {
+        return line != null ? new MeasurementState(line) : null;
+    }
+
+    /// <summary>Empile le retour à l'état capturé si la mesure a changé.</summary>
+    public static void RecordMeasurementChange(string label, MeasurementState before)
+    {
+        if (before == null || !before.HasChanged()) return;
+        Push(new MeasurementAction(label, before));
+    }
+
+    public class MeasurementState
+    {
+        public readonly GameObject line;
+        public readonly Vector3 pointA, pointB;
+        public readonly bool active;
+        public readonly string uiText;
+        public readonly Vector3 uiPos;
+
+        public MeasurementState(GameObject line)
+        {
+            this.line = line;
+            var nl = line.GetComponent<NetworkedLine>();
+            if (nl != null) { pointA = nl.networkedPointA; pointB = nl.networkedPointB; active = nl.isLineActive; }
+            var ui = line.GetComponentInChildren<NetworkedMUI>(true);
+            if (ui != null) { uiText = ui.networkedTextData; uiPos = ui.networkedPosition; }
+        }
+
+        public bool HasChanged()
+        {
+            if (line == null) return false;
+            var nl = line.GetComponent<NetworkedLine>();
+            if (nl == null) return false;
+            return (nl.networkedPointA - pointA).sqrMagnitude > 1e-6f || (nl.networkedPointB - pointB).sqrMagnitude > 1e-6f;
+        }
+
+        public void Restore()
+        {
+            if (line == null) return;
+            NetworkObjectUtils.EnsureAuthority(line, ok =>
+            {
+                if (!ok || line == null) return;
+                var nl = line.GetComponent<NetworkedLine>();
+                if (nl != null) nl.SetLinePositions(pointA, pointB, active);
+                var ui = line.GetComponentInChildren<NetworkedMUI>(true);
+                if (ui != null) ui.SetUIPositions(uiPos, uiText, active);
+                foreach (Transform child in line.transform)
+                {
+                    if (child.CompareTag("StartPoint")) NetworkObjectUtils.Teleport(child.gameObject, pointA, child.rotation);
+                    else if (child.CompareTag("EndPoint")) NetworkObjectUtils.Teleport(child.gameObject, pointB, child.rotation);
+                }
+            });
+        }
+    }
+
+    public class MeasurementAction : IUndoAction
+    {
+        public string Label { get; }
+        private readonly MeasurementState before;
+        public MeasurementAction(string label, MeasurementState before) { Label = label; this.before = before; }
+        public bool Undo()
+        {
+            if (before == null || before.line == null) return false;
+            before.Restore();
+            return true;
+        }
+    }
+
     /// <summary>Description sérialisable d'un objet réseau supprimé, suffisante pour le recréer.</summary>
     public class DeleteAction : IUndoAction
     {
@@ -377,6 +447,49 @@ public class UndoManager : MonoBehaviour
         }
     }
 
+    public Color undoButtonTint = new Color(0.95f, 0.65f, 0.15f, 1f);
+    private static Sprite undoIconSprite;
+
+    /// <summary>Icône « flèche de retour » dessinée en code (les polices TMP du projet n'ont pas de glyphe flèche).</summary>
+    private static Sprite UndoIcon()
+    {
+        if (undoIconSprite != null) return undoIconSprite;
+        const int size = 96;
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        var clear = new Color(0, 0, 0, 0);
+        var pixels = new Color[size * size];
+        for (int i = 0; i < pixels.Length; i++) pixels[i] = clear;
+        Vector2 c = new Vector2(size / 2f, size / 2f - 4f);
+        float rOut = size * 0.36f, rIn = size * 0.24f;
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                Vector2 p = new Vector2(x + 0.5f, y + 0.5f) - c;
+                float r = p.magnitude;
+                float ang = Mathf.Atan2(p.y, p.x) * Mathf.Rad2Deg; // 0 = droite, 90 = haut
+                bool onArc = r >= rIn && r <= rOut && (ang >= -40f && ang <= 220f || ang < -140f);
+                if (onArc) pixels[y * size + x] = Color.white;
+            }
+        // Pointe de flèche à l'extrémité gauche-bas de l'arc (triangle)
+        Vector2 tip = c + new Vector2(-rOut * 0.55f, -rOut * 0.95f);
+        Vector2 a = c + new Vector2(-rOut * 1.15f, -rOut * 0.25f);
+        Vector2 b = c + new Vector2(-rOut * 0.05f, -rOut * 0.2f);
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                Vector2 p = new Vector2(x + 0.5f, y + 0.5f);
+                float d1 = Sign(p, tip, a), d2 = Sign(p, a, b), d3 = Sign(p, b, tip);
+                bool inside = (d1 >= 0 && d2 >= 0 && d3 >= 0) || (d1 <= 0 && d2 <= 0 && d3 <= 0);
+                if (inside) pixels[y * size + x] = Color.white;
+            }
+        tex.SetPixels(pixels);
+        tex.Apply();
+        undoIconSprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+        return undoIconSprite;
+    }
+
+    private static float Sign(Vector2 p, Vector2 a, Vector2 b) => (p.x - b.x) * (a.y - b.y) - (a.x - b.x) * (p.y - b.y);
+
     private void CloneAsUndoButton(GameObject template)
     {
         var clone = Instantiate(template, template.transform.parent);
@@ -385,6 +498,21 @@ public class UndoManager : MonoBehaviour
 
         foreach (var tmp in clone.GetComponentsInChildren<TMP_Text>(true)) { tmp.text = undoButtonLabel; buttonLabels.Add(tmp); }
         foreach (var txt in clone.GetComponentsInChildren<Text>(true)) txt.text = undoButtonLabel;
+
+        // Icône et couleur distinctes de « Supprimer » : l'icône du modèle est remplacée par la flèche de retour,
+        // le fond du bouton est teinté.
+        var rootImage = clone.GetComponent<Image>();
+        if (rootImage != null) rootImage.color = undoButtonTint;
+        foreach (var img in clone.GetComponentsInChildren<Image>(true))
+        {
+            if (img.gameObject == clone) continue;
+            if (img.sprite != null)
+            {
+                img.sprite = UndoIcon();
+                img.color = Color.white;
+                img.preserveAspect = true;
+            }
+        }
 
         var button = clone.GetComponent<Button>();
         int count = button.onClick.GetPersistentEventCount();

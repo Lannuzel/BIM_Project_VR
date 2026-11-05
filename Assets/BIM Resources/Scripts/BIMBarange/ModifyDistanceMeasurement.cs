@@ -96,6 +96,7 @@ public class ModifyDistanceMeasurement : NetworkBehaviour
             {
                 currentLine = hit.collider.transform.parent.GetComponent<LineRenderer>();
                 lineObj = hit.collider.transform.parent.gameObject;
+                modifyUndo = UndoManager.CaptureMeasurement(lineObj); // F19 : etat avant modification
                 Transform spawnedUITransform = FindChildWithTagRecursive(hit.collider.transform.parent, "MeasureUI");
                 spawnedUI = spawnedUITransform.gameObject.GetComponent<NetworkedMUI>();
 
@@ -137,6 +138,7 @@ public class ModifyDistanceMeasurement : NetworkBehaviour
 
 
     private Transform lastLine;
+    private UndoManager.MeasurementState modifyUndo; // F19
     void Update()
     {
         if (!isMeasurementActive) return; // Exit if the measurement tool is inactive
@@ -360,6 +362,7 @@ public class ModifyDistanceMeasurement : NetworkBehaviour
          }
 
         lastLine = currentLine.transform;
+        if (modifyUndo != null) { UndoManager.RecordMeasurementChange("Modifier une mesure", modifyUndo); modifyUndo = null; } // F19
         isDrawing = false;
         isModifyingEndPoint = false;
         isModifyingStartPoint = false;

@@ -109,7 +109,6 @@ public class DistanceMeasurementToolV2 : NetworkBehaviour
             spawnRefEnd = null;
             if (lineObj != null && lineObj.activeSelf)
             {
-                UndoManager.RecordSpawn("Tracer une mesure", lineObj);
                 lineObj = null;
              //   MeasurementHandler.Instance.lineCount++;
                 // Destroy(lineObj);
@@ -130,7 +129,6 @@ public class DistanceMeasurementToolV2 : NetworkBehaviour
             spawnRefEnd = null;
             if (lineObj != null && lineObj.activeSelf)
             {
-                UndoManager.RecordSpawn("Tracer une mesure", lineObj);
                 lineObj = null;
              //   MeasurementHandler.Instance.lineCount++;
                 // Destroy(lineObj);
@@ -209,6 +207,7 @@ public class DistanceMeasurementToolV2 : NetworkBehaviour
                 MeasurementHandlerV2.Instance.AddLine(spawnNWLine.gameObject);
                 
                 MeasurementHandlerV2.Instance.lineCount++;
+                UndoManager.RecordSpawn("Tracer une mesure", lineObj); // F19
                  updateLinePosition(pointA, pointB);
                  DrawUI();
                   

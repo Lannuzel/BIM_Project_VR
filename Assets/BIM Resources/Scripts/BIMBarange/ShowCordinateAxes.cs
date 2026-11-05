@@ -51,6 +51,8 @@ public class ShowCoordinateAxes : MonoBehaviour
 
     void Update()
     {
+        if (selectedObjects == null || axes == null) return;
+        selectedObjects.RemoveAll(o => o == null); // N5 : objet supprime ou annule -> le repere disparait
         if (selectedObjects.Count > 0)
         {
             if (selectedObjects[0] != null)
