@@ -1,305 +1,229 @@
-
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using Fusion;
-using UnityEngine.InputSystem.HID;
-using UnityEngine.UIElements;
 
+/// <summary>
+/// Lignes de référence « distance au mur / aux autres objets » depuis les objets sélectionnés.
+/// N5 : recherche dans les deux sens de chaque axe (+X, -X, +Z, -Z) à partir du bord de l'objet,
+/// la ligne part de la face du collider (distance bord à obstacle), chaque instance (ToWall, ToChair)
+/// a ses propres lignes (noms suffixés), l'étiquette est téléportée sur sa propre NetworkTransform.
+/// </summary>
 public class ReferenceLineFromObject : NetworkBehaviour
 {
-    private int count = 0;
     public Material lineMaterial; // Material for the LineRenderer
-    private GameObject lineObj;
-
-
-
-    private TMP_Text measureText;
 
     public Transform cameraRef;
 
     private List<GameObject> selectedObjects;// = new List<GameObject>(); // List of selected objects
-    private ObjectInteractionHandler objectInteractionHandler;
 
     public LayerMask layerMask;
     private bool showRefLines = false;
 
+    [Tooltip("Décalage (m) du point de départ par rapport au pivot (ancien comportement). Ignoré si useColliderBounds est vrai.")]
     public Vector3 posOffset = Vector3.zero;
+    [Tooltip("Partir du bord du collider de l'objet (distance bord à obstacle) plutôt que du pivot.")]
+    public bool useColliderBounds = true;
+    [Tooltip("Portée (m) de la recherche d'obstacle.")]
+    public float maxDistance = 20f;
 
     public NetworkedLine linePrefab; // Assign this in the Inspector
-    private NetworkedLine spawnedLine;
-
-
     public NetworkedMUI measureUI;
 
     public float networkedDistanceX { get; set; }
     public float networkedDistanceZ { get; set; }
 
-    // Start is called before the first frame update
+    private string suffix;
+
+    private void Awake()
+    {
+        suffix = "_" + gameObject.name;
+    }
+
     private void Start()
     {
         selectedObjects = ObjectInteractionHandler.Instance.SelectedObjects();
     }
 
+    private string LineName(string axis) => "DirectionLine" + axis + suffix;
 
     public void Update()
     {
-        if (showRefLines)
-        {
-            foreach (GameObject obj in selectedObjects)
-            {
-                Transform DirectionLineZ =  obj.transform.Find("DirectionLineZ");
-                if (DirectionLineZ == null)
-                {
-                    DrawPositionIndicatorV0(obj);
-                }
-                else 
-                {
-                    UpdatePositionIndicator(obj);
-                }
-                 
-            }
-        }
+        if (!showRefLines || selectedObjects == null) return;
 
+        foreach (GameObject obj in selectedObjects)
+        {
+            if (obj == null) continue;
+            if (obj.transform.Find(LineName("Z")) == null || obj.transform.Find(LineName("X")) == null)
+                DrawPositionIndicatorV0(obj);
+            else
+                UpdatePositionIndicator(obj);
+        }
     }
+
     public void ToggleShowReferenceLines()
     {
         showRefLines = !showRefLines;
-
         if (!showRefLines)
-        {
             DeleteReferenceLines();
-        }
     }
-    // Update is called once per frame
+
+    /// <summary>Point de départ et étendue de l'objet le long d'un axe (bords du collider ou pivot).</summary>
+    private void GetExtent(GameObject go, Vector3 axis, out Vector3 center, out float halfExtent)
+    {
+        center = go.transform.position + posOffset;
+        halfExtent = 0f;
+        if (!useColliderBounds) return;
+
+        Bounds? b = null;
+        foreach (var c in go.GetComponentsInChildren<Collider>())
+        {
+            if (c.name == "BoundingBox" || c.isTrigger) continue;
+            b = b.HasValue ? Encapsulate(b.Value, c.bounds) : c.bounds;
+        }
+        if (!b.HasValue) return;
+        center = b.Value.center;
+        halfExtent = Mathf.Abs(Vector3.Dot(b.Value.extents, axis));
+    }
+
+    private static Bounds Encapsulate(Bounds a, Bounds b) { a.Encapsulate(b); return a; }
+
+    /// <summary>Obstacle le plus proche le long de ±axis ; retourne false si rien dans la portée.</summary>
+    private bool FindNearest(GameObject go, Vector3 axis, out Vector3 from, out Vector3 to)
+    {
+        GetExtent(go, axis, out Vector3 center, out float half);
+        from = to = center;
+        float best = float.MaxValue;
+        bool found = false;
+
+        foreach (float sign in new[] { 1f, -1f })
+        {
+            Vector3 dir = axis * sign;
+            Vector3 origin = center + dir * (half + 0.005f);
+            var hits = Physics.RaycastAll(origin, dir, maxDistance, layerMask);
+            foreach (var h in hits)
+            {
+                if (h.collider.transform == go.transform || h.collider.transform.IsChildOf(go.transform)) continue;
+                if (h.distance < best)
+                {
+                    best = h.distance;
+                    from = origin;
+                    to = h.point;
+                    found = true;
+                }
+            }
+        }
+        return found;
+    }
 
     public void UpdatePositionIndicator(GameObject go)
     {
-        RaycastHit hit;
-        Vector3 transformPos = go.transform.position;
-        Vector3 position = new Vector3(transformPos.x + posOffset.x, transformPos.y + posOffset.y, transformPos.z + posOffset.z);
+        UpdateAxis(go, LineName("Z"), Vector3.forward, true);
+        UpdateAxis(go, LineName("X"), Vector3.right, false);
+    }
 
-        Transform DirectionLineZ = go.transform.Find("DirectionLineZ");
+    private void UpdateAxis(GameObject go, string lineName, Vector3 axis, bool isZ)
+    {
+        Transform lineT = go.transform.Find(lineName);
+        if (lineT == null) return;
 
-        if (DirectionLineZ == null) return;
+        var networkLine = lineT.GetComponent<NetworkObject>();
+        var spawnedLine = lineT.GetComponent<NetworkedLine>();
+        Transform uiT = ObjectInteractionHandler.Instance.FindChildWithTagRecursive(lineT, "MeasureUI");
+        var spawnedUI = uiT != null ? uiT.GetComponent<NetworkedMUI>() : null;
 
-        if (DirectionLineZ != null)
+        if (FindNearest(go, axis, out Vector3 from, out Vector3 to))
         {
+            lineT.gameObject.SetActive(true);
+            float distance = Vector3.Distance(from, to);
+            if (isZ) networkedDistanceZ = distance; else networkedDistanceX = distance;
 
-            Transform spawnedUITransform = ObjectInteractionHandler.Instance.FindChildWithTagRecursive(DirectionLineZ, "MeasureUI");
-            NetworkedMUI spawnedUI = spawnedUITransform.gameObject.GetComponent<NetworkedMUI>();
-
-           
-            LineRenderer currentLine = DirectionLineZ.transform.GetComponent<LineRenderer>();
-
-            //draw a line towards the -Z axis from the corner point
-            Ray ray = new Ray(position, new Vector3(0, 0, 1));
-            // Perform a raycast
-            if (Physics.Raycast(ray, out hit, 20, layerMask))
+            if (networkLine != null && networkLine.HasStateAuthority && spawnedLine != null)
             {
-
-                DirectionLineZ.gameObject.SetActive(true);
-                NetworkObject networklineObj = DirectionLineZ.gameObject.GetComponent<NetworkObject>();
-                if (networklineObj != null && networklineObj.HasStateAuthority)
+                spawnedLine.SetLinePositions(from, to, true);
+                if (spawnedUI != null && spawnedUI.Object != null && spawnedUI.Object.HasStateAuthority)
                 {
-                    // Use NetworkTransform if present
-                    NetworkTransform networkTransform = DirectionLineZ.GetComponent<NetworkTransform>();
-                    if (networkTransform != null)
-                    {
-
-                        NetworkedLine spawnedLine = networklineObj.gameObject.GetComponent<NetworkedLine>();
-                        spawnedLine.SetLinePositions(position, hit.point, true);
-
-                        NetworkObject networkedUI = spawnedUITransform.GetComponent<NetworkObject>();
-                        if (networkedUI != null && networkedUI.HasStateAuthority)
-                        {
-                            // Use NetworkTransform if present
-                            NetworkTransform networkUITransform = spawnedUITransform.GetComponent<NetworkTransform>();
-                            if (networkUITransform != null)
-                            {
-                                networkTransform.Teleport((currentLine.GetPosition(0) + currentLine.GetPosition(1)) / 2);
-
-                                string data = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " m�tre";
-                                spawnedUI.SetUIPositions((currentLine.GetPosition(0) + currentLine.GetPosition(1)) / 2, data, true);
-
-                                
-                            }
-                            //Debug.Log($"Moved {obj.name} to {newPosition}");
-                        }
-
-
-
-                    }
-                    //Debug.Log($"Moved {obj.name} to {newPosition}");
+                    Vector3 mid = (from + to) / 2f;
+                    var uiTransform = uiT.GetComponent<NetworkTransform>();
+                    if (uiTransform != null) uiTransform.Teleport(mid);
+                    spawnedUI.SetUIPositions(mid, distance.ToString("F2") + " m", true);
                 }
             }
-            else
-            {
-                DirectionLineZ.gameObject.SetActive(false);
-                currentLine.enabled = false;
-               // measurementUI.SetActive(false);
-            }
         }
-        Transform DirectionLineX = go.transform.Find("DirectionLineX");
-        if (DirectionLineX == null) return;
-
-        if (DirectionLineX != null)
+        else
         {
-            Transform spawnedUITransform = ObjectInteractionHandler.Instance.FindChildWithTagRecursive(DirectionLineX, "MeasureUI");
-            NetworkedMUI spawnedUI = spawnedUITransform.gameObject.GetComponent<NetworkedMUI>();
-
-            LineRenderer currentLine = DirectionLineX.GetComponent<LineRenderer>();
-
-
-            //draw a line towards the -X axis from the corner point
-            Ray ray = new Ray(position, new Vector3(1, 0, 0));
-            // Perform a raycast
-            if (Physics.Raycast(ray, out hit, 20, layerMask))
+            if (networkLine != null && networkLine.HasStateAuthority && spawnedLine != null)
             {
-
-                DirectionLineX.gameObject.SetActive(true);
-                NetworkObject networklineObj = DirectionLineX.GetComponent<NetworkObject>();
-                if (networklineObj != null && networklineObj.HasStateAuthority)
-                {
-                    // Use NetworkTransform if present
-                    NetworkTransform networkTransform = DirectionLineX.GetComponent<NetworkTransform>();
-                    if (networkTransform != null)
-                    {
-
-                        NetworkedLine spawnedLine = networklineObj.gameObject.GetComponent<NetworkedLine>();
-                        spawnedLine.SetLinePositions(position, hit.point, true);
-
-                        NetworkObject networkedUI = spawnedUITransform.GetComponent<NetworkObject>();
-                        if (networkedUI != null && networkedUI.HasStateAuthority)
-                        {
-                            // Use NetworkTransform if present
-                            NetworkTransform networkUITransform = spawnedUITransform.GetComponent<NetworkTransform>();
-                            if (networkUITransform != null)
-                            {
-                                networkTransform.Teleport((currentLine.GetPosition(0) + currentLine.GetPosition(1)) / 2);
-
-                                string data = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " m�tre";
-                                spawnedUI.SetUIPositions((currentLine.GetPosition(0) + currentLine.GetPosition(1)) / 2, data, true);
-
-                            
-                            }
-                            //Debug.Log($"Moved {obj.name} to {newPosition}");
-                        }
-
-                    }
-                    //Debug.Log($"Moved {obj.name} to {newPosition}");
-                }
-            }
-            else
-            {
-                DirectionLineX.gameObject.SetActive(false); 
-
-                currentLine.enabled = false;
-                //measurementUI.SetActive(false);
+                spawnedLine.SetLinePositions(from, from, false);
+                if (spawnedUI != null && spawnedUI.Object != null && spawnedUI.Object.HasStateAuthority)
+                    spawnedUI.SetUIPositions(from, "", false);
             }
         }
-   
     }
 
     public void DeleteReferenceLines()
     {
         showRefLines = false;
+        if (selectedObjects == null) return;
 
         foreach (GameObject obj in selectedObjects)
         {
-            Transform directionLineZ = obj.transform.Find("DirectionLineZ");
-            if (directionLineZ != null)
-                Destroy(directionLineZ.gameObject);
-
-            Transform directionLineX = obj.transform.Find("DirectionLineX");
-            if (directionLineX != null)
-                Destroy(directionLineX.gameObject);
+            if (obj == null) continue;
+            foreach (var axis in new[] { "Z", "X" })
+            {
+                Transform t = obj.transform.Find(LineName(axis));
+                if (t != null)
+                    NetworkObjectUtils.DespawnHierarchy(t.gameObject);
+            }
         }
-
     }
 
     public void DrawPositionIndicatorV0(GameObject go)
     {
-        Vector3 transformPos = go.transform.position;
-        Collider collider = go.GetComponent<Collider>();
-        Vector3 position = new Vector3(transformPos.x + posOffset.x, transformPos.y + posOffset.y, transformPos.z + posOffset.z);
+        if (!NetworkObjectUtils.IsRunning) return;
 
-        Transform directionLineZ = go.transform.Find("DirectionLineZ");
-            if (directionLineZ != null)
-                Destroy(directionLineZ.gameObject);
-        GameObject dirLineZ =   DrawLine(go, position, position, "DirectionLineZ");
-        DrawUI(dirLineZ.transform, position);
+        Vector3 position = go.transform.position + posOffset;
 
+        foreach (var axis in new[] { "Z", "X" })
+        {
+            Transform existing = go.transform.Find(LineName(axis));
+            if (existing != null)
+                NetworkObjectUtils.DespawnHierarchy(existing.gameObject);
 
-         Transform directionLineX = go.transform.Find("DirectionLineX");
-            if (directionLineX != null)
-                Destroy(directionLineX.gameObject);
-        GameObject dirLineX =   DrawLine(go, position, position, "DirectionLineX");
-        DrawUI(dirLineX.transform, position);
-
-        dirLineZ.SetActive(false);
-        dirLineX.SetActive(false); 
-
+            GameObject line = DrawLine(go, position, position, LineName(axis));
+            if (line == null) continue;
+            DrawUI(line.transform, position);
+            line.SetActive(false);
+        }
     }
-
-
 
     private void DrawUI(Transform parentRef, Vector3 position)
     {
-     //   Debug.LogError("Hurry it workds*************");
-
-
-        NetworkedMUI spawnedUI = NetworkManager.Instance.Runner.Spawn(measureUI, Vector3.zero, Quaternion.identity);
-        
-        // Calculate midpoint between pointA and pointB
-       
-
+        NetworkedMUI spawnedUI = NetworkObjectUtils.Runner.Spawn(measureUI, Vector3.zero, Quaternion.identity);
+        if (spawnedUI == null) return;
         spawnedUI.transform.parent = parentRef;
         spawnedUI.SetCameraRef(cameraRef);
-        // Set UI position at the midpoint
-        spawnedUI.SetUIPositions(position, "", true);
-
+        spawnedUI.SetUIPositions(position, "", false);
     }
-
-
 
     private GameObject DrawLine(GameObject go, Vector3 p1, Vector3 p2, string name)
     {
+        Fusion.NetworkObject spawnNWLine = NetworkObjectUtils.Runner.Spawn(linePrefab, Vector3.zero, linePrefab.transform.rotation, NetworkObjectUtils.Runner.LocalPlayer);
+        if (spawnNWLine == null) return null;
 
-        Fusion.NetworkObject spawnNWLine = null;
-        NetworkManager.Instance.Runner.Spawn(linePrefab, Vector3.zero, linePrefab.transform.rotation, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
-        {
-            spawnNWLine = obj;
-            spawnedLine = spawnNWLine.gameObject.GetComponent<NetworkedLine>();
-        });
         spawnNWLine.transform.name = name;
         spawnNWLine.transform.parent = go.transform;
-        
+
         GameObject lineObj = spawnNWLine.gameObject;
-
-        NetworkObject networklineObj = lineObj.GetComponent<NetworkObject>();
-        if (networklineObj != null && networklineObj.HasStateAuthority)
+        if (spawnNWLine.HasStateAuthority)
         {
-            // Use NetworkTransform if present
-            NetworkTransform networkTransform = lineObj.GetComponent<NetworkTransform>();
-            if (networkTransform != null)
-            {
-
-                NetworkedLine spawnedLine = networklineObj.gameObject.GetComponent<NetworkedLine>();
-                spawnedLine.SetLinePositions(p1, p2, true);
-
-                LineRenderer currentLine = lineObj.GetComponent<LineRenderer>();
-
-
-
-            }
-            //Debug.Log($"Moved {obj.name} to {newPosition}");
+            NetworkedLine spawnedLine = lineObj.GetComponent<NetworkedLine>();
+            if (spawnedLine != null)
+                spawnedLine.SetLinePositions(p1, p2, false);
         }
         return lineObj;
     }
-
-
 
     // Calculates rotation to face the main camera
     private Quaternion GetRotationFacingCamera(Vector3 objectPosition)
@@ -307,7 +231,4 @@ public class ReferenceLineFromObject : NetworkBehaviour
         Vector3 directionToCamera = (cameraRef.position - objectPosition).normalized;
         return Quaternion.LookRotation(-directionToCamera, Vector3.up);
     }
-
 }
-
-

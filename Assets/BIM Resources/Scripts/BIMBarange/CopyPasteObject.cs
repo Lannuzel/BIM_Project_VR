@@ -1,24 +1,13 @@
 using UnityEngine;
 using System.Collections.Generic;
-using UnityEngine.InputSystem;
-using System;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
-using UnityEngine.EventSystems;
-using System.Runtime.InteropServices.WindowsRuntime;
 using Fusion;
-using static Unity.Collections.Unicode;
+
+/// <summary>Copier-coller des objets sélectionnés (copies créées sur le réseau, action annulable F19).</summary>
 public class CopyPasteObject : Fusion.NetworkBehaviour
 {
     private List<GameObject> selectedObjects;// = new List<GameObject>(); // List of selected objects
     private List<GameObject> copiedObjects = new List<GameObject>(); // List of copied objects
-    private bool isMovingObjects = false;
-    private Dictionary<GameObject, GameObject> boundingBoxes = new Dictionary<GameObject, GameObject>(); // Map selected objects to bounding boxes
     public Transform chaireResources;
-
-    private XRIBIMInputActions playerInputActions;
-    private ObjectInteractionHandler objectInteractionHandler;
-    
 
     public Vector3 copyPasteOffset = Vector3.zero;
     // Start is called before the first frame update
@@ -29,52 +18,58 @@ public class CopyPasteObject : Fusion.NetworkBehaviour
 
     public void CopyAndPasteObjects()
     {
+        if (selectedObjects == null)
+            selectedObjects = ObjectInteractionHandler.Instance.SelectedObjects();
+
+        if (!NetworkObjectUtils.IsRunning)
+        {
+            NetworkStatusPanel.Show("Session réseau inactive : copie impossible.", 3f);
+            return;
+        }
+
         copiedObjects.Clear();
+        var runner = NetworkObjectUtils.Runner;
 
         // Copy selected objects
-        foreach (GameObject obj in selectedObjects)
+        foreach (GameObject obj in new List<GameObject>(selectedObjects))
         {
-            if (obj != null)
+            if (obj == null) continue;
+
+            var source = obj.GetComponent<NetworkObject>();
+            Vector3 spawnPosition = obj.transform.position + copyPasteOffset;
+            spawnPosition.y = 0;
+
+            NetworkObject pasted;
+            if (source != null && source.IsValid && source.NetworkTypeId.IsPrefab)
             {
-
-                Vector3 spawnPosition = obj.transform.position + copyPasteOffset;
-                spawnPosition.y = 0;
-
-                NetworkManager.Instance.Runner.Spawn(
-                    obj,
-                    spawnPosition,
-                    obj.transform.rotation,
-                    NetworkManager.Instance.Runner.LocalPlayer, // Assign authority to the local player
-                    (runner, pasteObj) =>
-                    {
-                        pasteObj.GetComponent<NetworkObject>().AssignInputAuthority(NetworkManager.Instance.Runner.LocalPlayer);
-                        pasteObj.transform.parent = chaireResources;
-                        copiedObjects.Add(pasteObj.gameObject);
-
-                        Debug.Log($"Copied: {pasteObj.name}");
-                    }
-                );
-                /*          GameObject copy = Instantiate(obj);
-                          copy.transform.position = obj.transform.position + copyPasteOffset; // Offset copied object
-                          copy.transform.parent = chaireResources;
-
-                          copiedObjects.Add(copy);
-
-                          Debug.Log($"Copied: {obj.name}");
-                */
+                // Copie depuis le prefab d'origine (fonctionne aussi pour un objet créé par un autre casque)
+                pasted = runner.Spawn(source.NetworkTypeId.AsPrefabId, spawnPosition, obj.transform.rotation, runner.LocalPlayer, (r, o) =>
+                {
+                    var srcScale = obj.GetComponent<ScaleNetworked>();
+                    var dstScale = o.GetComponent<ScaleNetworked>();
+                    if (srcScale != null && dstScale != null) dstScale.ScaleFactor = srcScale.ScaleFactor;
+                });
             }
-        }
-        //deselect all currently selected objects 
+            else
+            {
+                pasted = runner.Spawn(obj, spawnPosition, obj.transform.rotation, runner.LocalPlayer);
+            }
 
+            if (pasted == null) continue;
+            pasted.transform.parent = chaireResources;
+            copiedObjects.Add(pasted.gameObject);
+            Debug.Log($"Copied: {pasted.name}");
+        }
+
+        //deselect all currently selected objects
         ObjectInteractionHandler.Instance.DeselectAllObjects();
         // Add copied objects to selected list
         foreach (GameObject copy in copiedObjects)
         {
-            //CreateBoundingBox(copy);
             ObjectInteractionHandler.Instance.SelectObjects(copy);
-            // selectedObjects.Add(copy);
         }
 
+        UndoManager.RecordSpawn(copiedObjects.Count > 1 ? $"Coller {copiedObjects.Count} objets" : "Coller un objet", copiedObjects.ToArray());
         Debug.Log("Pasted copied objects");
     }
 }

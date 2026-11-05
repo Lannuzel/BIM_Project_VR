@@ -29,6 +29,7 @@ public class RaycastSelectAndMoveNW : Fusion.NetworkBehaviour
     private bool aButtonWasPressed = false;
 
     private float previousControllerRoll = 0f;
+    private UndoManager.PoseSnapshot grabUndo; // F19
     
     private void Start()
     {
@@ -59,6 +60,11 @@ public class RaycastSelectAndMoveNW : Fusion.NetworkBehaviour
                     selectedObject.transform.GetComponent<TranslateGizmoDrawer>().enabled = false;
                     selectedObject.transform.GetComponentInChildren<RotationGizmoDrawer>().enabled = false;
                 }
+            }
+            if (grabUndo != null)
+            {
+                UndoManager.RecordPoseChange("Deplacer / tourner la reservation", grabUndo);
+                grabUndo = null;
             }
             selectedObject = null;
             cumulativeJoystickOffset = Vector3.zero;
@@ -130,6 +136,8 @@ public class RaycastSelectAndMoveNW : Fusion.NetworkBehaviour
 
                 Debug.LogError("Selected: " + selectedObject.name);
                 ReservationInteractionHandler.Instance.currentReservation = selectedObject;
+                NetworkObjectUtils.EnsureAuthority(selectedObject); // N5 : objet cree par un autre casque
+                grabUndo = UndoManager.CapturePoses(new[] { selectedObject }); // F19
                 currentMode = ControlMode.Translate;
                 aButtonWasPressed = false;
                 

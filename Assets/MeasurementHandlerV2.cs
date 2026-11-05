@@ -3,11 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using static Unity.Collections.Unicode;
 
 public class MeasurementHandlerV2 : NetworkBehaviour
 {
-    private MeasurementHandlerV2 instance = null;
     public Material lineMaterial;
     public XRIBIMInputActions playerInputActions;
     private PlayerInput playerInput;
@@ -19,13 +17,11 @@ public class MeasurementHandlerV2 : NetworkBehaviour
 
     private static MeasurementHandlerV2 _instance;
 
-
-
-
     // Start is called before the first frame update
     private void Start()
     {
-        lines = new List<GameObject>();
+        if (lines == null)
+            lines = new List<GameObject>();
     }
 
 
@@ -58,24 +54,21 @@ public class MeasurementHandlerV2 : NetworkBehaviour
         _instance = this;
         DontDestroyOnLoad(gameObject); // Optional: keep the instance across scenes
 
-
+        if (lines == null)
+            lines = new List<GameObject>();
 
         playerInput = GetComponent<PlayerInput>();
         playerInputActions = new XRIBIMInputActions();
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
     public List<GameObject> Lines()
     {
         return lines;
     }
     public void AddLine(GameObject line)
     {
-        lines.Add(line);
+        if (line != null && !lines.Contains(line))
+            lines.Add(line);
     }
 
     public void RemoveLine(GameObject line)
@@ -84,45 +77,29 @@ public class MeasurementHandlerV2 : NetworkBehaviour
     }
     public int LineCount()
     {
+        lines.RemoveAll(l => l == null);
         return lines.Count;
     }
+
+    /// <summary>
+    /// Supprime la dernière mesure pour tous les participants (N5 : Despawn réseau de la ligne, de ses
+    /// marqueurs et de son étiquette, au lieu d'un Destroy local) ; l'action est annulable (F19).
+    /// </summary>
     public void DeleteLastLine()
     {
-            if (lines.Count > 0)
-            {
-               GameObject line = lines[lines.Count - 1];
-              /*  
-            
+        lines.RemoveAll(l => l == null);
+        if (lines.Count == 0)
+            return;
 
-                if (NetworkManager.Instance.Runner != null)
-                {   NetworkObject nwLine = line.GetComponent<NetworkObject>();
-                         nwLine.gameObject.SetActive(false);
-                Transform startPoint = FindChildWithTagRecursive(line.transform, "StartPoint");
-                    if (startPoint != null)
-                    {  
-                        NetworkObject startPointNW = startPoint.GetComponent<NetworkObject>();
-                         if (startPointNW != null && startPointNW.HasStateAuthority)
-                                NetworkManager.Instance.Runner.Despawn(startPointNW);
-                    }
-                    Transform endPoint = FindChildWithTagRecursive(line.transform, "EndPoint");
-                    if (endPoint != null)
-                    {
-                        NetworkObject endtPointNW = endPoint.GetComponent<NetworkObject>();
-                        if (endtPointNW != null && endtPointNW.HasStateAuthority)
-                        NetworkManager.Instance.Runner.Despawn(endtPointNW);
-                    }
-                     if (nwLine != null && nwLine.HasStateAuthority)
-                         NetworkManager.Instance.Runner.Despawn(nwLine);
-                    }
-              */
-            
-                Destroy(line.gameObject);
-                lines.RemoveAt(lines.Count - 1);
-            }
-  
+        GameObject line = lines[lines.Count - 1];
+        lines.RemoveAt(lines.Count - 1);
 
-      //  RPC_RequestDeleteLastLine();
+        var undo = UndoManager.CaptureForDelete("Supprimer la dernière mesure", new[] { line });
+        NetworkObjectUtils.DespawnHierarchy(line);
+        if (undo != null)
+            UndoManager.Push(undo);
     }
+
     private Transform FindChildWithTagRecursive(Transform parent, string tag)
     {
         foreach (Transform child in parent)
@@ -138,42 +115,5 @@ public class MeasurementHandlerV2 : NetworkBehaviour
             }
         }
         return null;
-    }
-
-
-
-    // Runs on host (state authority)
-    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    private void RPC_RequestDeleteLastLine()
-    {
-        InternalDeleteLastLineAsHost();
-    }
-
-    // Host-only: actually remove the last line
-    private void InternalDeleteLastLineAsHost()
-    {
-        // Walk back to find the last valid transform
-        for (int i = lines.Count - 1; i >= 0; i--)
-        {
-            var t = lines[i];
-            if (t == null) { lines.RemoveAt(i); continue; }
-
-            // ✅ Make sure we pick up the NetworkObject even if it's on a parent
-            var no = t.GetComponentInParent<NetworkObject>();
-
-            if (no != null && Runner != null)
-            {
-                Runner.Despawn(no);        // networked delete for everyone
-                lines.RemoveAt(i);
-                return;
-            }
-            else
-            {
-                // Fallback for non-networked lines: local delete
-                Destroy(t.gameObject);
-                lines.RemoveAt(i);
-                return;
-            }
-        }
     }
 }

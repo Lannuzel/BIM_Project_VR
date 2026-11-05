@@ -4,6 +4,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+/// <summary>
+/// Création, sélection et suppression des objets du Modélisateur (XP1).
+/// N5 : suppression réseau (Despawn) au lieu de Destroy, prise d'autorité à la sélection d'un objet
+/// créé par un autre casque ; F19 : création et suppression annulables.
+/// </summary>
 public class ObjectInteractionHandler : NetworkBehaviour
 {
     public XRIBIMInputActions playerInputActions;
@@ -19,8 +24,6 @@ public class ObjectInteractionHandler : NetworkBehaviour
     public ObjectOutline objectOutliner;
     public Transform runTimeGeneratedResources;
     public Transform instantiatedChaires;
-
-
 
     public static ObjectInteractionHandler Instance
     {
@@ -60,27 +63,29 @@ public class ObjectInteractionHandler : NetworkBehaviour
 
     public void SpawnObject()
     {
+        if (!NetworkObjectUtils.IsRunning)
+        {
+            NetworkStatusPanel.Show("Session réseau inactive : création impossible.", 3f);
+            return;
+        }
+
         Vector3 spawnPosition = cameraTransform.transform.position + cameraTransform.forward * spawnDistance;
         spawnPosition.y = 0;
-        /*  spawnedObject = Instantiate(spawnedObjectPrefab, spawnPosition, Quaternion.identity);
-          spawnedObject.transform.rotation = spawnedObjectPrefab.transform.rotation;
-          spawnedObject.transform.parent = runTimeGeneratedResources;
-        */
-        Fusion.NetworkObject spawnObj = null;
-        NetworkManager.Instance.Runner.Spawn(spawnedObjectPrefab, Vector3.zero, spawnedObjectPrefab.transform.rotation, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
+
+        Fusion.NetworkObject spawnObj = NetworkObjectUtils.Runner.Spawn(spawnedObjectPrefab, spawnPosition, spawnedObjectPrefab.transform.rotation, NetworkObjectUtils.Runner.LocalPlayer);
+        if (spawnObj == null)
         {
-            spawnObj = obj;
-        });
+            Debug.LogError("[ObjectInteractionHandler] Échec de création de l'objet.");
+            return;
+        }
 
-
-        /*Fusion.NetworkObject spawnObj =  NetworkManager.Instance.Runner.Spawn(spawnedObjectPrefab);
-        spawnObj.AssignInputAuthority(NetworkManager.Instance.Runner.LocalPlayer);
-       */
         spawnObj.transform.position = spawnPosition;
         spawnObj.transform.rotation = spawnedObjectPrefab.transform.rotation;
         spawnObj.transform.parent = instantiatedChaires;
         SelectObjects(spawnObj.gameObject);
         spawnedObject = null;
+
+        UndoManager.RecordSpawn("Créer un objet", spawnObj.gameObject);
     }
     public void SpawnObjectTutorial()
     {
@@ -94,12 +99,19 @@ public class ObjectInteractionHandler : NetworkBehaviour
     }
     public void SelectObjects(GameObject hitObject)
     {
+        if (hitObject == null) return;
         if (!selectedObjects.Contains(hitObject))
         {
             objectOutliner.EnableOutLine(hitObject.transform);
             //HighlightObject(hitObject);
             CreateBoundingBox(hitObject);
             selectedObjects.Add(hitObject);
+
+            // N5 : un objet créé par un autre casque devient manipulable (prise d'autorité d'état)
+            NetworkObjectUtils.EnsureAuthority(hitObject, ok =>
+            {
+                if (!ok) NetworkStatusPanel.Show($"Impossible de prendre la main sur {hitObject.name}.", 3f);
+            });
         }
 
     }
@@ -158,7 +170,7 @@ public class ObjectInteractionHandler : NetworkBehaviour
         {
             bounds.Encapsulate(renderer.bounds);
         }
-        
+
         return bounds;
     }
 
@@ -171,20 +183,26 @@ public class ObjectInteractionHandler : NetworkBehaviour
     }
 
 
+    /// <summary>Supprime les objets sélectionnés pour tous les participants (Despawn réseau), action annulable.</summary>
     public void DeleteAllSelectedObjects()
     {
-        List<GameObject> objectsToBeDeleted = new List<GameObject>(); // List of copied objects
+        selectedObjects.RemoveAll(o => o == null);
+        if (selectedObjects.Count == 0) return;
+
+        var toDelete = new List<GameObject>(selectedObjects);
         RemoveBoundingBoxes();
         RemoveOutLines();
-        foreach (GameObject obj in selectedObjects)
-        {
-            if (obj != null) // Check if the GameObject is not null
-            {
-                Destroy(obj); // Destroy the GameObject
-            }
-        }
+        DeleteReferenceLines();
         selectedObjects.Clear();
 
+        var undo = UndoManager.CaptureForDelete(toDelete.Count > 1 ? $"Supprimer {toDelete.Count} objets" : "Supprimer un objet", toDelete);
+        foreach (GameObject obj in toDelete)
+        {
+            if (obj != null)
+                NetworkObjectUtils.DespawnHierarchy(obj);
+        }
+        if (undo != null)
+            UndoManager.Push(undo);
     }
     private void RemoveBoundingBoxes()
     {
@@ -197,8 +215,6 @@ public class ObjectInteractionHandler : NetworkBehaviour
                 RemoveBoundingBox(obj);
             }
         }
-        //clear list
-        // boundingBoxes.Clear();
     }
     private void RemoveOutLines()
     {
@@ -207,11 +223,9 @@ public class ObjectInteractionHandler : NetworkBehaviour
         {
             if (obj != null)
             {
-                objectOutliner.DisableOutLine(obj.transform);   
+                objectOutliner.DisableOutLine(obj.transform);
             }
         }
-        //clear list
-        // boundingBoxes.Clear();
     }
 
     public void DeleteReferenceLines()
@@ -224,26 +238,29 @@ public class ObjectInteractionHandler : NetworkBehaviour
     }
     public void DeleteReferenceLine(GameObject obj)
     {
-             Transform directionLineZ = obj.transform.Find("DirectionLineZ");
-            if (directionLineZ != null)
-                Destroy(directionLineZ.gameObject);
-
-            Transform directionLineX = obj.transform.Find("DirectionLineX");
-            if (directionLineX != null)
-                Destroy(directionLineX.gameObject);
-        
-
+        if (obj == null) return;
+        // N5 : les lignes de référence sont nommées DirectionLine<axe><instance> ; suppression réseau.
+        var toRemove = new List<GameObject>();
+        foreach (Transform child in obj.transform)
+        {
+            if (child.name.StartsWith("DirectionLine"))
+                toRemove.Add(child.gameObject);
+        }
+        foreach (var line in toRemove)
+            NetworkObjectUtils.DespawnHierarchy(line);
     }
     public void DeselectAllObjects()
     {
         RemoveBoundingBoxes();
+        RemoveOutLines();
         DeleteReferenceLines();
         selectedObjects.Clear();
 
     }
    public void DeselectObject(GameObject selectedObject)
     {
-        // RemoveHighlight(selectedObject);
+        if (selectedObject == null) return;
+        if (objectOutliner != null) objectOutliner.DisableOutLine(selectedObject.transform);
         DeleteReferenceLine(selectedObject);
         RemoveBoundingBox(selectedObject);
         selectedObjects.Remove(selectedObject);
