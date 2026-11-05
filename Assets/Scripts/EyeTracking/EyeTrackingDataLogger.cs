@@ -7,6 +7,7 @@ public class EyeTrackingDataLogger : MonoBehaviour
     private string filePath;
     [SerializeField] private EyeTrackingRay eyeTrackingRay;
     private StreamWriter writer;
+    public bool IsRecording => isRecording;
     private bool isRecording = false; // Contrôle l'état de l'enregistrement
 
     void Start()

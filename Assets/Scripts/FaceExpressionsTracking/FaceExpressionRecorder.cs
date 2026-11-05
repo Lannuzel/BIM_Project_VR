@@ -9,6 +9,7 @@ public class FaceTrackingRecorder : MonoBehaviour
     [SerializeField] private OVRFaceExpressions faceExpressions;
     private StreamWriter writer;
     private bool isRecording = false;
+    public bool IsRecording => isRecording;
     void Start()
     {
         // Combine correctement les chemins

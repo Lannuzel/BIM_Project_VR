@@ -9,6 +9,8 @@ public class ShowPersonalisedMenu : MonoBehaviour
     public List<GameObject> calculateurItems;
     public List<GameObject> modelisateurItems;
     public List<GameObject> tutorialItems;
+    [Tooltip("F18 : elements de menu visibles seulement par l'experimentateur (optionnel).")]
+    public List<GameObject> experimentateurItems = new List<GameObject>();
 
     // Start is called before the first frame update
     void Start()
@@ -39,6 +41,15 @@ public class ShowPersonalisedMenu : MonoBehaviour
             {
                 item.SetActive(true);
             }
+        }
+        else if (playerName == "Experimentateur")
+        {
+            // F18 : fenetre d'administration reservee a l'experimentateur (creee en code)
+            foreach (GameObject item in experimentateurItems)
+            {
+                item.SetActive(true);
+            }
+            ExperimenterPanel.Create();
         }
         else if(playerName == "Blue")
         {

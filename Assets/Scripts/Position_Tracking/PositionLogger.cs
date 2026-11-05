@@ -10,6 +10,7 @@ public class PositionLogger : MonoBehaviour
     private List<UserTracker> userTrackers = new List<UserTracker>();
     private StreamWriter writer;
     private bool isRecording = false;
+    public bool IsRecording => isRecording;
 
     private float nextLogTime = 0f;
 
