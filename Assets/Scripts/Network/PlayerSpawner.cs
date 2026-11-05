@@ -10,6 +10,9 @@ public class PlayerSpawner : MonoBehaviour, INetworkRunnerCallbacks
     [SerializeField]
     private NetworkPrefabRef playerPrefab;
 
+    /// <summary>Prefab de l'avatar (F18 : utilisé aussi pour les joueurs simulés).</summary>
+    public NetworkPrefabRef PlayerPrefab => playerPrefab;
+
     // Dictionary of spawned user prefabs, to destroy them on disconnection
     private Dictionary<PlayerRef, NetworkObject> _spawnedUsers = new Dictionary<PlayerRef, NetworkObject>();
 

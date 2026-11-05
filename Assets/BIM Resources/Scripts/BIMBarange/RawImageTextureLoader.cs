@@ -1,9 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
-using Fusion;
-using static Unity.Collections.Unicode;
-using Unity.Netcode;
 using System.Collections.Generic;
+
 public class RawImageTextureLoader : MonoBehaviour
 {
     public RawImage rawImage; // Assign the RawImage in the Inspector
@@ -11,26 +9,27 @@ public class RawImageTextureLoader : MonoBehaviour
 
     public void Awake()
     {
-        string playerName = NetworkManager.GetLocalPlayerName();
-        if (playerName == "Lecteur")
-        {
-            rawImage.texture = userDocuments[0];
-        }
-        else if (playerName == "Calculateur")
-        {
-            rawImage.texture = userDocuments[1];
-        }
-        else if (playerName == "Modelisateur")
-        {
-            rawImage.texture = userDocuments[2];
-        }
-        AdjustHeightToAspectRatio();
-
-
+        ApplyRole(NetworkManager.GetLocalPlayerName());
     }
+
+    /// <summary>Charge le document du rôle (F18 : réappliqué lors d'un changement de rôle).</summary>
+    public void ApplyRole(string playerName)
+    {
+        if (rawImage == null || userDocuments == null) return;
+
+        int index = -1;
+        if (playerName == "Lecteur") index = 0;
+        else if (playerName == "Calculateur") index = 1;
+        else if (playerName == "Modelisateur") index = 2;
+
+        if (index >= 0 && index < userDocuments.Count)
+            rawImage.texture = userDocuments[index];
+        AdjustHeightToAspectRatio();
+    }
+
     public void AdjustHeightToAspectRatio()
     {
-        if (rawImage.texture != null)
+        if (rawImage != null && rawImage.texture != null)
         {
             float aspectRatio = (float)rawImage.texture.height / rawImage.texture.width;
             RectTransform rt = rawImage.GetComponent<RectTransform>();

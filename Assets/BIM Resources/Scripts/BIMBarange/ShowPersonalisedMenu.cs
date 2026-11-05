@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// Active les éléments de menu propres au rôle du joueur local.
+/// F18 : le rôle peut être réappliqué à chaud (ApplyRole) ; l'expérimentateur dispose d'un panneau d'administration.
+/// </summary>
 public class ShowPersonalisedMenu : MonoBehaviour
 {
     public List<GameObject> lecteurItems;
@@ -15,59 +19,47 @@ public class ShowPersonalisedMenu : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        string playerName = NetworkManager.GetLocalPlayerName();
+        ApplyRole(NetworkManager.GetLocalPlayerName());
+    }
+
+    private static void SetAll(List<GameObject> items, bool active)
+    {
+        if (items == null) return;
+        foreach (GameObject item in items)
+            if (item != null) item.SetActive(active);
+    }
+
+    /// <summary>Désactive les éléments de tous les rôles puis active ceux du rôle donné.</summary>
+    public void ApplyRole(string playerName)
+    {
+        SetAll(lecteurItems, false);
+        SetAll(calculateurItems, false);
+        SetAll(modelisateurItems, false);
+        SetAll(experimentateurItems, false);
 
         if (playerName == "Lecteur")
         {
             foreach (GameObject item in lecteurItems)
             {
-
+                if (item == null) continue;
                 item.SetActive(true);
                 if (item.name == "Arreter l'enregistrement")
                     item.SetActive(false);
-                
             }
         }
         else if (playerName == "Calculateur")
         {
-            foreach (GameObject item in calculateurItems)
-            {
-                item.SetActive(true);
-            }
+            SetAll(calculateurItems, true);
         }
-        else if (playerName == "Modelisateur")
+        else if (playerName == "Modelisateur" || playerName == "Blue" || playerName == "Red")
         {
-            foreach (GameObject item in modelisateurItems)
-            {
-                item.SetActive(true);
-            }
+            SetAll(modelisateurItems, true);
         }
         else if (playerName == "Experimentateur")
         {
             // F18 : fenetre d'administration reservee a l'experimentateur (creee en code)
-            foreach (GameObject item in experimentateurItems)
-            {
-                item.SetActive(true);
-            }
+            SetAll(experimentateurItems, true);
             ExperimenterPanel.Create();
         }
-        else if(playerName == "Blue")
-        {
-            foreach (GameObject item in modelisateurItems)
-            {
-                item.SetActive(true);
-            }
-
-        }
-        else if (playerName == "Red")
-        {
-            foreach (GameObject item in modelisateurItems)
-            {
-                item.SetActive(true);
-            }
-        }
-
     }
-
-
 }

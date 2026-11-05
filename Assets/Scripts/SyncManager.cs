@@ -35,7 +35,7 @@ public class SyncManager : NetworkBehaviour
 
     public override void Spawned()
     {
-        if (Object.HasStateAuthority)
+        if (Object.HasStateAuthority && !AdminTools.IsSimulated(Object))
             Instance = this;
         if (markerManager == null)
             markerManager = GetComponentInChildren<MarkerManager>(true);

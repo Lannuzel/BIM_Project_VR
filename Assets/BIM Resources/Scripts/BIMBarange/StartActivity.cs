@@ -84,8 +84,9 @@ public class StartActivity : NetworkBehaviour
             return;
         }
 
-        // ActivePlayers inclut le joueur local dès que la session est active.
-        int playerCount = nm.Runner.ActivePlayers.Count();
+        // ActivePlayers inclut le joueur local dès que la session est active ; F18 : les joueurs simulés
+        // par l'expérimentateur comptent comme connectés.
+        int playerCount = nm.Runner.ActivePlayers.Count() + AdminTools.SimulatedCount;
         SetState("Joueurs :  " + playerCount.ToString() + "/" + MaxPlayers, playerCount);
 
         if (playerCount >= MaxPlayers)

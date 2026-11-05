@@ -18,6 +18,7 @@ public class ExitManager : NetworkBehaviour
 
     public override void Spawned()
     {
+        if (AdminTools.IsSimulated(Object)) return;
         if (Object.HasStateAuthority || Instance == null)
             Instance = this;
     }

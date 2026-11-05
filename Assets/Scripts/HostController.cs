@@ -33,7 +33,7 @@ public class HostController : NetworkBehaviour
 
     public override void Spawned()
     {
-        if (Object.HasStateAuthority)
+        if (Object.HasStateAuthority && !AdminTools.IsSimulated(Object))
             instance = this;
     }
 

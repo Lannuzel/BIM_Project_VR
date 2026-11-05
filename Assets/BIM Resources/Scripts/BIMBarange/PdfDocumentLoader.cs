@@ -16,21 +16,19 @@ public class PdfDocumentLoader : MonoBehaviour
 
     public void Awake()
     {
-        string playerName = NetworkManager.GetLocalPlayerName();
-        if (playerName == "Lecteur")
-        {
-            ShowPdfFromStreamingAssets(pdfRoleDocs[0]);
-        }
-        else if (playerName == "Calculateur")
-        {
-            ShowPdfFromStreamingAssets(pdfRoleDocs[1]);
-        }
-        else if (playerName == "Modelisateur")
-        {
-            ShowPdfFromStreamingAssets(pdfRoleDocs[2]);
-        }
+        ApplyRole(NetworkManager.GetLocalPlayerName());
+    }
 
-
+    /// <summary>Charge le PDF du role (F18 : reapplique lors d'un changement de role).</summary>
+    public void ApplyRole(string playerName)
+    {
+        if (pdfRoleDocs == null) return;
+        int index = -1;
+        if (playerName == "Lecteur") index = 0;
+        else if (playerName == "Calculateur") index = 1;
+        else if (playerName == "Modelisateur") index = 2;
+        if (index >= 0 && index < pdfRoleDocs.Count && !string.IsNullOrEmpty(pdfRoleDocs[index]))
+            ShowPdfFromStreamingAssets(pdfRoleDocs[index]);
     }
 
 
