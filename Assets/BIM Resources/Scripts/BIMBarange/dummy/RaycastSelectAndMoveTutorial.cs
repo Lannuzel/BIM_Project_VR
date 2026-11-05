@@ -29,7 +29,9 @@ public class RaycastSelectAndMoveTutorial : MonoBehaviour
     [Tooltip("Objet à déplacer. Si vide : le premier enfant portant le tag « TutorialObject ».")]
     public Transform tutorialObject;
     [Tooltip("Écart de position toléré (m) entre l'objet et sa cible.")]
-    public float positionTolerance = 0.05f;
+    public float positionTolerance = 0.08f;
+    [Tooltip("Ne comparer que la position horizontale (X/Z) : l'ombre au sol et le pivot de l'objet n'ont pas la même hauteur.")]
+    public bool horizontalDistanceOnly = true;
     [Tooltip("Vérifier aussi l'orientation (inutile pour un cylindre symétrique).")]
     public bool checkRotation = false;
     [Tooltip("Écart d'orientation toléré (degrés) si checkRotation est actif.")]
@@ -315,7 +317,9 @@ public class RaycastSelectAndMoveTutorial : MonoBehaviour
     {
         if (tutorialObject == null || targetTransform == null)
             return -1f;
-        return Vector3.Distance(tutorialObject.position, targetTransform.position);
+        Vector3 a = tutorialObject.position, b = targetTransform.position;
+        if (horizontalDistanceOnly) { a.y = 0f; b.y = 0f; }
+        return Vector3.Distance(a, b);
     }
 
     private void EvaluateCompletion()
