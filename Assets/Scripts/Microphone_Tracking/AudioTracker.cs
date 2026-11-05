@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Android;
@@ -18,12 +19,17 @@ public class AudioTracker : MonoBehaviour
     private string micDevice;
     public AudioClip syncSignal; // Clip sonore de synchronisation
 
+    [Tooltip("N1 : si vrai, l'enregistrement démarre dès le chargement de la scène (ancien comportement). " +
+             "Sinon il démarre au lancement de l'activité (marqueur de synchronisation).")]
+    [SerializeField] private bool recordFromSceneStart = false;
+
+    [Tooltip("Délai maximal (s) d'attente du démarrage du micro avant de signaler une erreur.")]
+    [SerializeField] private float micStartTimeout = 3f;
+
+    public bool IsRecording => isRecording;
+
     void Start()
     {
-
-        // Sélection du microphone du casque
-        SelectHeadsetMicrophone();
-
         // Combine correctement les chemins
         string folderPath = Path.Combine(Application.persistentDataPath, folderName);
 
@@ -33,18 +39,19 @@ public class AudioTracker : MonoBehaviour
             Directory.CreateDirectory(folderPath);
         }
 
-        // Crée le nom du fichier avec timestamp + nom utilisateur
-        string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-        string fileName = $"{timestamp}_Audio.wav";
-
-        // Chemin complet du fichier
-        filePath = Path.Combine(folderPath, fileName);
-
-        Debug.Log($"Chemin du fichier audio : {filePath}");
-
-        // Initialisation de l'audio
+        // Initialisation de l'audio : la source ne doit jamais rejouer le micro dans le casque.
         audioSource = GetComponent<AudioSource>();
-        StartRecording();
+        audioSource.mute = true;
+        audioSource.playOnAwake = false;
+        audioSource.loop = true;
+
+        // Demande de permission et choix du micro (sans démarrer la capture).
+        SelectHeadsetMicrophone();
+
+        if (recordFromSceneStart)
+            StartRecording();
+        else
+            Debug.Log("[AudioTracker] Prêt. L'enregistrement audio démarrera au lancement de l'activité.");
     }
 
     private void SelectHeadsetMicrophone()
@@ -60,39 +67,73 @@ public class AudioTracker : MonoBehaviour
         //     }
         // }
 
-        
         if (!Permission.HasUserAuthorizedPermission(Permission.Microphone))
             Permission.RequestUserPermission(Permission.Microphone);
 
-        
-        micDevice = Microphone.devices[0]; // Utilise le premier micro disponible
-        if (!string.IsNullOrEmpty(micDevice))
+        if (Microphone.devices == null || Microphone.devices.Length == 0)
         {
-            Debug.Log($"Microphone sélectionné : {micDevice}");
+            Debug.LogError("Aucun microphone de casque trouvé !");
+            micDevice = null;
             return;
         }
-        Debug.LogError("Aucun microphone de casque trouvé !");
-        micDevice = null;
+
+        micDevice = Microphone.devices[0]; // Utilise le premier micro disponible
+        Debug.Log($"Microphone sélectionné : {micDevice}");
+    }
+
+    private string BuildFilePath()
+    {
+        string folderPath = Path.Combine(Application.persistentDataPath, folderName);
+        // Crée le nom du fichier avec timestamp (début d'enregistrement)
+        string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+        string fileName = $"{timestamp}_Audio.wav";
+        return Path.Combine(folderPath, fileName);
     }
 
     public void StartRecording()
     {
-        if (!string.IsNullOrEmpty(micDevice))
+        if (isRecording)
         {
-            audioSource.clip = Microphone.Start(micDevice, true, 10, sampleRate);
-            while (!(Microphone.GetPosition(micDevice) > 0)) { } // Attendre le démarrage
-
-            audioSource.Play();
-
-            InitWAV();
-
-            isRecording = true;
-
-            Debug.Log($"Enregistrement audio en cours : {filePath}");
+            Debug.LogWarning("[AudioTracker] Enregistrement déjà en cours.");
+            return;
         }
-        else
+
+        if (string.IsNullOrEmpty(micDevice))
+            SelectHeadsetMicrophone();
+
+        if (string.IsNullOrEmpty(micDevice))
         {
             Debug.LogError("Microphone introuvable !");
+            return;
+        }
+
+        filePath = BuildFilePath();
+        Debug.Log($"Chemin du fichier audio : {filePath}");
+
+        audioSource.clip = Microphone.Start(micDevice, true, 10, sampleRate);
+        audioSource.mute = true;
+        lastSamplePosition = 0;
+
+        InitWAV();
+        isRecording = true;
+
+        // Attente non bloquante du démarrage effectif du micro (l'ancienne boucle while gelait l'application).
+        StartCoroutine(WaitForMicrophoneStart());
+
+        Debug.Log($"Enregistrement audio en cours : {filePath}");
+    }
+
+    private IEnumerator WaitForMicrophoneStart()
+    {
+        float deadline = Time.realtimeSinceStartup + micStartTimeout;
+        while (isRecording && Microphone.GetPosition(micDevice) <= 0)
+        {
+            if (Time.realtimeSinceStartup > deadline)
+            {
+                Debug.LogError($"[AudioTracker] Le micro '{micDevice}' n'a pas démarré après {micStartTimeout} s.");
+                yield break;
+            }
+            yield return null;
         }
     }
 
@@ -122,8 +163,21 @@ public class AudioTracker : MonoBehaviour
         return samples;
     }
 
+    /// <summary>
+    /// Appelé par MarkerManager au lancement de l'activité (signal de synchronisation).
+    /// N1 : c'est ici que l'enregistrement audio démarre réellement.
+    /// </summary>
     public void AddAudioMarker()
     {
+        if (!isRecording)
+            StartRecording();
+
+        if (binaryWriter == null)
+        {
+            Debug.LogError("[AudioTracker] Impossible d'insérer le marqueur : enregistrement non démarré.");
+            return;
+        }
+
         if (syncSignal == null)
         {
             Debug.LogError("Le signal de synchronisation (syncSignal) n'est pas assigné !");
@@ -150,6 +204,9 @@ public class AudioTracker : MonoBehaviour
 
     private void SaveNewAudioData()
     {
+        if (audioSource.clip == null)
+            return;
+
         int currentPosition = Microphone.GetPosition(micDevice);
         if (currentPosition > 0 && currentPosition != lastSamplePosition)
         {
@@ -184,6 +241,8 @@ public class AudioTracker : MonoBehaviour
 
             binaryWriter?.Close();
             memoryStream?.Close();
+            binaryWriter = null;
+            memoryStream = null;
 
             Debug.Log($"Audio recording stopped.");
         }
