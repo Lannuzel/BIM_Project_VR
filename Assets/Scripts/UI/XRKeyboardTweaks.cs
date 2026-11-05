@@ -91,6 +91,68 @@ public class XRKeyboardTweaks : MonoBehaviour
         if (!Mathf.Approximately(scaleFactor, 1f) && scaleFactor > 0f)
             kb.transform.localScale *= scaleFactor;
 
+        if (azertyLayout)
+            ApplyAzerty(kb, keys);
+
         Debug.Log($"[XRKeyboardTweaks] Clavier « {kb.name} » ajusté ({keys.Length} touches).");
+    }
+
+    [Header("F15 : disposition AZERTY")]
+    [Tooltip("Réorganiser les touches alphabétiques en AZERTY (Q<->A, W<->Z, M en fin de 2e rangée).")]
+    public bool azertyLayout = true;
+
+    /// <summary>
+    /// Transforme la disposition QWERTY du prefab en AZERTY : permutation des caractères
+    /// A/Q et Z/W, et déplacement de la touche M à la fin de la rangée du milieu (QSDFGHJKLM).
+    /// Les rangées sont des groupes de mise en page : déplacer la touche suffit.
+    /// </summary>
+    private void ApplyAzerty(XRKeyboard kb, XRKeyboardKey[] keys)
+    {
+        XRKeyboardKey Find(string letter)
+        {
+            foreach (var k in keys)
+            {
+                if (k == null) continue;
+                string c = (k.character ?? string.Empty).Trim();
+                if (string.Equals(c, letter, System.StringComparison.OrdinalIgnoreCase) && c.Length == 1)
+                    return k;
+            }
+            return null;
+        }
+
+        void SetLetter(XRKeyboardKey key, string letter)
+        {
+            if (key == null) return;
+            key.character = letter.ToLowerInvariant();
+            key.shiftCharacter = letter.ToUpperInvariant();
+            key.displayCharacter = letter.ToLowerInvariant();
+            key.shiftDisplayCharacter = letter.ToUpperInvariant();
+            key.name = letter.ToUpperInvariant();
+        }
+
+        var q = Find("q"); var a = Find("a"); var w = Find("w"); var z = Find("z"); var m = Find("m"); var l = Find("l");
+        if (q == null || a == null || w == null || z == null)
+        {
+            Debug.LogWarning("[XRKeyboardTweaks] Touches QWERTY introuvables : AZERTY non appliqué.");
+            return;
+        }
+
+        SetLetter(q, "a"); SetLetter(a, "q");
+        SetLetter(w, "z"); SetLetter(z, "w");
+
+        // M passe à la fin de la rangée du milieu (après L).
+        if (m != null && l != null && l.transform.parent != null)
+        {
+            m.transform.SetParent(l.transform.parent, false);
+            m.transform.SetSiblingIndex(l.transform.GetSiblingIndex() + 1);
+        }
+
+        // Renommer les rangées pour la lisibilité dans la hiérarchie.
+        foreach (var row in kb.GetComponentsInChildren<Transform>(true))
+        {
+            if (row.name == "QWERTYUIOP") row.name = "AZERTYUIOP";
+            else if (row.name == "ASDFGHJKL") row.name = "QSDFGHJKLM";
+            else if (row.name == "ZXCVBNM") row.name = "WXCVBN";
+        }
     }
 }
