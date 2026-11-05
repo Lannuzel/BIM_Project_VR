@@ -1,18 +1,15 @@
 using System;
 using TMPro;
 using UnityEngine;
-using UnityEngine.InputSystem;
-using Fusion;
-using UnityEngine.UIElements;
-using UnityEngine.EventSystems;
-using System.Net;
-using Unity.Networking.Transport;
-using UnityEngine.Animations.Rigging;
 
+/// <summary>
+/// Étape « tracer une ligne » du tutoriel (F4).
+/// Une ligne n'est affichée, puis comptée, que si ses deux extrémités sont sur le bloc cible
+/// (<see cref="targetRoot"/>, par défaut l'enfant « Table1 »). Une ligne lâchée en dehors est supprimée.
+/// Entrée : gâchette intérieure (grip) de la main droite, via OVRInput uniquement (plus de double déclenchement).
+/// </summary>
 public class DrawLineTutorial : MonoBehaviour
 {
-    private XRIBIMInputActions playerInputActions;
-    private PlayerInput playerInput;
     public Transform cameraRef;
 
     public Transform controller;
@@ -24,545 +21,226 @@ public class DrawLineTutorial : MonoBehaviour
 
     public Transform runTimeLines;
 
-
-
-    private TMP_Text measureText;
-
-   
-   
-    private Vector3 pointA = new Vector3(0, 0, 2.36f); // Example position
-    private Vector3 pointB = new Vector3(0, 0, -1.4f); // Example position
-
-
     // Layer mask for raycast targets (optional)
     public LayerMask raycastLayerMask;
 
+    [Header("Validation (F4)")]
+    [Tooltip("Racine du bloc sur lequel les lignes doivent être tracées. Si vide : l'enfant nommé « Table1 », sinon cet objet.")]
+    public Transform targetRoot;
+    [Tooltip("Nombre de lignes valides demandées par l'étape.")]
+    public int requiredLines = 4;
+    [Tooltip("Texte optionnel pour afficher l'état (ex. « Lignes valides : 2/4 »).")]
+    public TMP_Text statusText;
+
+    /// <summary>Nombre de lignes dont les deux extrémités sont sur le bloc (lignes conservées par MeasurementHandler).</summary>
+    public int ValidLineCount => MeasurementHandler.Instance != null ? MeasurementHandler.Instance.LineCount() : 0;
+
+    /// <summary>Vrai quand le nombre de lignes valides demandé est atteint.</summary>
+    public bool IsCompleted => ValidLineCount >= requiredLines;
+
+    /// <summary>Déclenché à chaque changement du nombre de lignes valides.</summary>
+    public event Action<int> ValidLineCountChanged;
+
+    /// <summary>Dernier message d'aide (ligne hors du bloc, etc.).</summary>
+    public string LastMessage { get; private set; } = string.Empty;
+
     private LineRenderer currentLine;
     private bool isDrawing = false;
-
-    private int count = 0;
+    private bool firstPointOnTarget = false;
+    private bool secondPointOnTarget = false;
 
     private Vector3 firstPoint;
     private Vector3 secondPoint;
 
-
-
-
-
-
     private void Awake()
     {
-        playerInputActions = MeasurementHandler.Instance.playerInputActions;
-        playerInputActions.XRIRightInteraction.Enable();
-
-        //adding actionListeners
-        playerInputActions.XRIRightInteraction.Select.performed += DrawLine_performed;
-        playerInputActions.XRIRightInteraction.Select.canceled += DrawLine_endDrawing;
-
-      
+        if (targetRoot == null)
+        {
+            var t = transform.Find("Table1");
+            targetRoot = t != null ? t : transform;
+        }
     }
+
     private void OnEnable()
     {
-        playerInputActions = MeasurementHandler.Instance.playerInputActions;
-        playerInputActions.XRIRightInteraction.Enable();
-
-        //adding actionListeners
-        playerInputActions.XRIRightInteraction.Select.performed += DrawLine_performed;
-        playerInputActions.XRIRightInteraction.Select.canceled += DrawLine_endDrawing;
-    
+        UpdateStatus();
     }
+
     private void OnDisable()
     {
-        playerInputActions.XRIRightInteraction.Select.performed -= DrawLine_performed;
-        playerInputActions.XRIRightInteraction.Select.canceled -= DrawLine_endDrawing;
-
-    }
-
-    private void DrawLine_performed(InputAction.CallbackContext context)
-    {
-        if (!isDrawing)
-        {
-            DrawLine();
-            isDrawing = true;
-        }
-
-    }
-    private void DrawLine_performed()
-    {
-        if (!isDrawing)
-        {
-            DrawLine();
-            isDrawing = true;
-        }
-
-    }
-    private void DrawLine_endDrawing()
-    {
+        // Si l'objet est désactivé en plein tracé, on abandonne la ligne en cours.
         if (isDrawing)
-        {
-            isDrawing = false;
-            currentLine = null;
-           
-                   if (lineObj.activeSelf)
-            {
-                MeasurementHandler.Instance.AddLine(lineObj);
-                lineObj = null;
-                MeasurementHandler.Instance.lineCount++;
-                // Destroy(lineObj);
-            }
-           
-            lineObj = null;
-
-        }
-    }
-
-    private void DrawLine_endDrawing(InputAction.CallbackContext context)
-    {
-        if (isDrawing)
-        {
-            isDrawing = false;
-            currentLine = null;
-           
-            lineObj = null;
-
-        }
-    }
-    private void DeleteLastLine_performed(InputAction.CallbackContext context)
-    {
-        MeasurementHandler.Instance.DeleteLastLine();
+            CancelCurrentLine();
     }
 
     void Update()
     {
+        if (controller == null)
+            return;
 
-        // ********************************
+        // Gâchette intérieure (grip) de la main droite
         if (OVRInput.GetDown(OVRInput.Button.SecondaryHandTrigger))
         {
-            Debug.LogError("intex key pressed");
-            DrawLine_performed();
+            BeginLine();
         }
-        // Deselect
         else if (OVRInput.GetUp(OVRInput.Button.SecondaryHandTrigger))
         {
-            Debug.LogError("intex key removed");
-            DrawLine_endDrawing();
+            EndLine();
         }
 
-        // Get right-hand trigger value (0.0f to 1.0f)
-        // Read right index trigger (mapped)
-        float triggerValue = OVRInput.Get(OVRInput.Axis1D.PrimaryIndexTrigger, OVRInput.Controller.RTouch);
-
-
-        if (triggerValue > 0.3f) // Small threshold to avoid accidental movement
+        if (isDrawing)
         {
-            if (isDrawing)
-            {
-                UpdateLine();
-            }
+            UpdateLine();
         }
-
-        if (playerInputActions.XRIRightInteraction.Select.ReadValue<float>() > 0.3)
-        {
-            if (isDrawing)
-            {
-                UpdateLine();
-            }
-
-        }
-        /*       if (Input.GetMouseButtonUp(1))
-               {
-                   DrawPositionIndicator();
-               }
-        */
     }
 
-    private void DrawLine()
+    private bool RaycastTarget(out RaycastHit hit)
     {
-        if (currentLine == null)
+        Ray ray = new Ray(controller.position, controller.rotation * Vector3.forward);
+
+        // On ne retient que les impacts sur le bloc cible.
+        int mask = raycastLayerMask.value != 0 ? raycastLayerMask.value : Physics.DefaultRaycastLayers;
+        var hits = Physics.RaycastAll(ray, rayLength, mask);
+        float best = float.MaxValue;
+        hit = default;
+        bool found = false;
+        foreach (var h in hits)
         {
-            lineObj = Instantiate(linePrefab);
-            lineObj.transform.parent = runTimeLines;
-            currentLine = lineObj.GetComponent<LineRenderer>();
-
-            updateLinePosition(pointA, pointB);
-            // spawnedLine = NetworkManager.Instance.Runner.Spawn(linePrefab, Vector3.zero, Quaternion.identity);
+            if (h.distance < best && IsOnTarget(h))
+            {
+                best = h.distance;
+                hit = h;
+                found = true;
+            }
         }
+        return found;
+    }
 
+    private bool IsOnTarget(RaycastHit h)
+    {
+        return targetRoot == null || h.collider.transform == targetRoot || h.collider.transform.IsChildOf(targetRoot);
+    }
 
-        /*   currentLine.material = lineMaterial;
-           currentLine.startWidth = 0.01f;
-           currentLine.endWidth = 0.01f;
-           currentLine.positionCount = 2;
-        */
+    private void BeginLine()
+    {
+        if (isDrawing)
+            return;
 
-        currentLine.enabled = true; // Initially, the line is hidden
-                                     //add endPointMarquers
+        isDrawing = true;
+        secondPointOnTarget = false;
 
+        lineObj = Instantiate(linePrefab);
+        lineObj.transform.parent = runTimeLines;
+        currentLine = lineObj.GetComponent<LineRenderer>();
+        lineObj.SetActive(false); // visible seulement quand les deux points sont sur le bloc
 
-        // Get the controller's position and orientation
-        Vector3 controllerPosition = controller.position;
-        Quaternion controllerRotation = controller.rotation;
-        Vector3 rayDirection = controllerRotation * Vector3.forward;
-
-        // Raycast logic
-        Ray ray = new Ray(controllerPosition, rayDirection);
-
-        lineObj.SetActive(false);
-        // Perform the first raycast
-        if (Physics.Raycast(ray, out RaycastHit firstHit, rayLength))
+        firstPointOnTarget = RaycastTarget(out RaycastHit firstHit);
+        if (firstPointOnTarget)
         {
             firstPoint = firstHit.point;
-            Vector3 normal = firstHit.normal;
-           
+        }
+        else
+        {
+            SetMessage("Commencez la ligne sur le tableau.");
         }
     }
-   
-
-    private void updateLinePosition(Vector3 pointA, Vector3 pointB)
-    {
-
-        currentLine.SetPosition(0, pointA);
-        currentLine.SetPosition(1, pointB);
-
-        
-    }
-
 
     private void UpdateLine()
     {
-        // Get the controller's position and orientation
-        Vector3 controllerPosition = controller.position;
-        Quaternion controllerRotation = controller.rotation;
-        Vector3 rayDirection = controllerRotation * Vector3.forward;
+        if (currentLine == null || lineObj == null)
+            return;
 
-        // Raycast logic
-        Ray ray = new Ray(controllerPosition, rayDirection);
-
-        lineObj.SetActive(true);
-        // Perform the first raycast
-        if (Physics.Raycast(ray, out RaycastHit secondHit, rayLength, raycastLayerMask))
+        if (!firstPointOnTarget)
         {
-            lineObj.SetActive(true);
+            // Le premier point peut encore être pris dès que le pointeur revient sur le bloc.
+            if (RaycastTarget(out RaycastHit retryHit))
+            {
+                firstPoint = retryHit.point;
+                firstPointOnTarget = true;
+                SetMessage(string.Empty);
+            }
+            return;
+        }
+
+        if (RaycastTarget(out RaycastHit secondHit))
+        {
             secondPoint = secondHit.point;
-
-            updateLinePosition(firstPoint, secondPoint);
-
-
+            secondPointOnTarget = true;
+            if (!lineObj.activeSelf)
+                lineObj.SetActive(true);
+            currentLine.SetPosition(0, firstPoint);
+            currentLine.SetPosition(1, secondPoint);
         }
-
-    }
-
-
-
-
-}
-
-
-
-
-
-
-
-/*
- * using Meta.WitAi;
-using System;
-using System.Collections.Generic;
-using TMPro;
-using UnityEngine;
-using UnityEngine.InputSystem;
-using UnityEngine.UI;
-using UnityEngine.UIElements;
-
-public class DistanceMeasurementTool : MonoBehaviour
-{
-    public Transform controller;
-    public Transform cameraRef;
-    public Material lineMaterial;
-    public GameObject endPointPref;
-    public GameObject measurePref;
-    public bool isMeasurementActive = true; // Tracks if the measurement tool is active
-
-    private XRIBIMInputActions playerInputActions;
-    private MeasurementHandler measurementHandler;
-
-
-    private LineRenderer currentLine;
-    private TMP_Text measureText;
-    private GameObject measurementUI;
-    private Vector3 startPoint;
-    private bool isDrawing = false;
-
-    private Renderer objectRenderer; // Renderer of the GameObject
-                                     // Start is called before the first frame update
-
-    private bool isModifyingEndPoint;
-    private bool isModifyingStartPoint;
-
-    //line count
-    private int lineCount = 0;
-    private List<Transform> lines;
-    private int count = 0;
-
-
-    private void Awake()
-    {
-        measurementHandler = MeasurementHandler.Instance;
-        playerInputActions = measurementHandler.playerInputActions;
-        playerInputActions.XRIRightInteraction.Enable();
-        playerInputActions.XRILeftInteraction.Enable();
-
-        //adding actionListeners
-        playerInputActions.XRIRightInteraction.Select.performed += DrawLine_performed;
-        playerInputActions.XRIRightInteraction.Select.canceled += DrawLine_endDrawing;
-
-        playerInputActions.XRILeftInteraction.Delete.performed += DeleteLastLine_performed;
-
-    }
-    private void OnEnable()
-    {
-        measurementHandler = MeasurementHandler.Instance;
-        playerInputActions = measurementHandler.playerInputActions;
-        playerInputActions.XRIRightInteraction.Enable();
-        playerInputActions.XRILeftInteraction.Enable();
-
-        //adding actionListeners
-        playerInputActions.XRIRightInteraction.Select.performed += DrawLine_performed;
-        playerInputActions.XRIRightInteraction.Select.canceled += DrawLine_endDrawing;
-
-        playerInputActions.XRILeftInteraction.Delete.performed += DeleteLastLine_performed;
-
-    }
-    private void OnDisable()
-    {
-        playerInputActions.XRIRightInteraction.Select.performed -= DrawLine_performed;
-        playerInputActions.XRIRightInteraction.Select.canceled -= DrawLine_endDrawing;
-
-        playerInputActions.XRILeftInteraction.Delete.performed -= DeleteLastLine_performed;
-
-    }
-
-
-    private void DrawLine_performed(InputAction.CallbackContext context)
-    {
-        Vector3 controllerPosition = controller.position;
-        Quaternion controllerRotation = controller.rotation;
-        Vector3 rayDirection = controllerRotation * Vector3.forward;
-
-        // Raycast logic
-        Ray ray = new Ray(controllerPosition, rayDirection);
-        RaycastHit hit;
-        if (Physics.Raycast(ray, out hit))
+        else
         {
-            StartDrawing(hit.point);
-
-        }
-    }
-    private void DrawLine_endDrawing(InputAction.CallbackContext context)
-    {
-        if (currentLine != null)
-            EndDrawing();
-    }
-
-
-    private void DeleteLastLine_performed(InputAction.CallbackContext context)
-    {
-        measurementHandler.DeleteLastLine();
-    }
-
-
-    private Transform lastLine;
-    void Update()
-    {
-        if (!isMeasurementActive) return; // Exit if the measurement tool is inactive
-
-        // Get the controller's position and orientation
-        Vector3 controllerPosition = controller.position;
-        Quaternion controllerRotation = controller.rotation;
-        Vector3 rayDirection = controllerRotation * Vector3.forward;
-
-        // Raycast logic
-        Ray ray = new Ray(controllerPosition, rayDirection);
-        RaycastHit hit;
-
-        // Update the line's endpoint while holding the trigger
-        if (playerInputActions.XRIRightInteraction.Select.ReadValue<float>() > 0.3)
-        {
-            if (Physics.Raycast(ray, out hit))
-            {
-                if (isDrawing || isModifyingEndPoint)
-                    UpdateLine(hit.point);
-
-                else if (isModifyingStartPoint)
-                    UpdateLineStart(hit.point);
-            }
-        }
-
-    }
-
-    private void StartDrawing(Vector3 point)
-    {
-        isDrawing = true;
-        startPoint = point;
-
-        // Create a new line object
-        GameObject lineObj = new GameObject("Line" + count++);
-        currentLine = lineObj.AddComponent<LineRenderer>();
-        currentLine.material = lineMaterial;
-        currentLine.startWidth = 0.01f;
-        currentLine.endWidth = 0.01f;
-        currentLine.positionCount = 2;
-        currentLine.SetPosition(0, startPoint);
-        currentLine.SetPosition(1, startPoint); // Temporarily set the second point to the start
-        Quaternion rotation = Quaternion.identity; // No rotation
-        GameObject instance = Instantiate(endPointPref);
-        instance.transform.position = startPoint;
-
-        instance.transform.parent = currentLine.transform;
-        instance.transform.tag = "StartPoint";
-        measurementUI = Instantiate(measurePref);
-        measurementUI.transform.parent = currentLine.transform;
-        measurementUI.transform.position = startPoint;
-        measureText = measurementUI.GetComponentInChildren<TMP_Text>();
-
-    }
-
-    private void UpdateLineStart(Vector3 currentPoint)
-    {
-        if (currentLine != null)
-        {
-            currentLine.SetPosition(0, currentPoint); // Update the line's Start to the current hit point
-            measurementUI.transform.position = (currentPoint + currentLine.GetPosition(1)) / 2;
-            measurementUI.transform.LookAt(-(measurementUI.transform.position + cameraRef.forward));
-            //measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
-            measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " m�tre";
-        }
-    }
-    private void UpdateLine(Vector3 currentPoint)
-    {
-        if (currentLine != null)
-        {
-            currentLine.SetPosition(1, currentPoint); // Update the line's endpoint to the current hit point
-            measurementUI.transform.position = (currentPoint + currentLine.GetPosition(0)) / 2;
-            measurementUI.transform.LookAt(-(measurementUI.transform.position + cameraRef.forward));
-            // measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
-            measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " m�tre";
-        }
-    }
-    private void UpdateLine(Vector3 currentPoint, Transform endPointTransform)
-    {
-        if (currentLine != null)
-        {
-            Debug.LogError("Modifying current line");
-            currentLine.SetPosition(1, currentPoint); // Update the line's endpoint to the current hit point
-            endPointTransform.position = currentLine.GetPosition(1);
+            // Pointeur sorti du bloc : la ligne n'est pas affichée tant qu'il n'y revient pas.
+            secondPointOnTarget = false;
+            if (lineObj.activeSelf)
+                lineObj.SetActive(false);
         }
     }
 
-    private void EndDrawing()
+    private void EndLine()
     {
+        if (!isDrawing)
+            return;
 
-        if (isModifyingEndPoint || isModifyingStartPoint)
-        {
-            if (measurementHandler.LineCount() > 0)
-                measurementHandler.RemoveLine(currentLine.transform);
-        }
-
-        //increment line count
-        measurementHandler.AddLine(currentLine.transform);
-
-        measurementUI.transform.position = (currentLine.GetPosition(0) + currentLine.GetPosition(1)) / 2;
-        measurementUI.transform.LookAt(-(measurementUI.transform.position + cameraRef.forward));
-        // measurementUI.transform.LookAt(-(transform.position + cameraRef.forward));
-        measureText.text = (Vector3.Distance(currentLine.GetPosition(0), currentLine.GetPosition(1))).ToString("F2") + " m�tre";
-
-        if (isDrawing || isModifyingEndPoint)
-        {
-            Quaternion rotation = Quaternion.LookRotation((currentLine.GetPosition(1) - currentLine.GetPosition(0)).normalized);
-            // Quaternion rotation = Quaternion.identity; // No rotation
-            GameObject instance = Instantiate(endPointPref);
-            instance.transform.position = currentLine.GetPosition(1);
-
-            instance.transform.parent = currentLine.transform;
-            instance.transform.tag = "EndPoint";
-
-        }
-        else if (isModifyingStartPoint)
-        {
-            Quaternion rotation = Quaternion.LookRotation((currentLine.GetPosition(1) - currentLine.GetPosition(0)).normalized);
-            //Quaternion rotation = Quaternion.identity; // No rotation
-            GameObject instance = Instantiate(endPointPref);
-            instance.transform.position = currentLine.GetPosition(0);
-
-            instance.transform.parent = currentLine.transform;
-            instance.transform.tag = "StartPoint";
-        }
-
-        lastLine = currentLine.transform;
         isDrawing = false;
-        isModifyingEndPoint = false;
-        isModifyingStartPoint = false;
 
+        bool valid = firstPointOnTarget && secondPointOnTarget && lineObj != null
+                     && Vector3.Distance(firstPoint, secondPoint) > 0.01f;
 
-        currentLine = null; // Reset currentLine to allow drawing a new one
-        measurementUI = null;
-        measureText = null;
-
-
-    }
-
-    private void DeleteCurrentLine()
-    {
-        if (currentLine != null)
+        if (valid)
         {
-            Destroy(currentLine.transform.gameObject);
-            currentLine = null;
+            MeasurementHandler.Instance.AddLine(lineObj);
+            MeasurementHandler.Instance.lineCount++;
+            SetMessage(string.Empty);
+            ValidLineCountChanged?.Invoke(ValidLineCount);
+        }
+        else
+        {
+            if (lineObj != null)
+                Destroy(lineObj);
+            SetMessage("Ligne ignorée : les deux extrémités doivent être sur le tableau.");
         }
 
+        lineObj = null;
+        currentLine = null;
+        UpdateStatus();
     }
 
-
-    public void ActivateMeasurement()
+    private void CancelCurrentLine()
     {
-        isMeasurementActive = true;
+        isDrawing = false;
+        if (lineObj != null)
+            Destroy(lineObj);
+        lineObj = null;
+        currentLine = null;
     }
 
-    public void DeactivateMeasurement()
+    /// <summary>Supprime la dernière ligne validée (bouton « Supprimer la dernière mesure »).</summary>
+    public void DeleteLastLine()
     {
-        isMeasurementActive = false;
+        if (ValidLineCount <= 0)
+            return;
+
+        MeasurementHandler.Instance.DeleteLastLine();
+        ValidLineCountChanged?.Invoke(ValidLineCount);
+        UpdateStatus();
     }
 
-    void InstantiatePrefab(string tag)
+    private void SetMessage(string message)
     {
-        // Instantiate at a specific position and rotation
-        Vector3 position = new Vector3(0, 1, 0); // Example position
-        Quaternion rotation = Quaternion.identity; // No rotation
-        GameObject instance = Instantiate(endPointPref, position, rotation);
-
-        // Optional: Customize the instantiated object
-        instance.name = "New Instance";
+        LastMessage = message;
+        UpdateStatus();
     }
-    private Transform FindChildWithTagRecursive(Transform parent, string tag)
+
+    private void UpdateStatus()
     {
-        foreach (Transform child in parent)
-        {
-            if (child.CompareTag(tag))
-            {
-                return child;
-            }
-            Transform found = FindChildWithTagRecursive(child, tag);
-            if (found != null)
-            {
-                return found;
-            }
-        }
-        return null;
+        if (statusText == null)
+            return;
+
+        string status = $"Lignes valides : {ValidLineCount}/{requiredLines}";
+        statusText.text = string.IsNullOrEmpty(LastMessage) ? status : $"{status}\n{LastMessage}";
     }
 }
-
-*/
-
-
-
-
-
-

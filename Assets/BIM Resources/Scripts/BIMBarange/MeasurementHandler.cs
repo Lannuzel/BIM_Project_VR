@@ -94,9 +94,9 @@ public class MeasurementHandler : NetworkBehaviour
                 
             
 
-                if (NetworkManager.Instance.Runner != null)
+                if (NetworkManager.Instance != null && NetworkManager.Instance.IsRunning)
                 {   NetworkObject nwLine = line.GetComponent<NetworkObject>();
-                         nwLine.gameObject.SetActive(false);
+                         if (nwLine != null) nwLine.gameObject.SetActive(false);
                 Transform startPoint = FindChildWithTagRecursive(line.transform, "StartPoint");
                     if (startPoint != null)
                     {  
