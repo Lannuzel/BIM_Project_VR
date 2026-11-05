@@ -69,6 +69,10 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
         playerInputActions.XRIRightInteraction.Activate.performed += MoveToSurfaceDistance;
 
     }
+    [Tooltip("N5 : conserver l'ancien calcul avec constantes calibrees (sinon calcul geometrique independant du pivot).")]
+    public bool useLegacyOffsets = false;
+    private UndoManager.PoseSnapshot pendingUndo; // F19
+
     private void OnDisable()
     {
         //adding actionListeners
@@ -123,7 +127,7 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
             else
             {
                 Destroy(lineObj);
-               // lineObj = null;
+                if (pendingUndo != null) { UndoManager.RecordPoseChange("Distance au mur", pendingUndo); pendingUndo = null; } // F19
                transform.gameObject.SetActive(false);   
             }
         }
@@ -151,6 +155,7 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
                     // Calculate the endpoint of the tangent line
                     tangentEnd = hit.point + normal * targetClosestDistance;
                     //create new line and assign start point 
+                    pendingUndo = UndoManager.CapturePoses(selectedObjects); // F19
                     lineObj = new GameObject("Line");
 
                     LineRenderer currentLine = lineObj.AddComponent<LineRenderer>();
@@ -247,16 +252,22 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
 
     public void MoveObjectToNormalDistance1(GameObject objToMove, Vector3 tangentEnd)
     {
+        if (objToMove == null) return;
 
         NetworkObject networkObj = objToMove.GetComponent<NetworkObject>();
-        if (networkObj != null && networkObj.HasStateAuthority)
+        if (networkObj != null && networkObj.IsValid && !networkObj.HasStateAuthority)
         {
+            NetworkObjectUtils.EnsureAuthority(objToMove);
+            Debug.LogWarning($"Cannot move {objToMove.name} yet. Requesting State Authority...");
+            return;
+        }
 
-            Vector3 newPosition = tangentEnd;
-            // newPosition = newPosition;
+        Vector3 newPosition;
+        if (useLegacyOffsets)
+        {
+            // Ancien calcul : constantes calibrees pour un objet precis de la scene.
+            newPosition = tangentEnd;
             newPosition.y = 0;
-
-            //Vector3 newPosition = objToMove.transform.position;
             Collider collider = objToMove.transform.GetComponent<Collider>();
             if (normal.x < 0)
             {
@@ -265,7 +276,7 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
             }
             else if (normal.x > 0)
             {
-                newPosition.x = newPosition.x + positionOffsetXp  + (collider.bounds.size.x / 2);
+                newPosition.x = newPosition.x + positionOffsetXp + (collider.bounds.size.x / 2);
                 newPosition.z = newPosition.z + xZOffset;
             }
             if (normal.z > 0)
@@ -277,27 +288,58 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
             {
                 newPosition.z = newPosition.z + positionOffsetZn + (collider.bounds.size.z / 2);
                 newPosition.x = newPosition.x + zXOffset;
-
             }
-            // Use NetworkTransform if present
-            NetworkTransform networkTransform = objToMove.GetComponent<NetworkTransform>();
-                if (networkTransform != null)
-                {
-                    networkTransform.Teleport(newPosition);
-                }
-                else
-                {
-                    objToMove.transform.position = newPosition; // Fallback if no NetworkTransform
-                }
+        }
+        else
+        {
+            // N5 : calcul geometrique independant du pivot et du signe de la normale.
+            // La face de l'objet la plus proche de la surface est placee a targetClosestDistance de celle-ci,
+            // le long de la normale ; les autres coordonnees ne changent pas.
+            Vector3 n = normal;
+            n.y = 0f;
+            if (n.sqrMagnitude < 1e-6f) return;
+            n.Normalize();
 
-                //Debug.Log($"Moved {obj.name} to {newPosition}");
-            }
-            else
+            Bounds bounds = new Bounds(objToMove.transform.position, Vector3.zero);
+            bool hasBounds = false;
+            foreach (var c in objToMove.GetComponentsInChildren<Collider>())
             {
-                Debug.LogWarning($"Cannot move {objToMove.name}. No State Authority!");
+                if (c.name == "BoundingBox" || c.isTrigger) continue;
+                if (!hasBounds) { bounds = c.bounds; hasBounds = true; }
+                else bounds.Encapsulate(c.bounds);
+            }
+            if (!hasBounds)
+            {
+                foreach (var r in objToMove.GetComponentsInChildren<Renderer>())
+                {
+                    if (r.name == "BoundingBox") continue;
+                    if (!hasBounds) { bounds = r.bounds; hasBounds = true; }
+                    else bounds.Encapsulate(r.bounds);
+                }
             }
 
-        
+            // Plan de la surface : passe par tangentEnd - normal * targetClosestDistance (point d'impact).
+            Vector3 surfacePoint = tangentEnd - n * targetClosestDistance;
+            // Distance signee (le long de n) de la face de l'objet la plus proche de la surface.
+            float halfAlongNormal = hasBounds
+                ? Mathf.Abs(bounds.extents.x * n.x) + Mathf.Abs(bounds.extents.z * n.z)
+                : 0f;
+            float centerDistance = Vector3.Dot(bounds.center - surfacePoint, n);
+            float nearestFaceDistance = centerDistance - halfAlongNormal;
+            float shift = targetClosestDistance - nearestFaceDistance;
+
+            newPosition = objToMove.transform.position + n * shift;
+        }
+
+        NetworkTransform networkTransform = objToMove.GetComponent<NetworkTransform>();
+        if (networkTransform != null)
+        {
+            networkTransform.Teleport(newPosition);
+        }
+        else
+        {
+            objToMove.transform.position = newPosition; // Fallback if no NetworkTransform
+        }
     }
     void MoveToClosestSurface(RaycastHit hit, GameObject objToMove)
     {
