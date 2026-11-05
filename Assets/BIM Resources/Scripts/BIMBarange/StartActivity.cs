@@ -28,6 +28,9 @@ public class StartActivity : NetworkBehaviour
 
     public static StartActivity Local { get; private set; }
 
+    private int lastDisplayedCount = -1;
+    private string lastDisplayedState = string.Empty;
+
         public override void Spawned()
         {
             if (HasInputAuthority) Local = this;
@@ -63,25 +66,51 @@ public class StartActivity : NetworkBehaviour
     // Update is called once per frame
     void Update()
     {
-        try
-        {
-            int playerCount = NetworkManager.Instance.Runner.ActivePlayers.Count();
-            NBplayers.text = "Joueurs :  " + playerCount.ToString() + "/" + MaxPlayers;
-            if (playerCount >= MaxPlayers)
-            {
-                activityStartButton.SetActive(true);
-                startActivityGO.SetActive(true);
-            }
-        }catch(System.Exception e)
-        {
+        // F17 : plus de try/catch muet. Tant que la session n'est pas active, on l'indique
+        // au lieu de laisser le texte figé « Joueurs : 0/3 ».
+        var nm = NetworkManager.Instance;
 
+        if (nm == null || nm.Runner == null)
+        {
+            SetState("Joueurs : en attente de connexion...", -1);
+            return;
         }
 
+        if (!nm.IsRunning)
+        {
+            SetState(nm.IsReconnecting ? "Joueurs : reconnexion en cours..." : "Joueurs : connexion en cours...", -1);
+            return;
+        }
 
+        // ActivePlayers inclut le joueur local dès que la session est active.
+        int playerCount = nm.Runner.ActivePlayers.Count();
+        SetState("Joueurs :  " + playerCount.ToString() + "/" + MaxPlayers, playerCount);
+
+        if (playerCount >= MaxPlayers)
+        {
+            if (activityStartButton != null && !activityStartButton.activeSelf)
+                activityStartButton.SetActive(true);
+            if (startActivityGO != null && !startActivityGO.activeSelf)
+                startActivityGO.SetActive(true);
+        }
+    }
+
+    private void SetState(string text, int count)
+    {
+        if (text == lastDisplayedState && count == lastDisplayedCount)
+            return;
+
+        lastDisplayedState = text;
+        lastDisplayedCount = count;
+
+        if (NBplayers != null)
+            NBplayers.text = text;
+        else
+            Debug.LogError("[StartActivity] Le champ NBplayers n'est pas assigné : le compteur de joueurs ne peut pas s'afficher.");
     }
 
 
-   
+
 
     private static Camera GetPlayerCamera()
     {
@@ -99,7 +128,7 @@ public class StartActivity : NetworkBehaviour
         return null;
     }
 
-    // UI hook � only the input owner asks; StateAuthority writes
+    // UI hook : only the input owner asks; StateAuthority writes
     public void ActivateInteractionMenu()
     {
         if (Object.HasInputAuthority)
