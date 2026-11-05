@@ -33,7 +33,9 @@ public class StartActivity : NetworkBehaviour
 
         public override void Spawned()
         {
-            if (HasInputAuthority) Local = this;
+            // N5 : objet de scène en mode Shared (autorité d'état = master client, pas d'autorité d'entrée) :
+            // chaque casque a sa copie locale, c'est elle qui sert de point d'entrée.
+            Local = this;
 
             // your existing init...
             if (Object.HasStateAuthority) IsInteractionMenuActive = false;
@@ -131,11 +133,12 @@ public class StartActivity : NetworkBehaviour
     // UI hook : only the input owner asks; StateAuthority writes
     public void ActivateInteractionMenu()
     {
-        if (Object.HasInputAuthority)
+        if (Object != null && Object.IsValid)
             RPC_SetInteractionMenu(true);
     }
 
-    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    // N5 : tout casque peut demander ; l'autorité d'état (master client) écrit la valeur répliquée.
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
     private void RPC_SetInteractionMenu(NetworkBool active)
     {
         IsInteractionMenuActive = active;

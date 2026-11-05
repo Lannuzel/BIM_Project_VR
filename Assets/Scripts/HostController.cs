@@ -1,19 +1,18 @@
 using Fusion;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SocialPlatforms;
-using XRMultiplayer;
-using static Fusion.Sockets.NetBitBuffer;
 
+/// <summary>
+/// Commandes de session du joueur local (N5) : lancement / arrêt de l'enregistrement synchronisé
+/// via <see cref="SyncManager"/>, et fenêtre de remerciement affichée localement sur chaque casque.
+/// Une instance vit sur chaque avatar ; <see cref="instance"/> est celle du joueur local.
+/// </summary>
 public class HostController : NetworkBehaviour
 {
-
     [SerializeField] private float delay = 1800f;
     [SerializeField] private float distance = 1.2f;       // meters in front of the user
     [SerializeField] private float verticalOffset = -0.1f; // slightly below gaze
     [SerializeField] bool pinToCamera = true;       // keep it fixed to the view
-
 
     public static HostController instance { get; private set; }
 
@@ -23,145 +22,87 @@ public class HostController : NetworkBehaviour
     [Header("Exit")]
     public float exitDelay = 6f;
 
-
     static GameObject _localThanksInstance; // prevent duplicates on each client
-
 
     void Update()
     {
-        // Appuyer sur la touche "Space" pour démarrer la synchronisation
-        if (Input.GetKeyDown(KeyCode.Space) && NetworkManager.Instance.IsRunning && SyncManager.Instance != null)
-        {
-            float currentNetworkTime = NetworkManager.Instance.Runner.SimulationTime; // Récupérer l'heure réseau actuelle
-            SyncManager.Instance.RPC_StartSynchronization(currentNetworkTime);
-            Debug.LogError("Sent synchronization signal to all clients.");
-        }
+        // Appuyer sur la touche "Space" (éditeur) pour démarrer la synchronisation
+        if (Input.GetKeyDown(KeyCode.Space) && Object != null && Object.HasStateAuthority)
+            StartLogSynchornisation();
     }
+
     public override void Spawned()
     {
-        if (Object.HasInputAuthority)
+        if (Object.HasStateAuthority)
             instance = this;
+    }
+
+    public override void Despawned(NetworkRunner runner, bool hasState)
+    {
+        if (instance == this) instance = null;
+    }
+
+    private static SyncManager LocalSync()
+    {
+        if (SyncManager.Instance != null) return SyncManager.Instance;
+        foreach (var s in FindObjectsOfType<SyncManager>())
+            if (s.Object != null && s.Object.IsValid && s.Object.HasStateAuthority) return s;
+        return null;
     }
 
     public void StartLogSynchornisation()
     {
-        if (!NetworkManager.Instance.IsRunning || SyncManager.Instance == null)
+        var sync = LocalSync();
+        if (NetworkManager.Instance == null || !NetworkManager.Instance.IsRunning || sync == null)
         {
             Debug.LogError("[HostController] Impossible de lancer la synchronisation : session réseau inactive.");
             NetworkStatusPanel.Show("Session réseau inactive : impossible de lancer l'activité.", 5f);
             return;
         }
-        float currentNetworkTime = NetworkManager.Instance.Runner.SimulationTime; // Récupérer l'heure réseau actuelle
-        SyncManager.Instance.RPC_StartSynchronization(currentNetworkTime);
-
+        sync.StartSynchronizedRecording();
         Debug.LogError("Sent synchronization signal to all clients.");
-        
     }
+
     public void StoptLogSynchornisation()
     {
-        if (!NetworkManager.Instance.IsRunning || SyncManager.Instance == null)
+        var sync = LocalSync();
+        if (NetworkManager.Instance == null || !NetworkManager.Instance.IsRunning || sync == null)
         {
             Debug.LogError("[HostController] Session réseau inactive : arrêt local des enregistrements.");
             var marker = FindObjectOfType<MarkerManager>();
             if (marker != null) marker.StopAllRecordings();
+            ShowThanksLocally();
+            ExitManager.QuitLocallyAfter(exitDelay);
             return;
         }
-        float currentNetworkTime = NetworkManager.Instance.Runner.SimulationTime; // Récupérer l'heure réseau actuelle
-        SyncManager.Instance.RPC_StopSynchronization(currentNetworkTime);
+        sync.StopSynchronizedRecording(false);
         Debug.LogError("Sent synchronization Stop signal to all clients.");
+    }
 
-        // 1) Tell everyone to show the local window
-        ShowThanksgivingCanvasForAll();
-        // After StartGame completes on host:
-        
+    public void StoptLogSynchornisationTimeout()
+    {
+        var sync = LocalSync();
+        if (sync == null) { StoptLogSynchornisation(); return; }
+        sync.StopSynchronizedRecording(true);
+        Debug.LogError("Sent synchronization Timeout Stop signal to all clients.");
+    }
 
-        ExitManager emr = ExitManager.Instance;
-        if (emr != null)
+    /// <summary>Affiche la fenêtre de remerciement devant la caméra de CE casque (instanciation locale, pas de Spawn réseau).</summary>
+    public static void ShowThanksLocally()
+    {
+        HostController source = instance;
+        if (source == null)
         {
-            emr.BeginExit();
+            foreach (var h in FindObjectsOfType<HostController>()) { source = h; break; }
         }
-
-        // 2) Start the exit sequence everywhere
-       // RPC_BeginExitSequence(exitDelay);
-
-
-        //  HostBeginExit();
-
-        //version old
-        /*  HostController.instance.RPC_RequestExit(6f);
-
-          float currentNetworkTime = NetworkManager.Instance.Runner.SimulationTime; // Récupérer l'heure réseau actuelle
-           ShowThanksgivingCanvasForAll();
-
-
-
-              SyncManager.Instance.RPC_StopSynchronization(currentNetworkTime);
-              Debug.LogError("Sent synchronization Stop signal to all clients.");
-
-              // Instantiate(thankGivingWindow);
-
-
-             HostController.instance.RPC_RequestExit(3f);
-
-          //Invoke("QuitApplication", 3f);*/
+        if (source == null) { Debug.LogWarning("[HostController] Aucune instance : fenêtre de fin non affichée."); return; }
+        source.TryShowThanksgivingLocally(source.distance, source.verticalOffset, source.pinToCamera);
     }
 
-    public void HostBeginExit()
-    {
-        if (!Object || !Object.HasStateAuthority)
-        {
-            Debug.LogWarning("HostBeginExit called on a non-host instance.");
-            return;
-        }
-        // 1) Tell everyone to show the local window
-        RPC_ShowThanks(distance, verticalOffset, pinToCamera);
-
-        // 2) Start the exit sequence everywhere
-        RPC_BeginExitSequence(exitDelay);
-    }
-
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    void RPC_ShowThanks(float dist, float yOffset, bool pin)
-    {
-        TryShowThanksgivingLocally(dist, yOffset, pin);
-    }
-
-
-    // Client asks host to end session
-    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    public void RPC_RequestExit(float delaySeconds)
-    {
-        RPC_BeginExitSequence(delaySeconds);
-    }
-    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
-
-    private void RPC_BeginExitSequence(float delaySeconds)
-    {
-        StartCoroutine(StopApplicationAfterDelayCoroutine(delaySeconds));
-    }
-
-    // 3) Local exit sequence each client runs on itself.
-    private IEnumerator StopApplicationAfterDelayCoroutine(float delaySeconds)
-    {
-        yield return new WaitForSeconds(delaySeconds);
-
-    
-        // Give users a moment to see the UI, then quit
-        yield return new WaitForSeconds(0.5f);
-
-        // Closes the app in standalone builds
-        Application.Quit();
-
-    }
-
-
-    // --- Local-only UI spawn: in front of THIS client’s camera ---
     void TryShowThanksgivingLocally(float dist, float yOffset, bool pin)
     {
         if (thankGivingWindow == null) return;
-
-        // Don’t create twice on the same client
-        if (_localThanksInstance != null) return;
+        if (_localThanksInstance != null) return; // Don't create twice on the same client
 
         var cam = GetPlayerCamera();
         if (cam == null)
@@ -170,84 +111,25 @@ public class HostController : NetworkBehaviour
             return;
         }
 
-        // Position & rotation directly in front of the camera
         Vector3 pos = cam.transform.position + cam.transform.forward.normalized * dist + cam.transform.up * yOffset;
         Quaternion rot = Quaternion.LookRotation((pos - cam.transform.position).normalized, Vector3.up);
 
-        // 🔑 Local instantiate (NOT Runner.Spawn)
+        // Instanciation locale (PAS Runner.Spawn) : chaque casque voit la fenêtre devant lui.
         _localThanksInstance = Instantiate(thankGivingWindow, pos, rot);
+        foreach (var nb in _localThanksInstance.GetComponentsInChildren<NetworkBehaviour>(true))
+            nb.enabled = false; // composants réseau inertes sur une copie locale
+        var no = _localThanksInstance.GetComponent<NetworkObject>();
+        if (no != null) no.enabled = false;
 
-        // If the prefab is a Canvas, nudge settings for guaranteed visibility
-        var canvas = _localThanksInstance.GetComponentInChildren<Canvas>();
-        if (canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay)
-        {
-            // Keep world-space if you want a 3D panel; otherwise uncomment to force overlay:
-            // canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            // canvas.worldCamera = cam;
-        }
-
-        // Keep it pinned to the camera view if desired
         if (pin)
-        {
             _localThanksInstance.transform.SetParent(cam.transform, true);
-        }
     }
 
-    public void ShowThanksgivingCanvasForAll()
-    {
-        if (thankGivingWindow != null)
-        {
-
-            Camera cam = GetPlayerCamera();
-            if (cam == null)
-            {
-                Debug.LogError("[HostController] No player camera found on this client.");
-                return;
-            }
-
-            Vector3 forward = cam.transform.forward;
-            Vector3 right = cam.transform.right;
-            Vector3 up = cam.transform.up;
-
-            Vector3 spawnPos = cam.transform.position + forward.normalized * distance + up * verticalOffset;
-            Quaternion spawnRot = Quaternion.LookRotation((spawnPos - cam.transform.position).normalized, Vector3.up);
-
-            Debug.LogError("Trying to launch Thanks Window: step1");
-
-
-            Fusion.NetworkObject spawnNWObjEnd = null;
-            NetworkManager.Instance.Runner.Spawn(thankGivingWindow, spawnPos, spawnRot, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
-            {
-                spawnNWObjEnd = obj;
-
-                Debug.LogError("Trying to launch Thanks Window: step2");
-
-            });
-            Debug.LogError("Trying to launch Thanks Window: step3");
-
-        }
-    }
-
-
-    public void StoptLogSynchornisationTimeout()
-    {
-        float currentNetworkTime = NetworkManager.Instance.Runner.SimulationTime; // Récupérer l'heure réseau actuelle
-        ShowThanksgivingCanvasForAll();
-        SyncManager.Instance.RPC_StopSynchronizationTimeOut(currentNetworkTime);
-        Debug.LogError("Sent synchronization Timeout Stop signal to all clients.");
-
-       // Instantiate(thankGivingWindow);
-       
-
-        Invoke("QuitApplication", 3f);
-    }
     private static Camera GetPlayerCamera()
     {
-        // 1) Try MainCamera tag
         if (Camera.main != null && Camera.main.isActiveAndEnabled)
             return Camera.main;
 
-        // 2) Fallback to any enabled camera on display 0
         Camera[] cams = GameObject.FindObjectsOfType<Camera>(true);
         foreach (var c in cams)
         {
@@ -256,22 +138,4 @@ public class HostController : NetworkBehaviour
         }
         return null;
     }
-    private void QuitApplication()
-    {
-        Debug.LogError("Quit Application !!!!!!!!!.");
-
-        Application.Quit();
-    }
-  /*  public IEnumerator StopApplicationAfterDelayCoroutine(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-
-        // Instantiate(thankGivingWindow);
-        ShowThanksgivingCanvasForAll();
-
-        StoptLogSynchornisation();
-
-         yield return new WaitForSeconds(3.0f);
-        Application.Quit();
-    }*/
 }

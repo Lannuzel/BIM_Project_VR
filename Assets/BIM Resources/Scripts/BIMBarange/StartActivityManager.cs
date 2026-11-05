@@ -7,91 +7,85 @@ using TMPro;
 using System.Collections;
 
 
+/// <summary>
+/// Fenêtre « Vous pouvez maintenant commencer l'activité » (N5) : affichée localement devant la caméra
+/// de chaque casque (RPC vers tous, instanciation locale), au lieu d'un objet réseau posé devant le Lecteur.
+/// </summary>
 public class StartActivityManager : NetworkBehaviour
 {
     [SerializeField] private GameObject startActivityWindow; // your UI window (not necessarily a NetworkObject)
-   
 
     public float distance = 1.2f;       // meters in front of the user
     public float verticalOffset = -0.1f; // slightly below gaze
+    [Tooltip("Durée (s) d'affichage de la fenêtre sur chaque casque.")]
+    public float localLifetime = 3f;
 
-    private Fusion.NetworkObject spawnedSAW;
+    private GameObject localWindow;
 
     public static StartActivityManager Local { get; private set; }
 
     public override void Spawned()
     {
-        if (HasInputAuthority) Local = this;
+        Local = this;
     }
 
     public void CloseWindow(float delay)
     {
-        if (HasStateAuthority) // only the state authority schedules it
-            StartCoroutine(DeactivateAfterDelay(delay));
+        RPC_DeactivateWindow(delay);
     }
-    private IEnumerator DeactivateAfterDelay(float delay)
+
+    [Rpc(RpcSources.All, RpcTargets.All)]
+    private void RPC_DeactivateWindow(float delay)
     {
-        yield return new WaitForSeconds(delay);
-        RPC_DeactivateWindow(); // tell everyone to turn it off
+        StartCoroutine(DeactivateAfterDelay(localWindow, delay));
     }
 
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    private void RPC_DeactivateWindow()
-    {
-        if (startActivityWindow != null)
-            startActivityWindow.SetActive(false);
-    }
-
-
+    /// <summary>Bouton du Lecteur : chaque casque affiche la fenêtre devant lui.</summary>
     public void ShowStartActivtyWindowForAll()
     {
-        if (startActivityWindow != null)
+        if (Object == null || !Object.IsValid || Runner == null || !Runner.IsRunning)
         {
-
-            Camera cam = GetPlayerCamera();
-            if (cam == null)
-            {
-                Debug.LogError("[HostController] No player camera found on this client.");
-                return;
-            }
-
-            Vector3 forward = cam.transform.forward;
-            Vector3 right = cam.transform.right;
-            Vector3 up = cam.transform.up;
-
-            Vector3 spawnPos = cam.transform.position + forward.normalized * distance + up * verticalOffset;
-            Quaternion spawnRot = Quaternion.LookRotation((spawnPos - cam.transform.position).normalized, Vector3.up);
-
-            Debug.LogError("Trying to launch start Activity Window: step1");
-
-            spawnedSAW = null;
-            NetworkManager.Instance.Runner.Spawn(startActivityWindow, spawnPos, spawnRot, NetworkManager.Instance.Runner.LocalPlayer, (runner, obj) =>
-            {
-                spawnedSAW = obj;
-
-                Debug.LogError("Trying to launch start Activity Window: step2");
-
-            });
-            
-            Debug.LogError("Trying to launch start Activity Window: step3");
-
+            ShowLocally();
+            return;
         }
+        RPC_ShowWindow();
     }
-    IEnumerator DisactivateStartActivtyWindow()
+
+    [Rpc(RpcSources.All, RpcTargets.All)]
+    private void RPC_ShowWindow()
     {
-        yield return new WaitForSeconds(2f);
-        if (spawnedSAW != null)
-        { 
-        spawnedSAW.gameObject.SetActive(false);
-          }
+        ShowLocally();
     }
+
+    private void ShowLocally()
+    {
+        if (startActivityWindow == null) return;
+
+        Camera cam = GetPlayerCamera();
+        if (cam == null)
+        {
+            Debug.LogError("[StartActivityManager] No player camera found on this client.");
+            return;
+        }
+
+        Vector3 spawnPos = cam.transform.position + cam.transform.forward.normalized * distance + cam.transform.up * verticalOffset;
+        Quaternion spawnRot = Quaternion.LookRotation((spawnPos - cam.transform.position).normalized, Vector3.up);
+
+        if (localWindow != null) Destroy(localWindow);
+        localWindow = Instantiate(startActivityWindow, spawnPos, spawnRot);
+        // Copie locale : les composants réseau du prefab sont inertes.
+        foreach (var nb in localWindow.GetComponentsInChildren<NetworkBehaviour>(true)) nb.enabled = false;
+        var no = localWindow.GetComponent<NetworkObject>();
+        if (no != null) no.enabled = false;
+
+        StartCoroutine(DeactivateAfterDelay(localWindow, localLifetime));
+    }
+
     private IEnumerator DeactivateAfterDelay(GameObject target, float delay)
     {
         yield return new WaitForSeconds(delay);
         if (target != null)
-        {
-            target.SetActive(false);
-        }
+            Destroy(target);
     }
 
     private static Camera GetPlayerCamera()

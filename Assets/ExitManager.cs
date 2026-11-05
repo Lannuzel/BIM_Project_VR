@@ -3,18 +3,28 @@ using System;
 using System.Collections;
 using UnityEngine;
 
+/// <summary>
+/// Fin de session (N5) : tout casque peut demander la fermeture de tous les casques (RPC vers tous),
+/// et chaque casque exécute sa propre fermeture locale, quelle que soit la copie d'ExitManager qui reçoit l'ordre.
+/// </summary>
 public class ExitManager : NetworkBehaviour
 {
     [SerializeField] private float defaultDelay = 2f;
 
+    /// <summary>Instance du joueur local.</summary>
     public static ExitManager Instance { get; private set; }
 
-    // ---------------- Lifecycle ----------------
+    private static bool exitScheduled;
 
     public override void Spawned()
     {
-        Instance = this;
-        
+        if (Object.HasStateAuthority || Instance == null)
+            Instance = this;
+    }
+
+    public override void Despawned(NetworkRunner runner, bool hasState)
+    {
+        if (Instance == this) Instance = null;
     }
 
     private void OnDestroy()
@@ -22,64 +32,48 @@ public class ExitManager : NetworkBehaviour
         if (Instance == this) Instance = null;
     }
 
+    /// <summary>Demande la fermeture de l'application sur tous les casques.</summary>
     public void BeginExit(float delaySeconds = -1f)
     {
-        if (!HasStateAuthority)
+        if (delaySeconds < 0) delaySeconds = defaultDelay;
+
+        if (Object == null || !Object.IsValid || Runner == null || !Runner.IsRunning)
         {
-            Debug.LogError("[ExitManager] BeginExit called on a client. Use RequestExitFromHost() or call BeginExit on the host.");
-            RequestExitFromHost(delaySeconds);
-            return; // <- restore this
+            Debug.LogWarning("[ExitManager] Session inactive : fermeture locale seulement.");
+            QuitLocallyAfter(delaySeconds);
+            return;
         }
-
-        if (delaySeconds < 0) delaySeconds = defaultDelay;
-        RPC_BeginExit(delaySeconds); // Host-only RPC
-    }
-
-    public void RequestExitFromHost(float delaySeconds = -1f)
-    {
-        if (delaySeconds < 0) delaySeconds = defaultDelay;
-        RPC_RequestHostToBeginExit(delaySeconds);
-    }
-
-    // Allow any client to ask the host
-    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
-    private void RPC_RequestHostToBeginExit(float delaySeconds)
-    {
-        Debug.LogError($"[ExitManager][HOST] Received exit request. Broadcasting exit in {delaySeconds:0.##}s to all peers.");
         RPC_BeginExit(delaySeconds);
     }
 
-    // Host -> All remains unchanged and host-only
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RequestExitFromHost(float delaySeconds = -1f) => BeginExit(delaySeconds);
+
+    // N5 : n'importe quel casque peut émettre, tous exécutent localement (plus de condition Instance == this).
+    [Rpc(RpcSources.All, RpcTargets.All)]
     private void RPC_BeginExit(float delaySeconds)
     {
         Debug.LogError($"[ExitManager][ALL] Exit sequence received. Quitting in {delaySeconds:0.##}s.");
-        if (ExitManager.Instance == null)
-            ExitManager.Instance = this;
-
-        if (ExitManager.Instance == this)
-            ExitManager.Instance.StartCoroutine(ExitAfterDelay(delaySeconds));
-
-      //  Debug.LogError($"[ExitManager][ALL] Exit sequence received. Quitting in {delaySeconds:0.##}s.");
-      //  StartCoroutine(ExitAfterDelay(delaySeconds));
+        QuitLocallyAfter(delaySeconds);
     }
-private IEnumerator ExitAfterDelay(float delaySeconds)
+
+    /// <summary>Ferme l'application de ce casque après un délai (indépendant des objets réseau, qui peuvent être despawnés).</summary>
+    public static void QuitLocallyAfter(float delaySeconds)
     {
-        // This yield line is REQUIRED.
-        yield return new WaitForSeconds(delaySeconds);
+        if (exitScheduled) return;
+        exitScheduled = true;
+        NetworkObjectUtils.Instance.StartCoroutine(ExitAfterDelay(delaySeconds));
+    }
+
+    private static IEnumerator ExitAfterDelay(float delaySeconds)
+    {
+        yield return new WaitForSecondsRealtime(Mathf.Max(0f, delaySeconds));
 
 #if UNITY_EDITOR
         Debug.Log("[ExitManager] Stopping play mode in Editor.");
         UnityEditor.EditorApplication.isPlaying = false;
 #else
-    Debug.Log("[ExitManager] Quitting application (Build).");
-    Application.Quit();
+        Debug.Log("[ExitManager] Quitting application (Build).");
+        Application.Quit();
 #endif
-    
-
-}
-
-
-// --- Impl ---
-
+    }
 }
