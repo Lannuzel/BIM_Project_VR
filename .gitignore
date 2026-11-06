@@ -67,6 +67,7 @@ sysinfo.txt
 /TempAssembly.dll
 /RuntimeActionBindings.json
 PerformanceTestRun*.json
+PerformanceTestRun*.json.meta
 
 # Crashlytics generated file
 crashlytics-build.properties
