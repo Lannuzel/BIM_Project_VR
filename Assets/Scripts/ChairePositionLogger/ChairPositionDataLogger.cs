@@ -55,13 +55,28 @@ public class ChairPositionDataLogger : MonoBehaviour
         }
     }
 
-    /// <summary>Objets à consigner : objets réseau valides portant le tag, sinon enfants du conteneur InstantiatedChaires.</summary>
+    /// <summary>
+    /// Vrai si l'objet ou l'un de ses descendants porte le tag. Recette du 6 novembre 2026 : les prefabs créés
+    /// (TablePref, équipements XP3) portent le tag « Interactable » sur un enfant, pas sur la racine réseau ;
+    /// le fichier ChairePositionData restait vide.
+    /// </summary>
+    public static bool HasTagInHierarchy(Transform root, string tag)
+    {
+        if (root == null || string.IsNullOrEmpty(tag)) return false;
+        foreach (var t in root.GetComponentsInChildren<Transform>(true))
+            if (t.CompareTag(tag)) return true;
+        return false;
+    }
+
+    /// <summary>Objets à consigner : objets réseau valides portant le tag (racine ou descendant), sinon enfants du conteneur InstantiatedChaires.</summary>
     private List<Transform> CollectObjects()
     {
         var result = new List<Transform>();
         foreach (var no in FindObjectsOfType<NetworkObject>())
         {
-            if (no != null && no.IsValid && no.CompareTag(objectTag))
+            if (no == null || !no.IsValid) continue;
+            if (no.transform.parent != null && no.transform.parent.GetComponentInParent<NetworkObject>() != null) continue; // sous-objet (ligne, étiquette)
+            if (HasTagInHierarchy(no.transform, objectTag))
                 result.Add(no.transform);
         }
         if (result.Count == 0)
@@ -69,7 +84,7 @@ public class ChairPositionDataLogger : MonoBehaviour
             GameObject container = GameObject.Find("InstantiatedChaires");
             if (container != null)
                 foreach (Transform child in container.transform)
-                    if (child.CompareTag(objectTag)) result.Add(child);
+                    if (HasTagInHierarchy(child, objectTag)) result.Add(child);
         }
         return result;
     }

@@ -70,7 +70,7 @@ public class CalepinagePositionDataLogger : MonoBehaviour
             string objectType = "";
             foreach (Transform child in instantiatedChaires.transform )
             {
-                if (child.CompareTag("Interactable")) // Check if the child has the tag
+                if (ChairPositionDataLogger.HasTagInHierarchy(child, "Interactable")) // tag sur la racine ou un enfant (recette du 6 novembre 2026)
                 {
                     interactableChildren.Add(child);
                     if(child.name.Contains("Ventilator"))

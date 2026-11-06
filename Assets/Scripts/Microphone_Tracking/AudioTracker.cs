@@ -32,6 +32,17 @@ public class AudioTracker : MonoBehaviour
     private float nextFlushTime;
     private float[] sampleBuffer = new float[0];
 
+    // Recette du 6 novembre 2026 : le fichier d'une session de 99 s ne contenait que 89 s. Le tampon du micro
+    // ne garde que 10 s ; si l'application est mise en pause (casque retiré, menu système), les échantillons
+    // perdus manquaient au fichier et décalaient tout l'audio suivant par rapport aux CSV. Le temps réel écoulé
+    // sert de référence : tout déficit supérieur à un seuil est comblé par du silence, et consigné.
+    private const int MicBufferSeconds = 10;
+    private float micStartRealtime = -1f;      // instant réel correspondant à l'échantillon 0 du micro
+    private long micSamplesWritten;             // échantillons micro écrits (hors bip)
+    private const float PadThresholdSeconds = 1.0f;
+    /// <summary>Durée totale (s) de silence insérée pour combler des coupures de capture.</summary>
+    public float PaddedSeconds { get; private set; }
+
     public bool IsRecording => isRecording;
 
     /// <summary>Chemin du fichier WAV en cours (vide tant que l'enregistrement n'a pas démarré).</summary>
@@ -127,9 +138,12 @@ public class AudioTracker : MonoBehaviour
         if (!InitWAV())
             return;
 
-        audioSource.clip = Microphone.Start(micDevice, true, 10, sampleRate);
+        audioSource.clip = Microphone.Start(micDevice, true, MicBufferSeconds, sampleRate);
         audioSource.mute = true;
         lastSamplePosition = 0;
+        micStartRealtime = -1f;
+        micSamplesWritten = 0;
+        PaddedSeconds = 0f;
         nextFlushTime = Time.realtimeSinceStartup + flushInterval;
         isRecording = true;
 
@@ -269,6 +283,24 @@ public class AudioTracker : MonoBehaviour
                 ? currentPosition - lastSamplePosition
                 : audioSource.clip.samples - lastSamplePosition + currentPosition;
 
+            if (micStartRealtime < 0f)
+                micStartRealtime = Time.realtimeSinceStartup - (float)currentPosition / sampleRate;
+
+            // Déficit entre le temps réel écoulé depuis le départ du micro et ce qui a été (ou va être) écrit :
+            // des échantillons ont été écrasés dans le tampon circulaire pendant une pause. On comble par du silence
+            // pour que la position dans le fichier reste alignée sur le temps réel (et sur les CSV).
+            double expected = (Time.realtimeSinceStartup - micStartRealtime) * sampleRate;
+            double deficit = expected - (micSamplesWritten + samplesToRead);
+            if (deficit > PadThresholdSeconds * sampleRate)
+            {
+                int pad = (int)System.Math.Min(deficit, (double)int.MaxValue);
+                WriteSilence(pad);
+                micSamplesWritten += pad;
+                PaddedSeconds += (float)pad / sampleRate;
+                Debug.LogWarning($"[AudioTracker] Coupure de capture : {(float)pad / sampleRate:0.0} s de silence insérées pour rester aligné (total {PaddedSeconds:0.0} s).");
+            }
+            micSamplesWritten += samplesToRead;
+
             if (sampleBuffer.Length < samplesToRead)
                 sampleBuffer = new float[samplesToRead];
 
@@ -288,6 +320,19 @@ public class AudioTracker : MonoBehaviour
             }
 
             lastSamplePosition = currentPosition; // Mise à jour de la dernière position
+        }
+    }
+
+    private void WriteSilence(int count)
+    {
+        if (binaryWriter == null) return;
+        const int chunk = 4096;
+        var zeros = new byte[chunk * 2];
+        while (count > 0)
+        {
+            int n = System.Math.Min(chunk, count);
+            binaryWriter.Write(zeros, 0, n * 2);
+            count -= n;
         }
     }
 
