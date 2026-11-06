@@ -155,6 +155,11 @@ public class TestScript1 : MonoBehaviour
         }
 
     }
+
+    public void HelloDarling()
+    {
+        Debug.Log("i am on");
+    }
     public void loadImage()
     {
         Sprite FULLHP = Resources.Load<Sprite>("ganeshji.png");      //FULL

@@ -187,7 +187,7 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
         {
             Vector3 newPosition = tangentEnd;
             // newPosition = newPosition;
-            newPosition.y = 0;
+            newPosition.y = ObjectInteractionHandler.Instance.HeightFor(networkObj.gameObject); // XP1 : sol ; XP3 : plafond
 
 
             // Get the collider of the hit object
@@ -267,7 +267,7 @@ public class MoveToClosestSurfaceDistance : MonoBehaviour
         {
             // Ancien calcul : constantes calibrees pour un objet precis de la scene.
             newPosition = tangentEnd;
-            newPosition.y = 0;
+            newPosition.y = ObjectInteractionHandler.Instance.HeightFor(objToMove); // XP1 : sol ; XP3 : plafond
             Collider collider = objToMove.transform.GetComponent<Collider>();
             if (normal.x < 0)
             {
