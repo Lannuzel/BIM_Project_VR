@@ -1,205 +1,216 @@
 # BIM Project VR
 
-Application de recherche en réalité virtuelle (CESI LINEACT) : une triade collabore sur une tâche
-inspirée du BIM pendant que l'application enregistre voix, regard, expressions faciales et positions
-pour étudier l'intelligence collective.
+*Version française : [README.fr.md](README.fr.md).*
 
-- **Moteur** : Unity 2022.3.56f1 (`ProjectSettings/ProjectVersion.txt`), Asset Serialization en Force Text.
-- **Casque** : Meta Quest Pro (eye-tracking et face-tracking requis), Android API 32.
-- **Réseau** : Photon Fusion 2.0.3, mode Shared, cloud Photon région `eu` (voir `docs/reseau.md`).
-- **Rôles** : Lecteur (consignes, lance et termine l'activité), Calculateur (bloc-notes, calculatrice,
-  documents), Modélisateur (création, déplacement, mesure des objets), Expérimentateur (panneau
-  d'administration, hors tâche).
+<img src="docs/images/avatar.png" alt="Network avatar of a participant (head, body, role label and controllers)" width="240" align="right">
 
-## Scénarios
+Virtual-reality research application (CESI LINEACT): a triad collaborates on a BIM-inspired task
+while the application records voice, gaze, facial expressions and positions to study collective
+intelligence.
 
-| Scénario | Scène | Tâche | État |
+- **Engine**: Unity 2022.3.56f1 (`ProjectSettings/ProjectVersion.txt`), Asset Serialization set to Force Text.
+- **Headset**: Meta Quest Pro (eye tracking and face tracking required), Android API 32.
+- **Network**: Photon Fusion 2.0.3, Shared mode, Photon cloud, region `eu` (see `docs/reseau.md`).
+- **Roles**: Reader (*Lecteur*: instructions, starts and ends the activity), Calculator (*Calculateur*:
+  notepad, calculator, documents), Modeller (*Modélisateur*: creates, moves and measures objects),
+  Experimenter (*Expérimentateur*: administration panel, outside the task).
+
+Each participant is represented by the avatar shown opposite (`Assets/Prefabs/PlayerPrefabMB.prefab`):
+a translucent head and body, two eyes that follow the headset, the role displayed above the head
+and the two Touch Pro controllers. The picture is produced by **BIM VR Tools › Capture the avatar**
+(`Assets/Editor/AvatarSnapshot.cs`).
+
+## Scenarios
+
+| Scenario | Scene | Task | Status |
 | --- | --- | --- | --- |
-| Tutoriel (commun) | `Assets/EXP1/Scenes/Tutorial/BIM-EXP_Tutorial_V2.unity` | saisie, téléportation, tracer des lignes, déplacer un objet, choix du rôle | testé |
-| XP1 | `Assets/EXP1/Scenes/Exp1_V3.unity` | aménagement d'une salle de cours (tables et chaises) | testé (recette du 5 novembre 2026) |
-| XP2 | `Assets/EXP2/Scene/Exp2-V1-09-06-2025_EXP2_User.unity` | réservations pour gaines et canalisations dans murs et sols | testé (recette du 5 novembre 2026) |
-| XP3 | `Assets/EXP3/Scenes/Exp3-V0.2-10-02-26.unity` | équipements au plafond (luminaires, bouches d'air, ventilateurs), mise à l'échelle par rapport à une dalle, taux de brassage, réservations | **non testé avec des participants** |
+| Tutorial (shared) | `Assets/EXP1/Scenes/Tutorial/BIM-EXP_Tutorial_V2.unity` | grabbing, teleporting, drawing lines, moving an object, choosing a role | tested |
+| XP1 | `Assets/EXP1/Scenes/Exp1_V3.unity` | laying out a classroom (tables and chairs) | tested (acceptance run of 5 November 2026) |
+| XP2 | `Assets/EXP2/Scene/Exp2-V1-09-06-2025_EXP2_User.unity` | reservations for ducts and pipes in walls and floors | tested (acceptance run of 5 November 2026) |
+| XP3 | `Assets/EXP3/Scenes/Exp3-V0.2-10-02-26.unity` | ceiling equipment (luminaires, air terminals, fans), scaling against a reference slab, air-change rate, reservations | **not yet tested with participants** |
 
-Chaque expérience est un APK distinct : scène 0 = tutoriel, scène 1 = expérience
-(`SceneLoader` charge l'index 1 à la fin du tutoriel ou avec « Passer le tutoriel »).
+Each experiment is a separate APK: scene 0 = tutorial, scene 1 = experiment
+(`SceneLoader` loads index 1 at the end of the tutorial or on "Skip the tutorial").
 
-L'XP3 vient de la branche `Network` (avril 2026, Mukesh Barange), intégrée le 6 novembre 2026.
-Cette branche avait été enregistrée sans les fichiers `.meta` : ils ont été reconstruits, avec les
-identifiants d'origine quand les scènes permettaient de les retrouver. La scène se construit, mais
-aucune passation n'a encore validé le scénario sur casque. Point connu : l'objet `PDFCanvas` de la
-scène porte un script manquant (déjà le cas dans XP1 et XP2, sans effet).
+XP3 comes from the `Network` branch (April 2026, Mukesh Barange), integrated on 6 November 2026.
+That branch had been committed without its `.meta` files: they were rebuilt, keeping the original
+identifiers wherever the scenes allowed them to be recovered. The scene builds, but no session has
+validated the scenario on a headset yet. Known point: the `PDFCanvas` object of the scene carries a
+missing script (already the case in XP1 and XP2, with no effect).
 
-## Branches et étiquettes
+## Branches and tags
 
-- `main` : version intégrée.
-- `fix/recette-2026-11-05` : corrections de la recette du 5 novembre 2026, un commit par point
-  (identifiants `F1`–`F19`, `N1`–`N5` du cahier des charges), puis intégration de l'XP3 et nettoyage.
-- `feedback` : système de feedbacks temps réel (dossier `1_Emery`, Emery Descours), basé sur le `main`
-  de décembre 2024 ; non intégré.
-- Étiquettes : `v3.0-avant-recette` (état d'avril 2026 avant la recette), `archive/BIM_Interaction`,
-  `archive/BIM_Clean` (anciennes branches de janvier 2025).
+- `main`: integrated version.
+- `fix/recette-2026-11-05`: fixes from the acceptance run of 5 November 2026, one commit per item
+  (identifiers `F1`–`F19`, `N1`–`N5` of the requirements document), then XP3 integration and cleanup.
+- `feedback`: real-time feedback system (folder `1_Emery`, Emery Descours), based on the `main`
+  of December 2024; not integrated.
+- Tags: `v3.0-avant-recette` (state of April 2026 before the acceptance run), `archive/BIM_Interaction`,
+  `archive/BIM_Clean` (old branches from January 2025).
 
 ## Documents
 
-| Fichier | Contenu |
+| File | Content |
 | --- | --- |
-| `docs/cahier_des_charges.md` | exigences F1–F18, N1–N5, anomalies, points à clarifier |
-| `docs/recette_2026-11-05.md` | transcription de la note vocale de test |
-| `docs/reseau.md` | réseau requis (ports Photon), vérification avant session, comportement en cas de coupure |
-| `docs/clavier_natif_quest.md` | étude du clavier natif Meta (non activé) |
-| `docs/check_session.py` | contrôle d'intégrité des fichiers d'une session (voir ci-dessous) |
+| `docs/cahier_des_charges.md` | requirements F1–F18, N1–N5, defects, points to clarify (French) |
+| `docs/recette_2026-11-05.md` | transcript of the test voice memo (French) |
+| `docs/reseau.md` | network requirements (Photon ports), pre-session check, behaviour on connection loss (French) |
+| `docs/clavier_natif_quest.md` | study of the native Meta keyboard (not enabled) (French) |
+| `docs/check_session.py` | integrity check of a session's files (see below) |
+| `docs/receive_data.py` | HTTP receiver that collects the session files from the headsets (see below) |
 
-## Générer les APK
+## Building the APKs
 
-Dans Unity : menu **Outils BIM VR › Générer l'APK XP1 / XP2 / XP3** (`Assets/Editor/BuildExperiments.cs`).
-En ligne de commande, depuis un dossier quelconque :
+In Unity: menu **Outils BIM VR › Générer l'APK XP1 / XP2 / XP3** (`Assets/Editor/BuildExperiments.cs`).
+From the command line, from any folder:
 
 ```powershell
 & "C:\Program Files\Unity\Hub\Editor\2022.3.56f1\Editor\Unity.exe" -batchmode -nographics -quit `
-  -projectPath "<dossier du projet>" -buildTarget Android `
-  -executeMethod BuildExperiments.BuildXP1 -outputDir "<dossier de sortie>" -logFile build_xp1.log
+  -projectPath "<project folder>" -buildTarget Android `
+  -executeMethod BuildExperiments.BuildXP1 -outputDir "<output folder>" -logFile build_xp1.log
 ```
 
-Même commande avec `BuildExperiments.BuildXP2`, `BuildXP3` ou `BuildAll` (les trois). Les APK ont des
-identifiants distincts (`CollectiveIntelligence.CESI.EXP1`, `.EXP2`, `.EXP3`) et coexistent sur un
-casque. Le SDK Android doit contenir la plateforme 32 (`sdkmanager "platforms;android-32"`).
-Installation : `adb install -r <fichier.apk>`.
+Same command with `BuildExperiments.BuildXP2`, `BuildXP3` or `BuildAll` (all three). The APKs have
+distinct identifiers (`CollectiveIntelligence.CESI.EXP1`, `.EXP2`, `.EXP3`) and coexist on one
+headset. The Android SDK must contain platform 32 (`sdkmanager "platforms;android-32"`).
+Install with `adb install -r <file.apk>`.
 
-Les seules erreurs consignées pendant une build viennent du package Meta
-(`AvatarBehaviourFusion`, exception sur une propriété `[Networked]`) : elles sont connues et
-n'empêchent pas la génération.
+The only errors logged during a build come from the Meta package (`AvatarBehaviourFusion`,
+exception on a `[Networked]` property): they are known and do not prevent the build.
 
-## Configuration d'une session
+## Session configuration
 
-Tous les réglages de session sont dans un seul asset : `Assets/Resources/SessionConfig.asset`
-(sélectionner le fichier dans Unity, les champs apparaissent dans l'inspecteur ; ils sont aussi
-rappelés dans le panneau de l'expérimentateur).
+All session settings live in a single asset: `Assets/Resources/SessionConfig.asset`
+(select the file in Unity, the fields appear in the Inspector; they are also shown in the
+experimenter panel).
 
-| Champ | Rôle | Valeur actuelle |
+| Field | Purpose | Current value |
 | --- | --- | --- |
-| `sessionName` | nom de la session Photon rejointe par les casques | `Modelisateur` |
-| `photonRegion` | région Photon fixe | `eu` |
-| `maxPlayers` | joueurs attendus avant de pouvoir lancer l'activité | 1 (tests) ; mettre 3 en passation |
-| `sessionTimeoutMinutes` | arrêt automatique des enregistrements | 30 |
-| `syncLeadSeconds` | avance donnée à l'heure réseau de lancement | 1 |
-| `exitDelayAfterStop` | délai avant fermeture après la fenêtre de remerciement | 6 s |
-| `uploadUrl` | récepteur des données sur le PC (vide = pas d'envoi) | vide |
-| `uploadTimeoutSeconds` | délai maximal accordé à l'envoi | 180 |
+| `sessionName` | name of the Photon session joined by the headsets | `Modelisateur` |
+| `photonRegion` | fixed Photon region | `eu` |
+| `maxPlayers` | players expected before the activity can be started | 1 (tests); set 3 for a session |
+| `sessionTimeoutMinutes` | automatic stop of the recordings | 30 |
+| `syncLeadSeconds` | lead given to the network start time | 1 |
+| `exitDelayAfterStop` | delay before closing after the thank-you window | 6 s |
+| `uploadUrl` | data receiver on the PC (empty = no upload) | empty |
+| `uploadTimeoutSeconds` | maximum time allowed for the upload | 180 |
 
-Le socle commun des scènes d'expérience (fenêtres déplaçables, clavier, pile d'annulation, rôle
-Expérimentateur, bloc-notes multiligne) est installé par code au chargement de la scène
-(`Assets/Scripts/Core/SessionCore.cs`) : rien à recopier d'une scène à l'autre.
+The common base of the experiment scenes (movable windows, keyboard, undo stack, Experimenter role,
+multi-line notepad) is installed by code when the scene loads (`Assets/Scripts/Core/SessionCore.cs`):
+nothing to copy from one scene to another.
 
-## Déroulé d'une session
+## Running a session
 
-1. Les trois casques sur le même réseau (voir `docs/reseau.md`). Pour récupérer les données
-   automatiquement, lancer le récepteur sur le PC de l'expérimentateur et renseigner son URL dans
-   `SessionConfig` avant de générer les APK :
+1. The three headsets on the same network (see `docs/reseau.md`). To collect the data
+   automatically, start the receiver on the experimenter's PC and put its URL in `SessionConfig`
+   before building the APKs:
 
    ```powershell
    python docs/receive_data.py --port 8765 --out .\sessions
    ```
 
-2. Tutoriel sur chaque casque ; le rôle peut être choisi dès le tutoriel.
-3. Scène d'expérience : choisir le rôle dans la liste, « Rejoindre ». Le compteur « Joueurs : n/N »
-   affiche l'état de connexion (N = `maxPlayers` de `SessionConfig`).
-4. Le Lecteur appuie sur « Lancer l'activité » : fenêtre d'attente sur chaque casque, puis les
-   enregistrements démarrent à la même heure réseau sur les trois casques (marqueur `MARKER`) et
-   le manifeste de session est écrit.
-5. Le Lecteur termine l'activité, ou l'arrêt automatique survient après `sessionTimeoutMinutes` :
-   fenêtre de remerciement, envoi des fichiers au PC si une URL est configurée (état affiché devant
-   la caméra), puis fermeture de l'application sur chaque casque. Les fichiers restent sur le casque
-   dans tous les cas.
+2. Tutorial on each headset; the role can be chosen from the tutorial onwards.
+3. Experiment scene: pick the role in the list, then "Rejoindre" (join). The counter
+   "Joueurs : n/N" shows the connection state (N = `maxPlayers` from `SessionConfig`).
+4. The Reader presses "Lancer l'activité" (start the activity): a waiting window appears on each
+   headset, then the recordings start at the same network time on the three headsets (`MARKER`
+   line) and the session manifest is written.
+5. The Reader ends the activity, or the automatic stop occurs after `sessionTimeoutMinutes`:
+   thank-you window, upload of the files to the PC if a URL is configured (status shown in front
+   of the camera), then the application closes on each headset. The files stay on the headset in
+   every case.
 
-### Commandes
+### Controls
 
-- **Menu** : bouton X (manette gauche). **Supprimer** : bouton Y. **Annuler la dernière action** :
-  bouton dans les menus Édition d'objets, Mesure et Réservation, ou Y maintenu 0,6 s.
-- **Déplacer / tourner un objet** : gâchette intérieure droite pour saisir, bouton A pour changer de
-  mode ; des flèches (déplacement) ou des anneaux (rotation) s'affichent sur l'objet, dans le
-  tutoriel comme dans les expériences.
-- **Fenêtres** (documents, bloc-notes, calculatrice, claviers) : pointer et maintenir la gâchette
-  intérieure droite pour les déplacer ; croix rouge en haut à droite pour les fermer (au-dessus du
-  socle pour la calculatrice).
-- **Clavier** : AZERTY, Entrée valide le champ (retour à la ligne uniquement dans le bloc-notes),
-  touche « Fermer ».
-- **Expérimentateur** : panneau avec lancement / arrêt de l'enregistrement, fin de session forcée
-  (confirmation), changement de rôle à chaud, joueurs simulés, suivi en temps réel des enregistrements.
+- **Menu**: X button (left controller). **Delete**: Y button. **Undo the last action**: button in
+  the Object editing, Measure and Reservation menus, or hold Y for 0.6 s.
+- **Move / rotate an object**: right grip trigger to grab, A button to switch mode; arrows (move)
+  or rings (rotate) are drawn on the object, in the tutorial as in the experiments.
+- **Windows** (documents, notepad, calculator, keyboards): point and hold the right grip trigger
+  to move them; red cross at the top right to close them (above the base for the calculator).
+- **Keyboard**: AZERTY, Enter validates the field (line break only in the notepad), "Fermer"
+  (close) key.
+- **Experimenter**: panel with recording start / stop, forced end of session (with confirmation),
+  live role change, simulated players, real-time monitoring of the recordings.
 
-## Données enregistrées
+## Recorded data
 
-Sur le casque : `Android/data/<identifiant de l'application>/files/Data/`.
+On the headset: `Android/data/<application identifier>/files/Data/`.
 
-| Fichier | Contenu |
+| File | Content |
 | --- | --- |
-| `*_Session.json` | manifeste : session, rôle, scène, casque, version de l'application, heure du marqueur et de fin (locale, réseau, UTC), fichiers produits et leur taille |
-| `*_Audio.wav` | voix, PCM 16 bits mono 44,1 kHz, démarre au lancement de l'activité, bip de synchronisation inséré (1 kHz, 0,5 s, `Assets/Resources/SyncSignal.wav`) |
-| `*_EyeTrackingData.csv` | regard : origine, point d'impact, objet regardé, au framerate |
-| `*_FaceTrackingData.csv` | 71 unités d'action faciales, au framerate |
+| `*_Session.json` | manifest: session, role, scene, headset, application version, marker and end times (local, network, UTC), files produced and their size |
+| `*_Audio.wav` | voice, 16-bit PCM mono 44.1 kHz, starts when the activity starts, synchronisation beep inserted (1 kHz, 0.5 s, `Assets/Resources/SyncSignal.wav`) |
+| `*_EyeTrackingData.csv` | gaze: origin, hit point, object looked at, at frame rate |
+| `*_FaceTrackingData.csv` | 71 facial action units, at frame rate |
 | `*_UsersPositions.csv` | positions, 2 Hz |
-| `*_ChairePositionData.csv` / `*_ReservationPositionData.csv` / `*_CalepinagePositionData.csv` | bilan de fin : objets, réservations ou équipements de tous les casques |
+| `*_ChairePositionData.csv` / `*_ReservationPositionData.csv` / `*_CalepinagePositionData.csv` | end-of-session summary: objects, reservations or equipment from all headsets |
 
-Les CSV du regard, du visage et des positions commencent par trois colonnes de temps :
-`Time` (secondes depuis le lancement de l'application sur ce casque), `NetTime` (horloge réseau
-Photon Fusion, identique sur les trois casques d'une session, -1 hors session) et `Utc` (heure UTC
-du casque, ISO 8601). L'alignement entre casques se fait sur `NetTime`. Chaque CSV contient une
-ligne `MARKER` au lancement et se termine par `END`. Vérification :
+The gaze, face and position CSV files start with three time columns: `Time` (seconds since the
+application was launched on this headset), `NetTime` (Photon Fusion network clock, identical on
+the three headsets of a session, -1 outside a session) and `Utc` (headset UTC time, ISO 8601).
+Headsets are aligned on `NetTime`. Each CSV contains a `MARKER` line at start and ends with `END`.
+Check with:
 
 ```powershell
-python docs/check_session.py <dossier Data copié depuis le casque>
+python docs/check_session.py <Data folder copied from the headset>
 ```
 
-## Architecture (points clés)
+## Architecture (key points)
 
-- `Assets/Scripts/Core/` : `SessionConfig` (asset de configuration), `SessionCore` (socle installé
-  par code dans les scènes d'expérience), `SessionClock` (colonnes de temps des CSV),
-  `SessionManifest` (manifeste JSON), `DataUploader` (envoi HTTP des fichiers en fin de session).
-- `Assets/Scripts/Network/NetworkManager.cs` : session Fusion, reconnexion automatique après une
-  coupure, `GetLocalPlayerName()` pour le rôle local.
-- `Assets/Scripts/SyncManager.cs`, `HostController.cs`, `ExitManager.cs` (sur l'avatar
-  `PlayerPrefabMB`) : lancement et arrêt synchronisés, fin de session.
-- `Assets/Scripts/Network/AdminTools.cs`, `Assets/Scripts/UI/ExperimenterPanel.cs` : outils de
-  l'expérimentateur.
-- `Assets/Scripts/Undo/UndoManager.cs` : pile d'annulation du Modélisateur (Despawn / Spawn /
-  téléportation sur le réseau ; la mise à l'échelle XP3 n'est pas annulable).
-- `Assets/Scripts/Tutorial/TutorialManager.cs` : progression et validation des étapes du tutoriel ;
-  `ModeGizmo.cs` : repère déplacement / rotation sur l'objet du tutoriel (même dessin que
-  `TranslateGizmoDrawer` / `RotationGizmoDrawer` de l'XP2).
-- `Assets/BIM Resources/Scripts/BIMBarange/` : outils du Modélisateur (sélection, mesure,
-  alignement, distance au mur, réservations). `ObjectInteractionHandler.HeightFor` donne la hauteur
-  de pose d'un objet : 0 (sol) en XP1, hauteur de plafond selon le nom de l'objet en XP3
-  (`spawnHeightRules`).
-- Interfaces créées en code : utiliser `XRUiCanvas.MakeInteractive` pour qu'elles répondent au
-  pointeur laser Meta (`OVRRaycaster`).
+- `Assets/Scripts/Core/`: `SessionConfig` (configuration asset), `SessionCore` (base installed by
+  code in the experiment scenes), `SessionClock` (time columns of the CSV files),
+  `SessionManifest` (JSON manifest), `DataUploader` (HTTP upload of the files at the end of a session).
+- `Assets/Scripts/Network/NetworkManager.cs`: Fusion session, automatic reconnection after a
+  connection loss, `GetLocalPlayerName()` for the local role.
+- `Assets/Scripts/SyncManager.cs`, `HostController.cs`, `ExitManager.cs` (on the avatar
+  `PlayerPrefabMB`): synchronised start and stop, end of session.
+- `Assets/Scripts/Network/AdminTools.cs`, `Assets/Scripts/UI/ExperimenterPanel.cs`: experimenter tools.
+- `Assets/Scripts/Undo/UndoManager.cs`: Modeller undo stack (networked Despawn / Spawn /
+  teleport; XP3 scaling cannot be undone).
+- `Assets/Scripts/Tutorial/TutorialManager.cs`: progression and validation of the tutorial steps;
+  `ModeGizmo.cs`: move / rotate gizmo on the tutorial object (same drawing as
+  `TranslateGizmoDrawer` / `RotationGizmoDrawer` in XP2).
+- `Assets/BIM Resources/Scripts/BIMBarange/`: Modeller tools (selection, measurement, alignment,
+  distance to wall, reservations). `ObjectInteractionHandler.HeightFor` gives the placement height
+  of an object: 0 (floor) in XP1, ceiling height by object name in XP3 (`spawnHeightRules`).
+- Interfaces created in code: use `XRUiCanvas.MakeInteractive` so that they respond to the Meta
+  laser pointer (`OVRRaycaster`).
 
-## Contenu du dépôt
+## Repository content
 
-Le dépôt ne contient que ce que les quatre scènes de build atteignent, plus les dossiers chargés
-par nom (`Resources`, `StreamingAssets`, `Editor`, `Scripts`, SDK). Le nettoyage du 6 novembre 2026
-a retiré les kits sans rapport avec l'expérience (plateformer, VRKeys, ShadersCollection, template
-multijoueur XRI et ses tutoriels d'éditeur, Netcode for GameObjects et les services multijoueur
-Unity, bibliothèques PDF iOS / macOS / UWP / WebGL), les anciennes scènes de test et les scripts
-que ni une scène, ni un prefab, ni un autre script ne citent. Tout reste dans l'historique git.
+The repository only contains what the four build scenes reach, plus the folders loaded by name
+(`Resources`, `StreamingAssets`, `Editor`, `Scripts`, SDKs). The cleanup of 6 November 2026
+removed the kits unrelated to the experiment (platformer, VRKeys, ShadersCollection, XRI
+multiplayer template and its editor tutorials, Netcode for GameObjects and the Unity multiplayer
+services, PDF libraries for iOS / macOS / UWP / WebGL), the old test scenes and the scripts that
+no scene, prefab or other script references. Everything remains in the git history.
 
-Règles pour garder le dépôt sain :
+Rules to keep the repository healthy:
 
-- ne jamais ignorer `*.meta` : chaque asset doit être versionné avec son `.meta` ;
-- les archives de build, journaux et réglages d'IDE sont exclus par `.gitignore` ;
-- une scène d'essai ne va pas dans `Assets/EXP*/Scenes` ; les Build Settings listent uniquement
-  le tutoriel et les trois scènes d'expérience.
+- never ignore `*.meta`: every asset must be versioned with its `.meta`;
+- build archives, logs and IDE settings are excluded by `.gitignore`;
+- a test scene does not go into `Assets/EXP*/Scenes`; the Build Settings list only the tutorial
+  and the three experiment scenes;
+- shader include files (`*.cginc`, `*.hlsl`) are referenced by name, not by GUID: a dependency
+  analysis does not see them. The two includes used by the avatar and keyboard shaders
+  (`TexturedStableFresnelCommon.cginc`, `MixedRealityShaderUtils.cginc`) were restored on
+  6 November 2026 after the cleanup; a magenta avatar means an include is missing.
 
-## Citer l'application
+## Citing the application
 
-Si vous utilisez cette application dans un travail de recherche, merci de citer :
+Source code: <https://github.com/Lannuzel/BIM_Project_VR>.
+
+If you use this application in research work, please cite:
 
 > Tristan Lannuzel, Beatrice Biancardi, Mukesh Barange, Emery Descours, Stéphanie Buisine.
-> *BIM Project VR : application de réalité virtuelle multi-utilisateur pour l'étude de l'intelligence
-> collective.* CESI LINEACT.
+> *BIM Project VR: a multi-user virtual reality application for the study of collective
+> intelligence.* CESI LINEACT. <https://github.com/Lannuzel/BIM_Project_VR>
 
-La partie « feedbacks » (branche `feedback`), réalisée par Emery Descours, a fait l'objet d'une
-publication :
+The feedback part (`feedback` branch), developed by Emery Descours, was the subject of a
+publication:
 
 > Emery Descours, Tristan Lannuzel, Beatrice Biancardi, Mukesh Barange, Stéphanie Buisine.
 > Étude de systèmes de feedback en réalité virtuelle pour l'amélioration de l'intelligence
 > collective. *IHM'26 - 37e Conférence Internationale Francophone sur l'Interaction Humain-Machine*,
-> AFIHM ; Université de Lille, octobre 2026, Villeneuve-d'Ascq, France. ⟨hal-05781898⟩
+> AFIHM; Université de Lille, October 2026, Villeneuve-d'Ascq, France. ⟨hal-05781898⟩ <https://hal.science/hal-05781898/>
