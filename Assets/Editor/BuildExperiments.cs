@@ -7,20 +7,21 @@ using UnityEditor.Build.Reporting;
 using UnityEngine;
 
 /// <summary>
-/// Génération des APK des deux expériences (tutoriel + XP1, tutoriel + XP2) sans toucher aux
+/// Génération des APK des expériences (tutoriel + XP1, tutoriel + XP2, tutoriel + XP3) sans toucher aux
 /// Build Settings du projet : les scènes sont passées explicitement (index 0 = tutoriel,
 /// index 1 = scène d'expérience, comme l'attend SceneLoader).
 ///
 /// Ligne de commande (depuis la racine du projet) :
 ///   Unity.exe -batchmode -nographics -quit -projectPath . -buildTarget Android
 ///             -executeMethod BuildExperiments.BuildXP1 -logFile build_xp1.log [-outputDir C:\dossier]
-/// Menu Unity : Outils BIM VR > Générer l'APK XP1 / XP2.
+/// Menu Unity : Outils BIM VR > Générer l'APK XP1 / XP2 / XP3.
 /// </summary>
 public static class BuildExperiments
 {
     private const string TutorialScene = "Assets/EXP1/Scenes/Tutorial/BIM-EXP_Tutorial_V2.unity";
     private const string Xp1Scene = "Assets/EXP1/Scenes/Exp1_V3.unity";
     private const string Xp2Scene = "Assets/EXP2/Scene/Exp2-V1-09-06-2025_EXP2_User.unity";
+    private const string Xp3Scene = "Assets/EXP3/Scenes/Exp3-V0.2-10-02-26.unity";
 
     [MenuItem("Outils BIM VR/Générer l'APK XP1")]
     public static void BuildXP1() => Build("XP1", Xp1Scene, "CollectiveIntelligence.CESI.EXP1");
@@ -28,10 +29,20 @@ public static class BuildExperiments
     [MenuItem("Outils BIM VR/Générer l'APK XP2")]
     public static void BuildXP2() => Build("XP2", Xp2Scene, "CollectiveIntelligence.CESI.EXP2");
 
+    [MenuItem("Outils BIM VR/Générer l'APK XP3 (non testé avec des participants)")]
+    public static void BuildXP3() => Build("XP3", Xp3Scene, "CollectiveIntelligence.CESI.EXP3");
+
     public static void BuildBoth()
     {
         BuildXP1();
         BuildXP2();
+    }
+
+    public static void BuildAll()
+    {
+        BuildXP1();
+        BuildXP2();
+        BuildXP3();
     }
 
     private static void Build(string label, string experimentScene, string applicationId)
@@ -50,7 +61,7 @@ public static class BuildExperiments
         string previousId = PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.Android);
         string previousName = PlayerSettings.productName;
         PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, applicationId);
-        PlayerSettings.productName = label == "XP1" ? "EXP1" : "EXP2";
+        PlayerSettings.productName = label.Replace("XP", "EXP");
 
         var options = new BuildPlayerOptions
         {
