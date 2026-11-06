@@ -39,6 +39,12 @@ public class SyncManager : NetworkBehaviour
             Instance = this;
         if (markerManager == null)
             markerManager = GetComponentInChildren<MarkerManager>(true);
+
+        // Réglages de session centralisés (Assets/Resources/SessionConfig.asset).
+        var config = SessionConfig.Instance;
+        timerThreshold = config.sessionTimeoutMinutes * 60f;
+        syncLeadSeconds = config.syncLeadSeconds;
+        exitDelayAfterStop = config.exitDelayAfterStop;
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
@@ -207,6 +213,7 @@ public class SyncManager : NetworkBehaviour
     private void EndOfSessionLocally()
     {
         HostController.ShowThanksLocally();
-        ExitManager.QuitLocallyAfter(exitDelayAfterStop);
+        // Envoi des données vers le PC de l'expérimentateur si une URL est configurée, puis fermeture.
+        DataUploader.UploadSession(_ => ExitManager.QuitLocallyAfter(exitDelayAfterStop));
     }
 }

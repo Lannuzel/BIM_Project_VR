@@ -8,6 +8,7 @@ public class CalepinagePositionDataLogger : MonoBehaviour
 {
     private string folderName = "Data";
     private string filePath;  
+    public string FilePath => filePath;
     private StreamWriter writer;
     private bool isRecording = false; // Contr�le l'�tat de l'enregistrement
 

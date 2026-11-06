@@ -69,16 +69,47 @@ Les seules erreurs consignées pendant une build viennent du package Meta
 (`AvatarBehaviourFusion`, exception sur une propriété `[Networked]`) : elles sont connues et
 n'empêchent pas la génération.
 
+## Configuration d'une session
+
+Tous les réglages de session sont dans un seul asset : `Assets/Resources/SessionConfig.asset`
+(sélectionner le fichier dans Unity, les champs apparaissent dans l'inspecteur ; ils sont aussi
+rappelés dans le panneau de l'expérimentateur).
+
+| Champ | Rôle | Valeur actuelle |
+| --- | --- | --- |
+| `sessionName` | nom de la session Photon rejointe par les casques | `Modelisateur` |
+| `photonRegion` | région Photon fixe | `eu` |
+| `maxPlayers` | joueurs attendus avant de pouvoir lancer l'activité | 1 (tests) ; mettre 3 en passation |
+| `sessionTimeoutMinutes` | arrêt automatique des enregistrements | 30 |
+| `syncLeadSeconds` | avance donnée à l'heure réseau de lancement | 1 |
+| `exitDelayAfterStop` | délai avant fermeture après la fenêtre de remerciement | 6 s |
+| `uploadUrl` | récepteur des données sur le PC (vide = pas d'envoi) | vide |
+| `uploadTimeoutSeconds` | délai maximal accordé à l'envoi | 180 |
+
+Le socle commun des scènes d'expérience (fenêtres déplaçables, clavier, pile d'annulation, rôle
+Expérimentateur, bloc-notes multiligne) est installé par code au chargement de la scène
+(`Assets/Scripts/Core/SessionCore.cs`) : rien à recopier d'une scène à l'autre.
+
 ## Déroulé d'une session
 
-1. Les trois casques sur le même réseau (voir `docs/reseau.md`).
+1. Les trois casques sur le même réseau (voir `docs/reseau.md`). Pour récupérer les données
+   automatiquement, lancer le récepteur sur le PC de l'expérimentateur et renseigner son URL dans
+   `SessionConfig` avant de générer les APK :
+
+   ```powershell
+   python docs/receive_data.py --port 8765 --out .\sessions
+   ```
+
 2. Tutoriel sur chaque casque ; le rôle peut être choisi dès le tutoriel.
 3. Scène d'expérience : choisir le rôle dans la liste, « Rejoindre ». Le compteur « Joueurs : n/N »
-   affiche l'état de connexion (`MaxPlayers` est réglé sur 1 dans les scènes pour les tests).
+   affiche l'état de connexion (N = `maxPlayers` de `SessionConfig`).
 4. Le Lecteur appuie sur « Lancer l'activité » : fenêtre d'attente sur chaque casque, puis les
-   enregistrements démarrent à la même heure réseau sur les trois casques (marqueur `MARKER`).
-5. Le Lecteur termine l'activité, ou l'arrêt automatique survient après 30 minutes :
-   fenêtre de remerciement puis fermeture de l'application sur chaque casque.
+   enregistrements démarrent à la même heure réseau sur les trois casques (marqueur `MARKER`) et
+   le manifeste de session est écrit.
+5. Le Lecteur termine l'activité, ou l'arrêt automatique survient après `sessionTimeoutMinutes` :
+   fenêtre de remerciement, envoi des fichiers au PC si une URL est configurée (état affiché devant
+   la caméra), puis fermeture de l'application sur chaque casque. Les fichiers restent sur le casque
+   dans tous les cas.
 
 ### Commandes
 
@@ -101,13 +132,18 @@ Sur le casque : `Android/data/<identifiant de l'application>/files/Data/`.
 
 | Fichier | Contenu |
 | --- | --- |
+| `*_Session.json` | manifeste : session, rôle, scène, casque, version de l'application, heure du marqueur et de fin (locale, réseau, UTC), fichiers produits et leur taille |
 | `*_Audio.wav` | voix, PCM 16 bits mono 44,1 kHz, démarre au lancement de l'activité, bip de synchronisation inséré (1 kHz, 0,5 s, `Assets/Resources/SyncSignal.wav`) |
 | `*_EyeTrackingData.csv` | regard : origine, point d'impact, objet regardé, au framerate |
 | `*_FaceTrackingData.csv` | 71 unités d'action faciales, au framerate |
 | `*_UsersPositions.csv` | positions, 2 Hz |
 | `*_ChairePositionData.csv` / `*_ReservationPositionData.csv` / `*_CalepinagePositionData.csv` | bilan de fin : objets, réservations ou équipements de tous les casques |
 
-Chaque CSV contient une ligne `MARKER` au lancement et se termine par `END`. Vérification :
+Les CSV du regard, du visage et des positions commencent par trois colonnes de temps :
+`Time` (secondes depuis le lancement de l'application sur ce casque), `NetTime` (horloge réseau
+Photon Fusion, identique sur les trois casques d'une session, -1 hors session) et `Utc` (heure UTC
+du casque, ISO 8601). L'alignement entre casques se fait sur `NetTime`. Chaque CSV contient une
+ligne `MARKER` au lancement et se termine par `END`. Vérification :
 
 ```powershell
 python docs/check_session.py <dossier Data copié depuis le casque>
@@ -115,6 +151,9 @@ python docs/check_session.py <dossier Data copié depuis le casque>
 
 ## Architecture (points clés)
 
+- `Assets/Scripts/Core/` : `SessionConfig` (asset de configuration), `SessionCore` (socle installé
+  par code dans les scènes d'expérience), `SessionClock` (colonnes de temps des CSV),
+  `SessionManifest` (manifeste JSON), `DataUploader` (envoi HTTP des fichiers en fin de session).
 - `Assets/Scripts/Network/NetworkManager.cs` : session Fusion, reconnexion automatique après une
   coupure, `GetLocalPlayerName()` pour le rôle local.
 - `Assets/Scripts/SyncManager.cs`, `HostController.cs`, `ExitManager.cs` (sur l'avatar

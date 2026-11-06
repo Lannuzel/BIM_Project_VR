@@ -25,6 +25,7 @@ l'accès au cloud Photon, pas un défaut du rôle. Le même casque fonctionne su
 | DNS | résolution de `*.exitgames.com` / `*.photonengine.io` |
 | Isolation client (AP isolation) | sans effet sur Fusion cloud, mais à désactiver si un usage LAN est envisagé plus tard |
 | Portail captif | à éviter : les casques ne peuvent pas valider la page de connexion de façon fiable |
+| Envoi automatique des données (optionnel) | les casques joignent le PC de l'expérimentateur en HTTP sur le réseau local : PC et casques sur le même réseau, sans isolation client, port TCP 8765 entrant autorisé pour Python dans le pare-feu du PC (`docs/receive_data.py`, URL dans `Assets/Resources/SessionConfig.asset`) |
 
 Recommandation : un routeur dédié (ou partage de connexion 4G/5G) auquel seuls les 3 casques
 et le PC de l'expérimentateur sont connectés. Les réseaux d'établissement filtrent souvent

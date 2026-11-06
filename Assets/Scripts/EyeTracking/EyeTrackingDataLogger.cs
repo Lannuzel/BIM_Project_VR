@@ -43,7 +43,7 @@ public class EyeTrackingDataLogger : MonoBehaviour
         
         // Initialise le StreamWriter
         writer = new StreamWriter(filePath, false) { AutoFlush = true }; // N2 : rien ne reste en memoire  // false écrase le fichier existant
-        writer.WriteLine("Time;RayOriginX;RayOriginY;RayOriginZ;HitPointX;HitPointY;HitPointZ;ObjectHit");
+        writer.WriteLine(SessionClock.HeaderColumns + ";RayOriginX;RayOriginY;RayOriginZ;HitPointX;HitPointY;HitPointZ;ObjectHit");
 
         isRecording = true;
         Debug.Log("Recording started: " + filePath);
@@ -53,7 +53,7 @@ public class EyeTrackingDataLogger : MonoBehaviour
     {
         if (isRecording && eyeTrackingRay != null && eyeTrackingRay.TryGetRayHit(out RaycastHit hit))
         {
-            writer.WriteLine($"{Time.time};{eyeTrackingRay.transform.position.x};{eyeTrackingRay.transform.position.y};{eyeTrackingRay.transform.position.z};" +
+            writer.WriteLine($"{SessionClock.Stamp()};{eyeTrackingRay.transform.position.x};{eyeTrackingRay.transform.position.y};{eyeTrackingRay.transform.position.z};" +
                                 $"{hit.point.x};{hit.point.y};{hit.point.z};{hit.transform.name}");
             SampleCount++;
         }
@@ -61,7 +61,7 @@ public class EyeTrackingDataLogger : MonoBehaviour
 
     public void AddMarker()
     {
-        writer.WriteLine($"{Time.time};MARKER");
+        writer.WriteLine($"{SessionClock.Stamp()};MARKER");
         Debug.Log($"Marker ajouté dans le fichier CSV : {filePath}");
     }
 

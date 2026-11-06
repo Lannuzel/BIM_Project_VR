@@ -91,6 +91,19 @@ public class MarkerManager : MonoBehaviour
         }
 
         Debug.Log("Tous les enregistrements ont été arrêtés avec succès.");
+        SessionManifest.End(successStatus, !successStatus, LoggerFiles());
+    }
+
+    /// <summary>Chemins des fichiers de tous les loggers de ce casque (manifeste, envoi).</summary>
+    public IEnumerable<string> LoggerFiles()
+    {
+        foreach (var l in positionLoggers) yield return l.FilePath;
+        foreach (var l in faceLoggers) yield return l.FilePath;
+        foreach (var l in eyeLoggers) yield return l.FilePath;
+        foreach (var l in audioTrackers) yield return l.FilePath;
+        foreach (var l in chairPositionLogger) yield return l.FilePath;
+        foreach (var l in reservationPositionDataLoggers) yield return l.FilePath;
+        foreach (var l in calepinagePositionDataLogger) yield return l.FilePath;
     }
     public void AddMarkerToAllLogs()
     {
@@ -148,6 +161,7 @@ public class MarkerManager : MonoBehaviour
             Debug.Log($"Marker ajouté dans un CalepinagepositionLogger.");
         }
         Debug.Log($"Ajout du marker terminé.");
+        SessionManifest.Begin(LoggerFiles());
     }
 
 }
