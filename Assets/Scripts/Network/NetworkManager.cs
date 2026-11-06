@@ -68,7 +68,7 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
     private void Start()
     {
         // Fixing the server to a particular region
-        Fusion.Photon.Realtime.PhotonAppSettings.Global.AppSettings.FixedRegion = "eu";
+        Fusion.Photon.Realtime.PhotonAppSettings.Global.AppSettings.FixedRegion = SessionConfig.Instance.photonRegion; // Assets/Resources/SessionConfig.asset
     }
 
     /// <summary>

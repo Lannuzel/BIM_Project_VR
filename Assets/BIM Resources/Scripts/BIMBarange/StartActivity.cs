@@ -36,6 +36,7 @@ public class StartActivity : NetworkBehaviour
             // N5 : objet de scène en mode Shared (autorité d'état = master client, pas d'autorité d'entrée) :
             // chaque casque a sa copie locale, c'est elle qui sert de point d'entrée.
             Local = this;
+            MaxPlayers = SessionConfig.Instance.maxPlayers; // Assets/Resources/SessionConfig.asset
 
             // your existing init...
             if (Object.HasStateAuthority) IsInteractionMenuActive = false;
