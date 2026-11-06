@@ -49,6 +49,21 @@ public class StaticBatchingAtBuild : IProcessSceneWithReport
         var filter = go.GetComponent<MeshFilter>();
         if (filter == null || filter.sharedMesh == null) return false;
         string source = AssetDatabase.GetAssetPath(filter.sharedMesh);
-        return !string.IsNullOrEmpty(source) && source.EndsWith(".fbx", System.StringComparison.OrdinalIgnoreCase);
+        if (string.IsNullOrEmpty(source) || !source.EndsWith(".fbx", System.StringComparison.OrdinalIgnoreCase)) return false;
+        foreach (var prefix in ModelFolders)
+            if (source.StartsWith(prefix, System.StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
     }
+
+    /// <summary>
+    /// Dossiers des modèles fixes (salle, maquettes BIM). Les autres FBX de la scène (touches de la calculatrice,
+    /// manettes, mains…) peuvent être déplacés à l'exécution et ne doivent pas être combinés.
+    /// </summary>
+    private static readonly string[] ModelFolders =
+    {
+        "Assets/EXP2/Maquette/",
+        "Assets/EXP3/Maquettes/",
+        "Assets/BIM Resources/EXP2_Resources/",
+        "Assets/Resources/3dmax_1_1.fbx",
+    };
 }
