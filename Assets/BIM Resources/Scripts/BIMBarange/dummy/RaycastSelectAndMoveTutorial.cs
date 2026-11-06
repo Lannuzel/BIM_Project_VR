@@ -6,6 +6,8 @@ using UnityEngine;
 /// Étape « déplacer un objet » du tutoriel (F5).
 /// Sélection au grip droit (gâchette intérieure) en pointant l'objet marqué « TutorialObject »,
 /// déplacement au joystick droit, bascule déplacement / rotation avec le bouton A.
+/// Pendant la sélection, le repère de l'XP2 est affiché sur l'objet (flèches en déplacement,
+/// anneaux en rotation, voir <see cref="ModeGizmo"/>).
 /// L'étape est validée quand l'objet est posé à moins de <see cref="positionTolerance"/> de sa cible
 /// (l'ombre bleue, <see cref="targetTransform"/>).
 /// </summary>
@@ -154,6 +156,13 @@ public class RaycastSelectAndMoveTutorial : MonoBehaviour
         floatingLabel.color = currentMode == ControlMode.Rotate ? new Color(1f, 0.75f, 0.2f) : new Color(0.5f, 0.9f, 1f);
     }
 
+    /// <summary>Repère visuel de l'XP2 sur l'objet sélectionné : flèches (déplacement) ou anneaux (rotation).</summary>
+    private void UpdateGizmo()
+    {
+        if (selectedObject == null) return;
+        ModeGizmo.Show(selectedObject, currentMode == ControlMode.Rotate ? ModeGizmo.Mode.Rotate : ModeGizmo.Mode.Translate);
+    }
+
     void Update()
     {
         if (rightController == null)
@@ -177,6 +186,7 @@ public class RaycastSelectAndMoveTutorial : MonoBehaviour
             currentMode = currentMode == ControlMode.Translate ? ControlMode.Rotate : ControlMode.Translate;
             Debug.Log("Mode switched to: " + currentMode);
             UpdateModeLabel();
+            UpdateGizmo();
             ModeChanged?.Invoke(CurrentModeLabel);
         }
         aButtonWasPressed = aButton;
@@ -285,6 +295,7 @@ public class RaycastSelectAndMoveTutorial : MonoBehaviour
                     objectRenderer.material = highlightMaterial;
                 }
 
+                UpdateGizmo();
                 SetMessage(string.Empty);
                 Debug.Log("Selected: " + selectedObject.name);
             }
@@ -306,6 +317,7 @@ public class RaycastSelectAndMoveTutorial : MonoBehaviour
             objectRenderer.material = originalMaterial;
         }
 
+        ModeGizmo.Hide(selectedObject);
         objectRenderer = null;
         originalMaterial = null;
         selectedObject = null;

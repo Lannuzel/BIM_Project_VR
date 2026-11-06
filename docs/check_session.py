@@ -65,6 +65,14 @@ def check_csv(path, kind, problems, expected_hz=None):
     header = lines[0].strip()
     markers = [i for i, l in enumerate(lines) if ";MARKER" in l]
     has_end = any(l.strip().startswith("END") for l in lines[-3:])
+    # Depuis le 2026-11-06 : colonnes Time;NetTime;Utc (NetTime = horloge réseau Fusion commune aux casques)
+    has_net_time = header.startswith("Time;NetTime;Utc")
+    for i in markers[:1]:
+        cols = lines[i].split(";")
+        if has_net_time and len(cols) >= 4:
+            print(f"      MARKER : local={cols[0]} s, réseau={cols[1]} s, UTC={cols[2]}")
+        else:
+            print(f"      MARKER : local={cols[0]} s (pas d'horloge réseau dans ce fichier)")
     times = []
     for l in lines[1:]:
         if not l or ";MARKER" in l or l.startswith("END"):
@@ -107,6 +115,29 @@ def main():
 
     problems = []
     print(f"Session : {args.folder}  {args.role}")
+
+    # Manifeste de session (depuis le 2026-11-06) : rôle, casque, version, heure du marqueur, fichiers
+    manifests = sorted(glob.glob(os.path.join(args.folder, "*_Session.json")))
+    print(f"\n[manifeste] {len(manifests)} fichier(s)")
+    if not manifests:
+        problems.append("aucun manifeste *_Session.json (application antérieure au 2026-11-06 ou activité jamais lancée)")
+    for path in manifests:
+        try:
+            import json
+            with open(path, encoding="utf-8") as f:
+                m = json.load(f)
+            print(f"  {os.path.basename(path)} : rôle {m.get('role')}, session {m.get('sessionName')}, scène {m.get('scene')}, "
+                  f"casque {m.get('deviceName')} ({m.get('deviceModel')}), app {m.get('applicationId')} {m.get('applicationVersion')}")
+            print(f"      marqueur : réseau {m.get('markerNetTime')} s, UTC {m.get('markerUtc')} ; fin : UTC {m.get('endUtc') or '-'}, "
+                  f"terminé={'oui' if m.get('completed') else 'non'}, délai dépassé={'oui' if m.get('stoppedByTimeout') else 'non'}")
+            if not m.get("endUtc"):
+                problems.append(f"{path}: pas d'heure de fin (arrêt non propre ?)")
+            for entry in m.get("files", []):
+                if not os.path.exists(os.path.join(args.folder, entry.get("name", ""))):
+                    problems.append(f"{path}: fichier listé absent du dossier : {entry.get('name')}")
+        except (OSError, ValueError) as e:
+            problems.append(f"{path}: manifeste illisible ({e})")
+
     kinds = [
         ("*_Audio.wav", "audio", None),
         ("*_EyeTrackingData.csv", "eye", args.eye_hz),

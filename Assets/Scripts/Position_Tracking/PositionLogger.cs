@@ -49,7 +49,7 @@ public class PositionLogger : MonoBehaviour
         writer = new StreamWriter(filePath, false) { AutoFlush = true }; // N2 : rien ne reste en memoire // Ouvre en écrasant le fichier existant
 
         // Écrire l'en-tête (une colonne pour chaque utilisateur avec ses coordonnées)
-        writer.Write("Timestamp");
+        writer.Write(SessionClock.HeaderColumns);
 
         foreach (var user in userTrackers)
         {
@@ -71,7 +71,7 @@ public class PositionLogger : MonoBehaviour
     }
     void LogUserPositions()
     {
-        writer.Write($"{Time.time}"); // Ajoute le timestamp en première colonne
+        writer.Write(SessionClock.Stamp()); // Time;NetTime;Utc
 
         foreach (var user in userTrackers)
         {
@@ -94,7 +94,7 @@ public class PositionLogger : MonoBehaviour
 
     public void AddMarker()
     {
-        writer.WriteLine($"{Time.time};MARKER");
+        writer.WriteLine($"{SessionClock.Stamp()};MARKER");
         Debug.Log($"Marker ajouté dans le fichier CSV : {filePath}");
     }
 

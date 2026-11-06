@@ -222,6 +222,8 @@ public class ExperimenterPanel : MonoBehaviour
             string kind = p.IsSimulated ? "simulé" : (p.Object.HasStateAuthority ? "moi" : "casque distant");
             sb.AppendLine($"  • {p.PlayerName}  ({kind})");
         }
+        sb.AppendLine(SessionConfig.Instance.Summary());
+        sb.AppendLine($"Envoi des données : {DataUploader.LastStatus}");
         sb.Append($"Heure : {System.DateTime.Now:HH:mm:ss}");
         statusText.text = sb.ToString();
     }

@@ -52,7 +52,7 @@ public class FaceTrackingRecorder : MonoBehaviour
         writer = new StreamWriter(filePath, false) { AutoFlush = true }; // N2 : rien ne reste en memoire //ecrase fichier existant
 
         // Écrire l'en-tête (noms des colonnes)
-        writer.Write("Timestamp");
+        writer.Write(SessionClock.HeaderColumns);
         foreach (var expression in System.Enum.GetValues(typeof(OVRFaceExpressions.FaceExpression)))
         {
             if ((OVRFaceExpressions.FaceExpression)expression == OVRFaceExpressions.FaceExpression.Invalid ||
@@ -85,7 +85,7 @@ public class FaceTrackingRecorder : MonoBehaviour
     {
         if (isRecording && faceExpressions.ValidExpressions)
         {
-            writer.Write(Time.time); // Ajouter le timestamp
+            writer.Write(SessionClock.Stamp()); // Time;NetTime;Utc
 
             foreach (var expression in System.Enum.GetValues(typeof(OVRFaceExpressions.FaceExpression)))
             {
@@ -106,7 +106,7 @@ public class FaceTrackingRecorder : MonoBehaviour
 
     public void AddMarker()
     {
-        writer.WriteLine($"{Time.time};MARKER");
+        writer.WriteLine($"{SessionClock.Stamp()};MARKER");
         Debug.Log($"Marker ajouté dans le fichier CSV : {filePath}");
     }
 

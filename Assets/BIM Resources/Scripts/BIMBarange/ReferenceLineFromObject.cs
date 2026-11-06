@@ -34,6 +34,9 @@ public class ReferenceLineFromObject : NetworkBehaviour
     public float networkedDistanceX { get; set; }
     public float networkedDistanceZ { get; set; }
 
+    [Tooltip("XP3 (compatibilité de scène) : sans effet, les lignes partent toujours du bord de l'objet (N5).")]
+    public bool isReferingObject = false;
+
     private string suffix;
 
     private void Awake()

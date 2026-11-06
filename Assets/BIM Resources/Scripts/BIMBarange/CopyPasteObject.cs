@@ -37,7 +37,7 @@ public class CopyPasteObject : Fusion.NetworkBehaviour
 
             var source = obj.GetComponent<NetworkObject>();
             Vector3 spawnPosition = obj.transform.position + copyPasteOffset;
-            spawnPosition.y = 0;
+            spawnPosition.y = ObjectInteractionHandler.Instance.HeightFor(obj); // XP1 : 0 (sol) ; XP3 : hauteur plafond selon l'objet
 
             NetworkObject pasted;
             if (source != null && source.IsValid && source.NetworkTypeId.IsPrefab)

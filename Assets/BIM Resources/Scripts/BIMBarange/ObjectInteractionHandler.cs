@@ -3,11 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using TMPro;
 
 /// <summary>
-/// Création, sélection et suppression des objets du Modélisateur (XP1).
+/// Création, sélection et suppression des objets du Modélisateur (XP1, XP3).
 /// N5 : suppression réseau (Despawn) au lieu de Destroy, prise d'autorité à la sélection d'un objet
 /// créé par un autre casque ; F19 : création et suppression annulables.
+/// XP3 : création d'un prefab au choix (luminaire, bouche d'air, ventilateur) posé au plafond,
+/// mise à l'échelle par rapport à une dalle de référence, taux de brassage.
 /// </summary>
 public class ObjectInteractionHandler : NetworkBehaviour
 {
@@ -17,6 +20,49 @@ public class ObjectInteractionHandler : NetworkBehaviour
     public float spawnDistance = 2.0f; // Distance at which the object spawns
     public GameObject spawnedObjectPrefab; // The prefab to spawn
     private GameObject spawnedObject;
+
+    [Header("XP3 (objets au plafond)")]
+    public GameObject spawnedLumierPrefab;
+    public GameObject spawnedAirTerminalPrefab;
+    public GameObject spawnedVentilatorPrefab;
+    [Tooltip("Hauteur de pose (m) des objets qui ne sont pas dans la table ci-dessous : 0 = au sol (XP1).")]
+    public float spawnHeight = 0.0f;
+
+    [System.Serializable]
+    public class SpawnHeightRule
+    {
+        [Tooltip("Sous-chaîne du nom du prefab ou de l'objet.")]
+        public string nameContains;
+        [Tooltip("Hauteur de pose (m).")]
+        public float height;
+    }
+    [Tooltip("XP3 : hauteur de pose selon le nom de l'objet (plafond). Valeurs reprises de la branche EXP3.")]
+    public List<SpawnHeightRule> spawnHeightRules = new List<SpawnHeightRule>
+    {
+        new SpawnHeightRule { nameContains = "Ventilator", height = 2.112f },
+        new SpawnHeightRule { nameContains = "Lumier", height = 2.11f },
+        new SpawnHeightRule { nameContains = "AirTerminal", height = 2.11f },
+    };
+
+    [Tooltip("XP3 : dalle servant de référence à la mise à l'échelle en pourcentage.")]
+    public Transform dalleReference;
+    public TMP_InputField pourcentageRepereInput;
+    public TMP_InputField tauxDeBrassageInput;
+
+    /// <summary>Hauteur de pose (m) d'un objet : règle par nom (XP3), sinon <see cref="spawnHeight"/>.</summary>
+    public float HeightFor(GameObject obj)
+    {
+        if (obj != null)
+        {
+            string n = obj.name;
+            foreach (var rule in spawnHeightRules)
+            {
+                if (!string.IsNullOrEmpty(rule.nameContains) && n.Contains(rule.nameContains))
+                    return rule.height;
+            }
+        }
+        return spawnHeight;
+    }
 
     public List<GameObject> selectedObjects = new List<GameObject>(); // List of selected objects
     public Material boundingBoxMaterial; // Optional material for visualizing the bounding box
@@ -63,6 +109,20 @@ public class ObjectInteractionHandler : NetworkBehaviour
 
     public void SpawnObject()
     {
+        SpawnObject(spawnedObjectPrefab);
+    }
+
+    /// <summary>
+    /// Crée un prefab devant le joueur (XP1 : chaise au sol ; XP3 : luminaire, bouche d'air ou ventilateur au plafond,
+    /// hauteur selon <see cref="HeightFor"/>). Action annulable.
+    /// </summary>
+    public void SpawnObject(GameObject prefabToSpawn)
+    {
+        if (prefabToSpawn == null)
+        {
+            Debug.LogError("[ObjectInteractionHandler] Aucun prefab à créer.");
+            return;
+        }
         if (!NetworkObjectUtils.IsRunning)
         {
             NetworkStatusPanel.Show("Session réseau inactive : création impossible.", 3f);
@@ -70,9 +130,9 @@ public class ObjectInteractionHandler : NetworkBehaviour
         }
 
         Vector3 spawnPosition = cameraTransform.transform.position + cameraTransform.forward * spawnDistance;
-        spawnPosition.y = 0;
+        spawnPosition.y = HeightFor(prefabToSpawn);
 
-        Fusion.NetworkObject spawnObj = NetworkObjectUtils.Runner.Spawn(spawnedObjectPrefab, spawnPosition, spawnedObjectPrefab.transform.rotation, NetworkObjectUtils.Runner.LocalPlayer);
+        Fusion.NetworkObject spawnObj = NetworkObjectUtils.Runner.Spawn(prefabToSpawn, spawnPosition, prefabToSpawn.transform.rotation, NetworkObjectUtils.Runner.LocalPlayer);
         if (spawnObj == null)
         {
             Debug.LogError("[ObjectInteractionHandler] Échec de création de l'objet.");
@@ -80,13 +140,64 @@ public class ObjectInteractionHandler : NetworkBehaviour
         }
 
         spawnObj.transform.position = spawnPosition;
-        spawnObj.transform.rotation = spawnedObjectPrefab.transform.rotation;
+        spawnObj.transform.rotation = prefabToSpawn.transform.rotation;
         spawnObj.transform.parent = instantiatedChaires;
         SelectObjects(spawnObj.gameObject);
         spawnedObject = null;
 
         UndoManager.RecordSpawn("Créer un objet", spawnObj.gameObject);
     }
+
+    /// <summary>XP3 : met les objets sélectionnés à un pourcentage de la taille de la dalle de référence.</summary>
+    public void ScaleSelectedObjectsWithDalleReference()
+    {
+        if (pourcentageRepereInput == null || dalleReference == null) return;
+        if (!float.TryParse(pourcentageRepereInput.text.Replace(',', '.'), System.Globalization.NumberStyles.Float,
+                            System.Globalization.CultureInfo.InvariantCulture, out float percent))
+            return;
+
+        Renderer rendA = dalleReference.GetComponentInChildren<Renderer>();
+        if (rendA == null)
+        {
+            Debug.LogError("[ObjectInteractionHandler] La dalle de référence n'a pas de Renderer.");
+            return;
+        }
+        float sizeA = rendA.bounds.size.magnitude;
+
+        // Non annulable : la pile d'annulation ne mémorise pas l'échelle (position / rotation seulement).
+        selectedObjects.RemoveAll(o => o == null);
+        foreach (GameObject obj in selectedObjects)
+        {
+            NetworkObject networkObj = obj.GetComponent<NetworkObject>();
+            if (networkObj == null || !networkObj.HasStateAuthority) continue;
+            Renderer rendB = obj.GetComponentInChildren<Renderer>();
+            ScaleNetworked scaleNetworked = obj.GetComponent<ScaleNetworked>();
+            if (rendB == null || scaleNetworked == null) continue;
+
+            float sizeB = rendB.bounds.size.magnitude;
+            if (sizeB <= 1e-5f) continue;
+            float scaleFactor = (sizeA * percent / 100f) / sizeB;
+            scaleNetworked.ScaleFactor *= scaleFactor; // facteur pur (N5), appliqué par Render()
+            scaleNetworked.ApplyScale();
+        }
+    }
+
+    /// <summary>XP3 : renseigne le taux de brassage des objets sélectionnés (propriété métier, non réseau).</summary>
+    public void setTauxDeBrassage()
+    {
+        if (tauxDeBrassageInput == null) return;
+        if (!float.TryParse(tauxDeBrassageInput.text.Replace(',', '.'), System.Globalization.NumberStyles.Float,
+                            System.Globalization.CultureInfo.InvariantCulture, out float taux))
+            return;
+        foreach (GameObject obj in selectedObjects)
+        {
+            if (obj == null) continue;
+            ResourceProperties resourceProps = obj.GetComponent<ResourceProperties>();
+            if (resourceProps != null)
+                resourceProps.tauxDeBrassage = taux;
+        }
+    }
+
     public void SpawnObjectTutorial()
     {
         Vector3 spawnPosition = cameraTransform.transform.position + cameraTransform.forward * spawnDistance;

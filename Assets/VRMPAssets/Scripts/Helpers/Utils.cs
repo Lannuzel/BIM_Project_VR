@@ -1,12 +1,14 @@
 using System.Text;
 using TMPro;
-using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace XRMultiplayer
 {
+    /// <summary>Niveaux de journalisation (reprend ceux de Netcode, retire du projet).</summary>
+    public enum LogLevel { Developer = 0, Normal = 1, Error = 2, Nothing = 3 }
+
     public class Utils : MonoBehaviour
     {
         public const string k_LogPrefix = "<color=#33FF64>[XRMultiplayer]</color> ";

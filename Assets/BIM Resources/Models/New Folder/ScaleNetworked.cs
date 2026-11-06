@@ -30,7 +30,8 @@ public class ScaleNetworked : NetworkBehaviour
         ApplyScale();
     }
 
-    private void ApplyScale()
+    /// <summary>Applique le facteur courant (aussi appelé par Render ; public pour la mise à l'échelle XP3).</summary>
+    public void ApplyScale()
     {
         Vector3 factor = ScaleFactor;
         if (factor == Vector3.zero) factor = Vector3.one; // valeur réseau pas encore reçue

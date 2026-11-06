@@ -1,5 +1,4 @@
 
-using DG.Tweening;
 using UnityEngine;
 public class UILookAt_V3: MonoBehaviour
 {
