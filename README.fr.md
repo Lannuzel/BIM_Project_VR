@@ -43,10 +43,10 @@ scène porte un script manquant (déjà le cas dans XP1 et XP2, sans effet).
 - `main` : version intégrée.
 - `fix/recette-2026-11-05` : corrections de la recette du 5 novembre 2026, un commit par point
   (identifiants `F1`–`F19`, `N1`–`N5` du cahier des charges), puis intégration de l'XP3 et nettoyage.
-- `feedback` : système de feedbacks temps réel (dossier `1_Emery`, Emery Descours), basé sur le `main`
-  de décembre 2024 ; non intégré.
-- Étiquettes : `v3.0-avant-recette` (état d'avril 2026 avant la recette), `archive/BIM_Interaction`,
-  `archive/BIM_Clean` (anciennes branches de janvier 2025).
+- Étiquettes : `v3.0-avant-recette` (état d'avril 2026 avant la recette), `archive/feedback` (système de
+  feedbacks temps réel d'Emery Descours, dossier `1_Emery`, basé sur le `main` de décembre 2024 ; porté
+  par code dans `Assets/Scripts/Feedback/` le 6 novembre 2026, voir « Feedbacks collaboratifs »),
+  `archive/BIM_Interaction`, `archive/BIM_Clean` (anciennes branches de janvier 2025).
 
 ## Documents
 

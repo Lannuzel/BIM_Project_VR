@@ -44,10 +44,10 @@ missing script (already the case in XP1 and XP2, with no effect).
 - `main`: integrated version.
 - `fix/recette-2026-11-05`: fixes from the acceptance run of 5 November 2026, one commit per item
   (identifiers `F1`–`F19`, `N1`–`N5` of the requirements document), then XP3 integration and cleanup.
-- `feedback`: real-time feedback system (folder `1_Emery`, Emery Descours), based on the `main`
-  of December 2024; not integrated.
-- Tags: `v3.0-avant-recette` (state of April 2026 before the acceptance run), `archive/BIM_Interaction`,
-  `archive/BIM_Clean` (old branches from January 2025).
+- Tags: `v3.0-avant-recette` (state of April 2026 before the acceptance run), `archive/feedback`
+  (real-time feedback system of Emery Descours, folder `1_Emery`, based on the `main` of December 2024;
+  ported by code into `Assets/Scripts/Feedback/` on 6 November 2026, see "Collaborative feedbacks"),
+  `archive/BIM_Interaction`, `archive/BIM_Clean` (old branches from January 2025).
 
 ## Documents
 
