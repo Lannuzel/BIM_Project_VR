@@ -58,6 +58,7 @@ scène porte un script manquant (déjà le cas dans XP1 et XP2, sans effet).
 | `docs/clavier_natif_quest.md` | étude du clavier natif Meta (non activé) |
 | `docs/check_session.py` | contrôle d'intégrité des fichiers d'une session (voir ci-dessous) |
 | `docs/receive_data.py` | récepteur HTTP qui collecte les fichiers de session des casques (voir ci-dessous) |
+| `docs/check_references.py` | liste (et peut restaurer) les assets encore référencés par les scènes, prefabs ou matériaux mais absents du projet ; à lancer après tout nettoyage (voir ci-dessous) |
 
 ## Générer les APK
 
@@ -74,6 +75,11 @@ Même commande avec `BuildExperiments.BuildXP2`, `BuildXP3` ou `BuildAll` (les t
 identifiants distincts (`CollectiveIntelligence.CESI.EXP1`, `.EXP2`, `.EXP3`) et coexistent sur un
 casque. Le SDK Android doit contenir la plateforme 32 (`sdkmanager "platforms;android-32"`).
 Installation : `adb install -r <fichier.apk>`.
+
+Avant chaque build, `BuildExperiments` reconstruit la table des prefabs réseau Photon Fusion à partir
+des labels `FusionPrefab` et refuse une table suspecte : une table périmée (prefabs supprimés ou
+ajoutés sans réimport de `NetworkProjectConfig`) empêche silencieusement toute création d'objet sur
+casque. Le menu **Outils BIM VR › Vérifier la table des prefabs Fusion** l'affiche pour diagnostic.
 
 Les seules erreurs consignées pendant une build viennent du package Meta
 (`AvatarBehaviourFusion`, exception sur une propriété `[Networked]`) : elles sont connues et
@@ -93,6 +99,10 @@ rappelés dans le panneau de l'expérimentateur).
 | `sessionTimeoutMinutes` | arrêt automatique des enregistrements | 30 |
 | `syncLeadSeconds` | avance donnée à l'heure réseau de lancement | 1 |
 | `exitDelayAfterStop` | délai avant fermeture après la fenêtre de remerciement | 6 s |
+| `audioFromSceneStart` | l'enregistrement vocal démarre au chargement de la scène, comme les autres capteurs (le bip de synchronisation est inséré au lancement de l'activité) | vrai |
+| `playSyncBeep` | le bip de synchronisation est aussi joué dans le casque au lancement de l'activité | vrai |
+| `startInFrontOfPanel` | au chargement d'une scène, le casque est recentré devant le panneau d'accueil (tutoriel) ou de choix du rôle (expériences), quelle que soit son orientation physique | vrai |
+| `startDistance` | distance entre le casque et le panneau au départ | 1,6 m |
 | `uploadUrl` | récepteur des données sur le PC (vide = pas d'envoi) | vide |
 | `uploadTimeoutSeconds` | délai maximal accordé à l'envoi | 180 |
 
@@ -110,15 +120,16 @@ Expérimentateur, bloc-notes multiligne) est installé par code au chargement de
    python docs/receive_data.py --port 8765 --out .\sessions
    ```
 
-2. Tutoriel sur chaque casque ; le rôle peut être choisi dès le tutoriel.
-3. Scène d'expérience : choisir le rôle dans la liste, « Rejoindre ». Le compteur « Joueurs : n/N »
+2. Tutoriel sur chaque casque ; le rôle peut être choisi dès le tutoriel. À chaque chargement de scène,
+   le casque est recentré devant le panneau de départ (`startInFrontOfPanel`).
+3. Scène d'expérience : les capteurs, voix comprise, enregistrent dès le chargement. Choisir le rôle dans la liste, « Rejoindre ». Le compteur « Joueurs : n/N »
    affiche l'état de connexion (N = `maxPlayers` de `SessionConfig`).
 4. Le Lecteur appuie sur « Lancer l'activité » : fenêtre d'attente sur chaque casque, puis les
-   enregistrements démarrent à la même heure réseau sur les trois casques (marqueur `MARKER`) et
-   le manifeste de session est écrit.
+   lignes `MARKER` sont écrites à la même heure réseau sur les trois casques, le bip de synchronisation
+   est inséré dans le fichier audio et joué dans le casque, et le manifeste de session est écrit.
 5. Le Lecteur termine l'activité, ou l'arrêt automatique survient après `sessionTimeoutMinutes` :
-   fenêtre de remerciement, envoi des fichiers au PC si une URL est configurée (état affiché devant
-   la caméra), puis fermeture de l'application sur chaque casque. Les fichiers restent sur le casque
+   message de remerciement dans un panneau qui suit la tête, envoi des fichiers au PC si une URL est
+   configurée (état affiché sous le message), puis fermeture de l'application sur chaque casque. Les fichiers restent sur le casque
    dans tous les cas.
 
 ### Commandes
@@ -129,8 +140,9 @@ Expérimentateur, bloc-notes multiligne) est installé par code au chargement de
   mode ; des flèches (déplacement) ou des anneaux (rotation) s'affichent sur l'objet, dans le
   tutoriel comme dans les expériences.
 - **Fenêtres** (documents, bloc-notes, calculatrice, claviers) : pointer et maintenir la gâchette
-  intérieure droite pour les déplacer ; croix rouge en haut à droite pour les fermer (au-dessus du
-  socle pour la calculatrice).
+  intérieure droite pour les déplacer ; croix rouge en haut à droite pour les fermer (pour la
+  calculatrice, petit carré au coin supérieur droit de son corps, son canvas n'étant pas dans le plan
+  de sa façade).
 - **Clavier** : AZERTY, Entrée valide le champ (retour à la ligne uniquement dans le bloc-notes),
   touche « Fermer ».
 - **Expérimentateur** : panneau avec lancement / arrêt de l'enregistrement, fin de session forcée
@@ -143,7 +155,7 @@ Sur le casque : `Android/data/<identifiant de l'application>/files/Data/`.
 | Fichier | Contenu |
 | --- | --- |
 | `*_Session.json` | manifeste : session, rôle, scène, casque, version de l'application, heure du marqueur et de fin (locale, réseau, UTC), fichiers produits et leur taille |
-| `*_Audio.wav` | voix, PCM 16 bits mono 44,1 kHz, démarre au lancement de l'activité, bip de synchronisation inséré (1 kHz, 0,5 s, `Assets/Resources/SyncSignal.wav`) |
+| `*_Audio.wav` | voix, PCM 16 bits mono 44,1 kHz, démarre au chargement de la scène (`audioFromSceneStart`), bip de synchronisation inséré au lancement de l'activité (1 kHz, 0,5 s, `Assets/Resources/SyncSignal.wav`) |
 | `*_EyeTrackingData.csv` | regard : origine, point d'impact, objet regardé, au framerate |
 | `*_FaceTrackingData.csv` | 71 unités d'action faciales, au framerate |
 | `*_UsersPositions.csv` | positions, 2 Hz |
@@ -162,7 +174,8 @@ python docs/check_session.py <dossier Data copié depuis le casque>
 ## Architecture (points clés)
 
 - `Assets/Scripts/Core/` : `SessionConfig` (asset de configuration), `SessionCore` (socle installé
-  par code dans les scènes d'expérience), `SessionClock` (colonnes de temps des CSV),
+  par code dans les scènes d'expérience), `StartPlacement` (casque recentré devant le panneau de
+  départ), `SessionClock` (colonnes de temps des CSV),
   `SessionManifest` (manifeste JSON), `DataUploader` (envoi HTTP des fichiers en fin de session).
 - `Assets/Scripts/Network/NetworkManager.cs` : session Fusion, reconnexion automatique après une
   coupure, `GetLocalPlayerName()` pour le rôle local.
@@ -197,6 +210,11 @@ Règles pour garder le dépôt sain :
 - les archives de build, journaux et réglages d'IDE sont exclus par `.gitignore` ;
 - une scène d'essai ne va pas dans `Assets/EXP*/Scenes` ; les Build Settings listent uniquement
   le tutoriel et les trois scènes d'expérience ;
+- ne jamais supprimer un dossier en bloc sans vérifier les références qui y pointent : le nettoyage
+  du 6 novembre a retiré ainsi les matériaux des lignes et du cube du tutoriel, le modèle de la salle
+  et des dépendances des prefabs Fusion (objets magenta sur casque, création d'objets en panne).
+  Lancer `python docs/check_references.py .` après toute suppression : aucune ligne `MANQUANT` ne
+  doit rester ;
 - les fichiers d'include de shaders (`*.cginc`, `*.hlsl`) sont référencés par nom, pas par GUID :
   une analyse de dépendances ne les voit pas. Les deux includes utilisés par les shaders de l'avatar
   et du clavier (`TexturedStableFresnelCommon.cginc`, `MixedRealityShaderUtils.cginc`) ont été

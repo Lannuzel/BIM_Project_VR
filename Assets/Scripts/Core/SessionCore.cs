@@ -36,11 +36,15 @@ public static class SessionCore
         bool isExperiment = Object.FindObjectOfType<ObjectInteractionHandler>(true) != null
                             || Object.FindObjectOfType<ReservationInteractionHandler>(true) != null;
         bool isTutorial = Object.FindObjectOfType<TutorialManager>(true) != null;
-        if (!isExperiment || isTutorial) return;
+        if (!isExperiment && !isTutorial) return;
 
         var host = GameObject.Find(ObjectName);
         if (host == null)
             host = new GameObject(ObjectName);
+
+        // Commun au tutoriel et aux expériences : casque recentré devant le panneau de départ.
+        Ensure<StartPlacement>(host);
+        if (isTutorial) return;
 
         Ensure<UIWindowsManager>(host);
         Ensure<XRKeyboardTweaks>(host);

@@ -99,8 +99,18 @@ public class HostController : NetworkBehaviour
         source.TryShowThanksgivingLocally(source.distance, source.verticalOffset, source.pinToCamera);
     }
 
+    /// <summary>Texte de la fenêtre de remerciement (recette du 6 novembre 2026 : panneau suivi par la caméra).</summary>
+    public const string ThanksMessage = "Merci pour votre participation !";
+
     void TryShowThanksgivingLocally(float dist, float yOffset, bool pin)
     {
+        // Recette du 6 novembre 2026 : la fenêtre prefab instanciée devant la caméra a été vue hors du champ de
+        // vision sur casque. Le message passe par le panneau d'information local (NetworkStatusPanel), construit
+        // par code, qui suit la tête et affiche ensuite l'état de l'envoi des données sous le remerciement.
+        NetworkStatusPanel.Header = ThanksMessage;
+        NetworkStatusPanel.Show("", 0f);
+        return;
+#pragma warning disable CS0162 // ancien affichage conservé pour référence
         if (thankGivingWindow == null) return;
         if (_localThanksInstance != null) return; // Don't create twice on the same client
 
@@ -123,6 +133,7 @@ public class HostController : NetworkBehaviour
 
         if (pin)
             _localThanksInstance.transform.SetParent(cam.transform, true);
+#pragma warning restore CS0162
     }
 
     private static Camera GetPlayerCamera()

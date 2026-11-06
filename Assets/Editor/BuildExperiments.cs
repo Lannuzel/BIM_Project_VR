@@ -72,6 +72,17 @@ public static class BuildExperiments
             options = BuildOptions.None,
         };
 
+        // La table des prefabs réseau Fusion est reconstruite à partir des labels « FusionPrefab » : une table
+        // périmée (prefabs supprimés ou ajoutés sans réimport de NetworkProjectConfig) empêche toute création
+        // d'objet sur casque (Runner.Spawn renvoie null) sans aucune erreur de build.
+        Fusion.Editor.NetworkProjectConfigUtilities.RebuildPrefabTable();
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+        int prefabCount = Fusion.NetworkProjectConfig.Global.PrefabTable.Prefabs.Count;
+        Debug.Log($"[BuildExperiments] Table des prefabs Fusion reconstruite : {prefabCount} prefab(s).");
+        if (prefabCount < 10)
+            throw new BuildFailedException($"Table des prefabs Fusion suspecte ({prefabCount} entrées) : vérifier les labels FusionPrefab.");
+
         Debug.Log($"[BuildExperiments] Génération {label} -> {apkPath}");
         BuildReport report;
         try

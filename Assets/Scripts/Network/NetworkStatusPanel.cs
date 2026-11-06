@@ -88,10 +88,18 @@ public class NetworkStatusPanel : MonoBehaviour
         _text.enableWordWrapping = true;
     }
 
+    /// <summary>Texte affiché au-dessus de chaque message (fenêtre de remerciement en fin de session) ; vide = aucun.</summary>
+    public static string Header = "";
+
     private void SetMessage(string message)
     {
-        if (_text != null)
+        if (_text == null) return;
+        if (string.IsNullOrEmpty(Header))
             _text.text = message;
+        else if (string.IsNullOrEmpty(message))
+            _text.text = $"<size=130%><b>{Header}</b></size>";
+        else
+            _text.text = $"<size=130%><b>{Header}</b></size>" + "\n\n" + message;
     }
 
     private IEnumerator HideAfter(float seconds)
