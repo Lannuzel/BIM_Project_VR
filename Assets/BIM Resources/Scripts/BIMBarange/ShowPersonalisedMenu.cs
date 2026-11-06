@@ -29,6 +29,19 @@ public class ShowPersonalisedMenu : MonoBehaviour
             if (item != null) item.SetActive(active);
     }
 
+    /// <summary>
+    /// Le bouton « Arreter l'enregistrement » n'appartient qu'au Lecteur (fin de l'activité). La scène XP3,
+    /// issue de la branche Network, le listait aussi pour le Modélisateur : il est retiré par code pour tous
+    /// les autres rôles, quel que soit le scénario.
+    /// </summary>
+    private static void HideStopItem(List<GameObject> items)
+    {
+        if (items == null) return;
+        foreach (GameObject item in items)
+            if (item != null && item.name == "Arreter l'enregistrement")
+                item.SetActive(false);
+    }
+
     /// <summary>Désactive les éléments de tous les rôles puis active ceux du rôle donné.</summary>
     public void ApplyRole(string playerName)
     {
@@ -50,10 +63,12 @@ public class ShowPersonalisedMenu : MonoBehaviour
         else if (playerName == "Calculateur")
         {
             SetAll(calculateurItems, true);
+            HideStopItem(calculateurItems);
         }
         else if (playerName == "Modelisateur" || playerName == "Blue" || playerName == "Red")
         {
             SetAll(modelisateurItems, true);
+            HideStopItem(modelisateurItems);
         }
         else if (playerName == "Experimentateur")
         {
