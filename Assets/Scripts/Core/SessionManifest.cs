@@ -39,6 +39,9 @@ public static class SessionManifest
         public string endUtc;
         public bool completed;
         public bool stoppedByTimeout;
+        public bool feedbackGaze;
+        public bool feedbackVoice;
+        public bool feedbackFace;
         public List<FileEntry> files = new List<FileEntry>();
     }
 
@@ -89,6 +92,9 @@ public static class SessionManifest
                 markerLocalTime = Time.time,
                 markerNetTime = SessionClock.NetTime,
                 markerUtc = SessionClock.UtcIso,
+                feedbackGaze = FeedbackManager.Instance != null && FeedbackManager.IsEnabled(0),
+                feedbackVoice = FeedbackManager.Instance != null && FeedbackManager.IsEnabled(FeedbackNetwork.MessageKindVoice),
+                feedbackFace = FeedbackManager.Instance != null && FeedbackManager.IsEnabled(FeedbackNetwork.MessageKindFace),
             };
             string dir = DataDirectory(loggerFiles);
             Directory.CreateDirectory(dir);
