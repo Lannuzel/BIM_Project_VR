@@ -44,7 +44,11 @@ public class StaticBatchingAtBuild : IProcessSceneWithReport
         if (go.GetComponentInParent<Canvas>() != null) return false;
         if (go.GetComponentInParent<OVRCameraRig>() != null) return false;
 
-        string source = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(go);
+        // Pendant le build, les instances de prefab ne sont plus reconnues comme telles : on se fie au
+        // fichier source du maillage (un maillage importé d'un FBX du projet).
+        var filter = go.GetComponent<MeshFilter>();
+        if (filter == null || filter.sharedMesh == null) return false;
+        string source = AssetDatabase.GetAssetPath(filter.sharedMesh);
         return !string.IsNullOrEmpty(source) && source.EndsWith(".fbx", System.StringComparison.OrdinalIgnoreCase);
     }
 }
