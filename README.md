@@ -13,21 +13,31 @@ pour étudier l'intelligence collective.
 
 ## Scénarios
 
-| Scénario | Scène | Tâche |
-| --- | --- | --- |
-| Tutoriel (commun) | `Assets/EXP1/Scenes/Tutorial/BIM-EXP_Tutorial_V2.unity` | saisie, téléportation, tracer des lignes, déplacer un objet, choix du rôle |
-| XP1 | `Assets/EXP1/Scenes/Exp1_V3.unity` | aménagement d'une salle de cours (tables et chaises) |
-| XP2 | `Assets/EXP2/Scene/Exp2-V1-09-06-2025_EXP2_User.unity` | réservations pour gaines et canalisations dans murs et sols |
+| Scénario | Scène | Tâche | État |
+| --- | --- | --- | --- |
+| Tutoriel (commun) | `Assets/EXP1/Scenes/Tutorial/BIM-EXP_Tutorial_V2.unity` | saisie, téléportation, tracer des lignes, déplacer un objet, choix du rôle | testé |
+| XP1 | `Assets/EXP1/Scenes/Exp1_V3.unity` | aménagement d'une salle de cours (tables et chaises) | testé (recette du 5 novembre 2026) |
+| XP2 | `Assets/EXP2/Scene/Exp2-V1-09-06-2025_EXP2_User.unity` | réservations pour gaines et canalisations dans murs et sols | testé (recette du 5 novembre 2026) |
+| XP3 | `Assets/EXP3/Scenes/Exp3-V0.2-10-02-26.unity` | équipements au plafond (luminaires, bouches d'air, ventilateurs), mise à l'échelle par rapport à une dalle, taux de brassage, réservations | **non testé avec des participants** |
 
 Chaque expérience est un APK distinct : scène 0 = tutoriel, scène 1 = expérience
 (`SceneLoader` charge l'index 1 à la fin du tutoriel ou avec « Passer le tutoriel »).
 
-## Branches
+L'XP3 vient de la branche `Network` (avril 2026, Mukesh Barange), intégrée le 6 novembre 2026.
+Cette branche avait été enregistrée sans les fichiers `.meta` : ils ont été reconstruits, avec les
+identifiants d'origine quand les scènes permettaient de les retrouver. La scène se construit, mais
+aucune passation n'a encore validé le scénario sur casque. Point connu : l'objet `PDFCanvas` de la
+scène porte un script manquant (déjà le cas dans XP1 et XP2, sans effet).
 
-- `main` : version intégrée (fusion de `fix/recette-2026-11-05`).
-- `BIM_Project_VR---V3.0` : version de référence d'avril 2026 avant la recette.
+## Branches et étiquettes
+
+- `main` : version intégrée.
 - `fix/recette-2026-11-05` : corrections de la recette du 5 novembre 2026, un commit par point
-  (identifiants `F1`–`F19`, `N1`–`N5` du cahier des charges).
+  (identifiants `F1`–`F19`, `N1`–`N5` du cahier des charges), puis intégration de l'XP3 et nettoyage.
+- `feedback` : système de feedbacks temps réel (dossier `1_Emery`, Emery Descours), basé sur le `main`
+  de décembre 2024 ; non intégré.
+- Étiquettes : `v3.0-avant-recette` (état d'avril 2026 avant la recette), `archive/BIM_Interaction`,
+  `archive/BIM_Clean` (anciennes branches de janvier 2025).
 
 ## Documents
 
@@ -41,7 +51,7 @@ Chaque expérience est un APK distinct : scène 0 = tutoriel, scène 1 = expéri
 
 ## Générer les APK
 
-Dans Unity : menu **Outils BIM VR › Générer l'APK XP1 / XP2** (`Assets/Editor/BuildExperiments.cs`).
+Dans Unity : menu **Outils BIM VR › Générer l'APK XP1 / XP2 / XP3** (`Assets/Editor/BuildExperiments.cs`).
 En ligne de commande, depuis un dossier quelconque :
 
 ```powershell
@@ -50,10 +60,10 @@ En ligne de commande, depuis un dossier quelconque :
   -executeMethod BuildExperiments.BuildXP1 -outputDir "<dossier de sortie>" -logFile build_xp1.log
 ```
 
-Même commande avec `BuildExperiments.BuildXP2`. Les deux APK ont des identifiants distincts
-(`CollectiveIntelligence.CESI.EXP1` et `.EXP2`) et coexistent sur un casque. Le SDK Android doit
-contenir la plateforme 32 (`sdkmanager "platforms;android-32"`). Installation :
-`adb install -r <fichier.apk>`.
+Même commande avec `BuildExperiments.BuildXP2`, `BuildXP3` ou `BuildAll` (les trois). Les APK ont des
+identifiants distincts (`CollectiveIntelligence.CESI.EXP1`, `.EXP2`, `.EXP3`) et coexistent sur un
+casque. Le SDK Android doit contenir la plateforme 32 (`sdkmanager "platforms;android-32"`).
+Installation : `adb install -r <fichier.apk>`.
 
 Les seules erreurs consignées pendant une build viennent du package Meta
 (`AvatarBehaviourFusion`, exception sur une propriété `[Networked]`) : elles sont connues et
@@ -74,8 +84,12 @@ n'empêchent pas la génération.
 
 - **Menu** : bouton X (manette gauche). **Supprimer** : bouton Y. **Annuler la dernière action** :
   bouton dans les menus Édition d'objets, Mesure et Réservation, ou Y maintenu 0,6 s.
+- **Déplacer / tourner un objet** : gâchette intérieure droite pour saisir, bouton A pour changer de
+  mode ; des flèches (déplacement) ou des anneaux (rotation) s'affichent sur l'objet, dans le
+  tutoriel comme dans les expériences.
 - **Fenêtres** (documents, bloc-notes, calculatrice, claviers) : pointer et maintenir la gâchette
-  intérieure droite pour les déplacer ; croix en haut à droite pour les fermer.
+  intérieure droite pour les déplacer ; croix rouge en haut à droite pour les fermer (au-dessus du
+  socle pour la calculatrice).
 - **Clavier** : AZERTY, Entrée valide le champ (retour à la ligne uniquement dans le bloc-notes),
   touche « Fermer ».
 - **Expérimentateur** : panneau avec lancement / arrêt de l'enregistrement, fin de session forcée
@@ -87,11 +101,11 @@ Sur le casque : `Android/data/<identifiant de l'application>/files/Data/`.
 
 | Fichier | Contenu |
 | --- | --- |
-| `*_Audio.wav` | voix, PCM 16 bits mono 44,1 kHz, démarre au lancement de l'activité, marqueur sonore inséré |
+| `*_Audio.wav` | voix, PCM 16 bits mono 44,1 kHz, démarre au lancement de l'activité, bip de synchronisation inséré (1 kHz, 0,5 s, `Assets/Resources/SyncSignal.wav`) |
 | `*_EyeTrackingData.csv` | regard : origine, point d'impact, objet regardé, au framerate |
 | `*_FaceTrackingData.csv` | 71 unités d'action faciales, au framerate |
 | `*_UsersPositions.csv` | positions, 2 Hz |
-| `*_ChairePositionData.csv` / `*_ReservationPositionData.csv` | bilan de fin : objets ou réservations de tous les casques |
+| `*_ChairePositionData.csv` / `*_ReservationPositionData.csv` / `*_CalepinagePositionData.csv` | bilan de fin : objets, réservations ou équipements de tous les casques |
 
 Chaque CSV contient une ligne `MARKER` au lancement et se termine par `END`. Vérification :
 
@@ -108,9 +122,45 @@ python docs/check_session.py <dossier Data copié depuis le casque>
 - `Assets/Scripts/Network/AdminTools.cs`, `Assets/Scripts/UI/ExperimenterPanel.cs` : outils de
   l'expérimentateur.
 - `Assets/Scripts/Undo/UndoManager.cs` : pile d'annulation du Modélisateur (Despawn / Spawn /
-  téléportation sur le réseau).
-- `Assets/Scripts/Tutorial/TutorialManager.cs` : progression et validation des étapes du tutoriel.
+  téléportation sur le réseau ; la mise à l'échelle XP3 n'est pas annulable).
+- `Assets/Scripts/Tutorial/TutorialManager.cs` : progression et validation des étapes du tutoriel ;
+  `ModeGizmo.cs` : repère déplacement / rotation sur l'objet du tutoriel (même dessin que
+  `TranslateGizmoDrawer` / `RotationGizmoDrawer` de l'XP2).
 - `Assets/BIM Resources/Scripts/BIMBarange/` : outils du Modélisateur (sélection, mesure,
-  alignement, distance au mur, réservations).
+  alignement, distance au mur, réservations). `ObjectInteractionHandler.HeightFor` donne la hauteur
+  de pose d'un objet : 0 (sol) en XP1, hauteur de plafond selon le nom de l'objet en XP3
+  (`spawnHeightRules`).
 - Interfaces créées en code : utiliser `XRUiCanvas.MakeInteractive` pour qu'elles répondent au
   pointeur laser Meta (`OVRRaycaster`).
+
+## Contenu du dépôt
+
+Le dépôt ne contient que ce que les quatre scènes de build atteignent, plus les dossiers chargés
+par nom (`Resources`, `StreamingAssets`, `Editor`, `Scripts`, SDK). Le nettoyage du 6 novembre 2026
+a retiré les kits sans rapport avec l'expérience (plateformer, VRKeys, ShadersCollection, template
+multijoueur XRI et ses tutoriels d'éditeur, Netcode for GameObjects et les services multijoueur
+Unity, bibliothèques PDF iOS / macOS / UWP / WebGL), les anciennes scènes de test et les scripts
+que ni une scène, ni un prefab, ni un autre script ne citent. Tout reste dans l'historique git.
+
+Règles pour garder le dépôt sain :
+
+- ne jamais ignorer `*.meta` : chaque asset doit être versionné avec son `.meta` ;
+- les archives de build, journaux et réglages d'IDE sont exclus par `.gitignore` ;
+- une scène d'essai ne va pas dans `Assets/EXP*/Scenes` ; les Build Settings listent uniquement
+  le tutoriel et les trois scènes d'expérience.
+
+## Citer l'application
+
+Si vous utilisez cette application dans un travail de recherche, merci de citer :
+
+> Tristan Lannuzel, Beatrice Biancardi, Mukesh Barange, Emery Descours, Stéphanie Buisine.
+> *BIM Project VR : application de réalité virtuelle multi-utilisateur pour l'étude de l'intelligence
+> collective.* CESI LINEACT.
+
+La partie « feedbacks » (branche `feedback`), réalisée par Emery Descours, a fait l'objet d'une
+publication :
+
+> Emery Descours, Tristan Lannuzel, Beatrice Biancardi, Mukesh Barange, Stéphanie Buisine.
+> Étude de systèmes de feedback en réalité virtuelle pour l'amélioration de l'intelligence
+> collective. *IHM'26 - 37e Conférence Internationale Francophone sur l'Interaction Humain-Machine*,
+> AFIHM ; Université de Lille, octobre 2026, Villeneuve-d'Ascq, France. ⟨hal-05781898⟩
