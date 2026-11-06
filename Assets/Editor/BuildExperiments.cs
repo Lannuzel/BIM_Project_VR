@@ -75,6 +75,7 @@ public static class BuildExperiments
         // La table des prefabs réseau Fusion est reconstruite à partir des labels « FusionPrefab » : une table
         // périmée (prefabs supprimés ou ajoutés sans réimport de NetworkProjectConfig) empêche toute création
         // d'objet sur casque (Runner.Spawn renvoie null) sans aucune erreur de build.
+        FeedbackPrefabBuilder.EnsurePrefab(); // prefab réseau des feedbacks collaboratifs (généré, pas versionné à la main)
         Fusion.Editor.NetworkProjectConfigUtilities.RebuildPrefabTable();
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);

@@ -1,0 +1,90 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4819106319742531919
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6975784793492615020}
+  - component: {fileID: 3470740153080467724}
+  - component: {fileID: 6622599660970409683}
+  m_Layer: 0
+  m_Name: FeedbackNetwork
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6975784793492615020
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4819106319742531919}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3470740153080467724
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4819106319742531919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortKey: 2305694092
+  ObjectInterest: 1
+  Flags: 131073
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 6622599660970409683}
+--- !u!114 &6622599660970409683
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4819106319742531919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db888a4013b4b9f4291e60b9967f67a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _GazeEnabled:
+    _value: 0
+  _VoiceEnabled:
+    _value: 0
+  _FaceEnabled:
+    _value: 0
+  _Started:
+    _value: 0
+  _GazeIds: 
+  _Speaking: []
+  _Pausing: []
+  _Focused: []
+  _CurrentSpeaker: 0
+  _InterruptionSeq: 0
+  _LastInterrupter: 0
+  _FailedSeq: 0
+  _LastFailedInterrupter: 0
+  _MessageSeq: 0
+  _MessageKind: 0
+  _MessageSeconds: 0
+  _Message: 
+  _FaceGroupActive:
+    _value: 0
+  noPauseTiming: 0.5
+  faceMessageSeconds: 5
