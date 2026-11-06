@@ -26,6 +26,13 @@ public class SessionConfig : ScriptableObject
     [Tooltip("Délai (s) entre la fenêtre de remerciement et la fermeture de l'application.")]
     [Min(0f)] public float exitDelayAfterStop = 6f;
 
+    [Header("Rôles de pilotage de l'activité")]
+    [Tooltip("Rôle qui voit la fenêtre « Lancer l'activité » (vérification des participants et bouton de lancement). " +
+             "Recette du 6 novembre 2026 : le Modélisateur lance, le Lecteur arrête.")]
+    public string startActivityRole = "Modelisateur";
+    [Tooltip("Rôle qui voit le bouton « Arrêter l'enregistrement » (fin de l'activité) une fois celle-ci lancée.")]
+    public string stopActivityRole = "Lecteur";
+
     [Header("Enregistrements")]
     [Tooltip("Si vrai, l'enregistrement audio démarre dès le chargement de la scène, comme les autres capteurs ; " +
              "le bip de synchronisation est inséré au lancement de l'activité. Sinon l'audio démarre au lancement.")]
@@ -72,6 +79,6 @@ public class SessionConfig : ScriptableObject
     public string Summary()
     {
         string upload = UploadEnabled ? "envoi vers " + uploadUrl.Trim() : "pas d'envoi des données";
-        return $"Session « {sessionName} », région {photonRegion}, {maxPlayers} joueur(s), arrêt auto {sessionTimeoutMinutes:0} min, {upload}";
+        return $"Session « {sessionName} », région {photonRegion}, {maxPlayers} joueur(s), lancement par {startActivityRole}, arrêt par {stopActivityRole}, arrêt auto {sessionTimeoutMinutes:0} min, {upload}";
     }
 }
