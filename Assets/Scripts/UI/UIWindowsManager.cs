@@ -74,6 +74,10 @@ public class UIWindowsManager : MonoBehaviour
     public List<string> noCloseCrossNames = new List<string> { "XRI Keyboard", "NonNativeKeyboard (1)", "NonNativeKeyboard" };
     [Tooltip("Taille de la croix en fraction de la hauteur de la fenêtre.")]
     [Range(0.04f, 0.2f)] public float crossSizeRatio = 0.09f;
+    [Tooltip("Taille minimale de la croix dans le monde (m), pour les canvas aux unités très petites (calculatrice : 30 x 20 unités).")]
+    public float crossMinWorldSize = 0.05f;
+    [Tooltip("Fenêtres dont le canvas est recouvert par un objet 3D (socle de la calculatrice) : la croix est posée au-dessus du coin supérieur droit, hors du canvas.")]
+    public List<string> crossOutsideNames = new List<string> { "CalculatorRV" };
 
     /// <summary>Ajoute une croix en haut à droite du canvas principal de la fenêtre ; un clic désactive la fenêtre.</summary>
     private void AddCloseCross(GameObject window)
@@ -84,15 +88,34 @@ public class UIWindowsManager : MonoBehaviour
         if (canvasRect == null || canvasRect.Find("CloseCross") != null) return;
 
         // Les canvas des fenêtres ont déjà les raycasters XR nécessaires à leurs propres boutons.
-        float size = Mathf.Clamp(canvasRect.rect.height * crossSizeRatio, 24f, 120f);
+        // Taille exprimée en unités du canvas, mais bornée par une taille réelle (m) : l'ancien minimum de
+        // 24 unités couvrait tout le canvas de la calculatrice (30 x 20 unités) et n'en laissait voir
+        // qu'un trait rouge derrière le socle 3D.
+        float height = canvasRect.rect.height;
+        float unitsPerMeter = canvasRect.lossyScale.y > 1e-6f ? 1f / canvasRect.lossyScale.y : 1f;
+        float size = height * crossSizeRatio;
+        size = Mathf.Max(size, crossMinWorldSize * unitsPerMeter);
+        size = Mathf.Min(size, height * 0.5f);
+
+        bool outside = crossOutsideNames.Contains(window.name);
 
         var go = new GameObject("CloseCross", typeof(RectTransform), typeof(Image), typeof(Button));
         go.transform.SetParent(canvasRect, false);
         var rect = go.GetComponent<RectTransform>();
         rect.anchorMin = new Vector2(1f, 1f);
         rect.anchorMax = new Vector2(1f, 1f);
-        rect.pivot = new Vector2(1f, 1f);
-        rect.anchoredPosition = new Vector2(-size * 0.15f, -size * 0.15f);
+        if (outside)
+        {
+            // Posée au-dessus du bord supérieur, alignée sur le coin droit, légèrement devant le canvas.
+            rect.pivot = new Vector2(1f, 0f);
+            rect.anchoredPosition = new Vector2(0f, size * 0.15f);
+            rect.localPosition = new Vector3(rect.localPosition.x, rect.localPosition.y, -size * 0.1f);
+        }
+        else
+        {
+            rect.pivot = new Vector2(1f, 1f);
+            rect.anchoredPosition = new Vector2(-size * 0.15f, -size * 0.15f);
+        }
         rect.sizeDelta = new Vector2(size, size);
         go.transform.SetAsLastSibling();
 
