@@ -185,6 +185,20 @@ public class AudioTracker : MonoBehaviour
         }
     }
 
+    /// <summary>Bip de synchronisation généré (sinusoïde avec 10 ms de fondu), à la fréquence d'échantillonnage de l'enregistrement.</summary>
+    private float[] GenerateSyncTone(float frequency, float seconds)
+    {
+        int n = Mathf.Max(1, Mathf.RoundToInt(sampleRate * seconds));
+        float fade = sampleRate * 0.01f;
+        float[] samples = new float[n];
+        for (int i = 0; i < n; i++)
+        {
+            float env = Mathf.Min(1f, i / fade, (n - i) / fade);
+            samples[i] = 0.8f * env * Mathf.Sin(2f * Mathf.PI * frequency * i / sampleRate);
+        }
+        return samples;
+    }
+
     private float[] GetSamplesFromAudioClip(AudioClip clip)
     {
         if (clip == null) return null;
@@ -209,14 +223,11 @@ public class AudioTracker : MonoBehaviour
             return;
         }
 
+        // Récupérer les échantillons du signal sonore ; à défaut de clip assigné (le fichier bip.wav
+        // n'avait jamais été versionné), un bip de 1 kHz de 0,5 s est généré pour que le marqueur existe toujours.
+        float[] markerSamples = syncSignal != null ? GetSamplesFromAudioClip(syncSignal) : GenerateSyncTone(1000f, 0.5f);
         if (syncSignal == null)
-        {
-            Debug.LogError("Le signal de synchronisation (syncSignal) n'est pas assigné !");
-            return;
-        }
-
-        // Récupérer les échantillons du signal sonore
-        float[] markerSamples = GetSamplesFromAudioClip(syncSignal);
+            Debug.LogWarning("[AudioTracker] syncSignal non assigné : bip de synchronisation généré (1 kHz, 0,5 s).");
         if (markerSamples == null || markerSamples.Length == 0)
         {
             Debug.LogError("Impossible de récupérer les échantillons du signal sonore !");
