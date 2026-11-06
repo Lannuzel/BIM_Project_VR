@@ -60,7 +60,9 @@ public class AudioTracker : MonoBehaviour
         // Demande de permission et choix du micro (sans démarrer la capture).
         SelectHeadsetMicrophone();
 
-        if (recordFromSceneStart)
+        // Recette du 6 novembre 2026 : l'audio démarre dès la scène, comme les autres capteurs ; le bip de
+        // synchronisation inséré au marqueur (AddAudioMarker) aligne le fichier sur les CSV.
+        if (recordFromSceneStart || SessionConfig.Instance.audioFromSceneStart)
             StartRecording();
         else
             Debug.Log("[AudioTracker] Prêt. L'enregistrement audio démarrera au lancement de l'activité.");
@@ -237,6 +239,20 @@ public class AudioTracker : MonoBehaviour
         // Convertir les échantillons en données audio et les insérer dans le flux
         WriteSamples(markerSamples, markerSamples.Length);
         Flush();
+
+        // Bip audible dans le casque au lancement : les participants entendent le départ, et le bip capté par
+        // le micro double le marqueur inséré (repère physique commun si les casques sont dans la même pièce).
+        if (SessionConfig.Instance.playSyncBeep)
+        {
+            AudioClip beep = syncSignal;
+            if (beep == null)
+            {
+                beep = AudioClip.Create("SyncBeep", markerSamples.Length, 1, sampleRate, false);
+                beep.SetData(markerSamples, 0);
+            }
+            Vector3 at = Camera.main != null ? Camera.main.transform.position : transform.position;
+            AudioSource.PlayClipAtPoint(beep, at, 0.7f);
+        }
 
         Debug.Log("Signal sonore inséré dans le fichier audio.");
     }

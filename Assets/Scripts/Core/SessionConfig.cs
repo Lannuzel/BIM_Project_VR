@@ -26,6 +26,20 @@ public class SessionConfig : ScriptableObject
     [Tooltip("Délai (s) entre la fenêtre de remerciement et la fermeture de l'application.")]
     [Min(0f)] public float exitDelayAfterStop = 6f;
 
+    [Header("Enregistrements")]
+    [Tooltip("Si vrai, l'enregistrement audio démarre dès le chargement de la scène, comme les autres capteurs ; " +
+             "le bip de synchronisation est inséré au lancement de l'activité. Sinon l'audio démarre au lancement.")]
+    public bool audioFromSceneStart = true;
+    [Tooltip("Jouer le bip de synchronisation dans le casque au lancement de l'activité (en plus de son insertion dans le fichier).")]
+    public bool playSyncBeep = true;
+
+    [Header("Position de départ")]
+    [Tooltip("Au chargement d'une scène, recentre le casque devant le panneau d'accueil (tutoriel) ou de choix du rôle (expériences), " +
+             "quelle que soit l'orientation physique du casque.")]
+    public bool startInFrontOfPanel = true;
+    [Tooltip("Distance (m) entre le casque et le panneau au départ.")]
+    [Min(0.5f)] public float startDistance = 1.6f;
+
     [Header("Envoi des données en fin de session")]
     [Tooltip("URL du récepteur sur le PC de l'expérimentateur (docs/receive_data.py), ex. http://192.168.1.10:8765/upload. Vide = pas d'envoi.")]
     public string uploadUrl = "";
