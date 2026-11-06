@@ -28,6 +28,8 @@ public class TranslateGizmoDrawer : NetworkBehaviour
     void OnRenderObject()
     {
         if (lineMaterial == null) return;
+        if (rend == null) rend = GetComponentInChildren<Renderer>();
+        if (rend == null) return;
 
         lineMaterial.SetPass(0);
         // Compute center point: (pos.x, bounds.max.y, pos.z)
