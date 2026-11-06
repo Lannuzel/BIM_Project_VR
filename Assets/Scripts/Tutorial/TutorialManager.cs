@@ -80,9 +80,19 @@ public class TutorialManager : MonoBehaviour
     private GameObject progressPanel;
     private int currentStep = -1;
 
+    private TutorialFeedbackSteps feedbackSteps;
+
     private void Start()
     {
+        // Feedbacks collaboratifs (Emery Descours) : deux écrans de plus si un feedback est activé pour l'expérience de cet APK.
+        if (FeedbackSettings.EnabledForNextExperiment)
+            feedbackSteps = TutorialFeedbackSteps.Install(this, steps);
         ResolveSceneObjects();
+        if (feedbackSteps != null)
+        {
+            var welcome = GetStep("WecomeCanvas");
+            feedbackSteps.AfterResolve(welcome != null ? welcome.root : null);
+        }
         BuildProgressPanel();
         BuildQuickActions();
         HookButtons();
@@ -328,7 +338,16 @@ public class TutorialManager : MonoBehaviour
         step.done = true;
         RefreshProgress();
 
-        // Rejoue les actions câblées dans la scène (passage à l'étape suivante).
+        if (feedbackSteps != null && feedbackSteps.Intercept(this, step))
+            return;
+
+        ReplayPersistent(step);
+    }
+
+    /// <summary>Rejoue les actions câblées dans la scène sur le bouton OK de l'étape (passage à l'étape suivante).</summary>
+    public void ReplayPersistent(Step step)
+    {
+        if (step == null || step.okButton == null) return;
         replaying = true;
         try
         {
