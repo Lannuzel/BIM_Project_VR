@@ -58,6 +58,7 @@ missing script (already the case in XP1 and XP2, with no effect).
 | `docs/clavier_natif_quest.md` | study of the native Meta keyboard (not enabled) (French) |
 | `docs/check_session.py` | integrity check of a session's files (see below) |
 | `docs/receive_data.py` | HTTP receiver that collects the session files from the headsets (see below) |
+| `docs/check_references.py` | lists (and can restore) assets still referenced by scenes, prefabs or materials but missing from the project; run after any cleanup (see below) |
 
 ## Building the APKs
 
@@ -74,6 +75,11 @@ Same command with `BuildExperiments.BuildXP2`, `BuildXP3` or `BuildAll` (all thr
 distinct identifiers (`CollectiveIntelligence.CESI.EXP1`, `.EXP2`, `.EXP3`) and coexist on one
 headset. The Android SDK must contain platform 32 (`sdkmanager "platforms;android-32"`).
 Install with `adb install -r <file.apk>`.
+
+Before each build, `BuildExperiments` rebuilds the Photon Fusion network prefab table from the
+`FusionPrefab` labels and refuses a suspicious table: a stale table (prefabs removed or added without
+reimporting `NetworkProjectConfig`) silently breaks every object creation on the headset. The menu
+**Outils BIM VR › Vérifier la table des prefabs Fusion** lists the table for diagnosis.
 
 The only errors logged during a build come from the Meta package (`AvatarBehaviourFusion`,
 exception on a `[Networked]` property): they are known and do not prevent the build.
@@ -92,6 +98,10 @@ experimenter panel).
 | `sessionTimeoutMinutes` | automatic stop of the recordings | 30 |
 | `syncLeadSeconds` | lead given to the network start time | 1 |
 | `exitDelayAfterStop` | delay before closing after the thank-you window | 6 s |
+| `audioFromSceneStart` | voice recording starts when the scene loads, like the other trackers (the sync beep is inserted at activity start) | true |
+| `playSyncBeep` | the sync beep is also played in the headset at activity start | true |
+| `startInFrontOfPanel` | at scene load, the headset is recentred in front of the welcome panel (tutorial) or the role panel (experiments), whatever its physical orientation | true |
+| `startDistance` | distance between headset and panel at start | 1.6 m |
 | `uploadUrl` | data receiver on the PC (empty = no upload) | empty |
 | `uploadTimeoutSeconds` | maximum time allowed for the upload | 180 |
 
@@ -109,15 +119,17 @@ nothing to copy from one scene to another.
    python docs/receive_data.py --port 8765 --out .\sessions
    ```
 
-2. Tutorial on each headset; the role can be chosen from the tutorial onwards.
-3. Experiment scene: pick the role in the list, then "Rejoindre" (join). The counter
+2. Tutorial on each headset; the role can be chosen from the tutorial onwards. On every scene load the
+   headset is recentred in front of the starting panel (`startInFrontOfPanel`).
+3. Experiment scene: the trackers, voice included, record from the scene load. Pick the role in the list, then "Rejoindre" (join). The counter
    "Joueurs : n/N" shows the connection state (N = `maxPlayers` from `SessionConfig`).
 4. The Reader presses "Lancer l'activité" (start the activity): a waiting window appears on each
-   headset, then the recordings start at the same network time on the three headsets (`MARKER`
-   line) and the session manifest is written.
+   headset, then the `MARKER` line is written at the same network time on the three headsets, the
+   sync beep is inserted in the audio file and played in the headset, and the session manifest is
+   written.
 5. The Reader ends the activity, or the automatic stop occurs after `sessionTimeoutMinutes`:
-   thank-you window, upload of the files to the PC if a URL is configured (status shown in front
-   of the camera), then the application closes on each headset. The files stay on the headset in
+   thank-you message in a panel that follows the head, upload of the files to the PC if a URL is
+   configured (status shown under the message), then the application closes on each headset. The files stay on the headset in
    every case.
 
 ### Controls
@@ -127,7 +139,8 @@ nothing to copy from one scene to another.
 - **Move / rotate an object**: right grip trigger to grab, A button to switch mode; arrows (move)
   or rings (rotate) are drawn on the object, in the tutorial as in the experiments.
 - **Windows** (documents, notepad, calculator, keyboards): point and hold the right grip trigger
-  to move them; red cross at the top right to close them (above the base for the calculator).
+  to move them; red cross at the top right to close them (for the calculator, a small square at the
+  top-right corner of its body, since its canvas is not in the plane of its face).
 - **Keyboard**: AZERTY, Enter validates the field (line break only in the notepad), "Fermer"
   (close) key.
 - **Experimenter**: panel with recording start / stop, forced end of session (with confirmation),
@@ -140,7 +153,7 @@ On the headset: `Android/data/<application identifier>/files/Data/`.
 | File | Content |
 | --- | --- |
 | `*_Session.json` | manifest: session, role, scene, headset, application version, marker and end times (local, network, UTC), files produced and their size |
-| `*_Audio.wav` | voice, 16-bit PCM mono 44.1 kHz, starts when the activity starts, synchronisation beep inserted (1 kHz, 0.5 s, `Assets/Resources/SyncSignal.wav`) |
+| `*_Audio.wav` | voice, 16-bit PCM mono 44.1 kHz, starts when the scene loads (`audioFromSceneStart`), synchronisation beep inserted when the activity starts (1 kHz, 0.5 s, `Assets/Resources/SyncSignal.wav`) |
 | `*_EyeTrackingData.csv` | gaze: origin, hit point, object looked at, at frame rate |
 | `*_FaceTrackingData.csv` | 71 facial action units, at frame rate |
 | `*_UsersPositions.csv` | positions, 2 Hz |
@@ -159,7 +172,8 @@ python docs/check_session.py <Data folder copied from the headset>
 ## Architecture (key points)
 
 - `Assets/Scripts/Core/`: `SessionConfig` (configuration asset), `SessionCore` (base installed by
-  code in the experiment scenes), `SessionClock` (time columns of the CSV files),
+  code in the experiment scenes), `StartPlacement` (headset recentred in front of the starting panel),
+  `SessionClock` (time columns of the CSV files),
   `SessionManifest` (JSON manifest), `DataUploader` (HTTP upload of the files at the end of a session).
 - `Assets/Scripts/Network/NetworkManager.cs`: Fusion session, automatic reconnection after a
   connection loss, `GetLocalPlayerName()` for the local role.
@@ -192,6 +206,10 @@ Rules to keep the repository healthy:
 - build archives, logs and IDE settings are excluded by `.gitignore`;
 - a test scene does not go into `Assets/EXP*/Scenes`; the Build Settings list only the tutorial
   and the three experiment scenes;
+- never delete a folder wholesale without checking the references into it: the cleanup of
+  6 November removed materials of the lines and of the tutorial cube, the room model and the Fusion
+  prefabs' dependencies that way (magenta objects on the headset, object creation broken). Run
+  `python docs/check_references.py .` after any deletion: it must report no `MANQUANT` line;
 - shader include files (`*.cginc`, `*.hlsl`) are referenced by name, not by GUID: a dependency
   analysis does not see them. The two includes used by the avatar and keyboard shaders
   (`TexturedStableFresnelCommon.cginc`, `MixedRealityShaderUtils.cginc`) were restored on
