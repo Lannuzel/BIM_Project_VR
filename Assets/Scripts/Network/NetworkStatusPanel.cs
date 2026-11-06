@@ -11,6 +11,8 @@ using UnityEngine.UI;
 public class NetworkStatusPanel : MonoBehaviour
 {
     private static NetworkStatusPanel _instance;
+    private static readonly System.Collections.Generic.Dictionary<string, NetworkStatusPanel> _named = new System.Collections.Generic.Dictionary<string, NetworkStatusPanel>();
+    private bool _secondary;
 
     [SerializeField] private float distance = 1.5f;
     [SerializeField] private float verticalOffset = -0.15f;
@@ -40,6 +42,29 @@ public class NetworkStatusPanel : MonoBehaviour
     {
         if (_instance != null)
             _instance.gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// Panneau secondaire indépendant du panneau principal (feedbacks collaboratifs) : même construction, pas
+    /// d'en-tête, décalage vertical propre pour ne pas recouvrir le panneau principal.
+    /// </summary>
+    public static void ShowNamed(string key, string message, float autoHideSeconds, float verticalOffset)
+    {
+        if (!_named.TryGetValue(key, out var panel) || panel == null)
+        {
+            var go = new GameObject("NetworkStatusPanel_" + key);
+            DontDestroyOnLoad(go);
+            panel = go.AddComponent<NetworkStatusPanel>();
+            panel._secondary = true;
+            panel.verticalOffset = verticalOffset;
+            panel.Build();
+            _named[key] = panel;
+        }
+        panel.SetMessage(message);
+        panel.gameObject.SetActive(true);
+        panel.SnapInFrontOfCamera();
+        if (panel._hideRoutine != null) panel.StopCoroutine(panel._hideRoutine);
+        panel._hideRoutine = autoHideSeconds > 0f ? panel.StartCoroutine(panel.HideAfter(autoHideSeconds)) : null;
     }
 
     private static NetworkStatusPanel GetOrCreate()
@@ -94,7 +119,7 @@ public class NetworkStatusPanel : MonoBehaviour
     private void SetMessage(string message)
     {
         if (_text == null) return;
-        if (string.IsNullOrEmpty(Header))
+        if (_secondary || string.IsNullOrEmpty(Header))
             _text.text = message;
         else if (string.IsNullOrEmpty(message))
             _text.text = $"<size=130%><b>{Header}</b></size>";

@@ -66,6 +66,16 @@ public class ExperimenterPanel : MonoBehaviour
         y = AddButton("Arrêter l'enregistrement (fin de tâche)", new Color(0.6f, 0.45f, 0.15f), y, StopRecording);
         y = AddButton("Forcer la fin de session (tous les casques)", new Color(0.6f, 0.2f, 0.2f), y, ForceExit);
 
+        // --- Feedbacks collaboratifs (Emery Descours) : identiques sur les trois casques (RPC) ---
+        y = AddSectionLabel("Feedbacks (regard, parole, visage) : condition expérimentale", y);
+        y = AddButtonRow(new[]
+        {
+            ("Regard", (UnityEngine.Events.UnityAction)(() => ToggleFeedback(0))),
+            ("Parole", (UnityEngine.Events.UnityAction)(() => ToggleFeedback(1))),
+            ("Visage", (UnityEngine.Events.UnityAction)(() => ToggleFeedback(2))),
+        }, new Color(0.35f, 0.3f, 0.55f), y);
+        feedbackLabels = new[] { FindButtonLabel("Regard"), FindButtonLabel("Parole"), FindButtonLabel("Visage") };
+
         // --- Rôle du casque ---
         y = AddSectionLabel("Mon rôle (échange avec un joueur simulé s'il le tient)", y);
         y = AddButtonRow(AdminTools.Roles.Select(r => (Label(r), (UnityEngine.Events.UnityAction)(() => AdminTools.SetLocalRole(r)))).ToArray(),
@@ -222,10 +232,39 @@ public class ExperimenterPanel : MonoBehaviour
             string kind = p.IsSimulated ? "simulé" : (p.Object.HasStateAuthority ? "moi" : "casque distant");
             sb.AppendLine($"  • {p.PlayerName}  ({kind})");
         }
+        RefreshFeedbackLabels();
+        string feedbackState = FeedbackManager.Instance == null ? "non installés dans cette scène"
+            : $"regard {(FeedbackManager.IsEnabled(0) ? "ON" : "OFF")}, parole {(FeedbackManager.IsEnabled(1) ? "ON" : "OFF")}, visage {(FeedbackManager.IsEnabled(2) ? "ON" : "OFF")}{(FeedbackNetwork.Instance == null ? " (objet réseau en attente)" : "")}";
+        sb.AppendLine($"Feedbacks : {feedbackState}");
         sb.AppendLine(SessionConfig.Instance.Summary());
         sb.AppendLine($"Envoi des données : {DataUploader.LastStatus}");
         sb.Append($"Heure : {System.DateTime.Now:HH:mm:ss}");
         statusText.text = sb.ToString();
+    }
+
+    private TextMeshProUGUI[] feedbackLabels;
+
+    private TextMeshProUGUI FindButtonLabel(string label)
+    {
+        var t = transform.Find("Button_" + label);
+        return t != null ? t.GetComponentInChildren<TextMeshProUGUI>() : null;
+    }
+
+    private void ToggleFeedback(int kind)
+    {
+        bool gaze = FeedbackManager.IsEnabled(0), voice = FeedbackManager.IsEnabled(1), face = FeedbackManager.IsEnabled(2);
+        if (kind == 0) gaze = !gaze; else if (kind == 1) voice = !voice; else face = !face;
+        FeedbackManager.SetEnabled(gaze, voice, face);
+        RefreshFeedbackLabels();
+    }
+
+    private void RefreshFeedbackLabels()
+    {
+        if (feedbackLabels == null) return;
+        string[] names = { "Regard", "Parole", "Visage" };
+        for (int i = 0; i < 3; i++)
+            if (feedbackLabels[i] != null)
+                feedbackLabels[i].text = $"{names[i]} : {(FeedbackManager.IsEnabled(i) ? "ON" : "OFF")}";
     }
 
     private static string ShortName(string path)

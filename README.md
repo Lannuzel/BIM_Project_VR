@@ -44,10 +44,10 @@ missing script (already the case in XP1 and XP2, with no effect).
 - `main`: integrated version.
 - `fix/recette-2026-11-05`: fixes from the acceptance run of 5 November 2026, one commit per item
   (identifiers `F1`–`F19`, `N1`–`N5` of the requirements document), then XP3 integration and cleanup.
-- `feedback`: real-time feedback system (folder `1_Emery`, Emery Descours), based on the `main`
-  of December 2024; not integrated.
-- Tags: `v3.0-avant-recette` (state of April 2026 before the acceptance run), `archive/BIM_Interaction`,
-  `archive/BIM_Clean` (old branches from January 2025).
+- Tags: `v3.0-avant-recette` (state of April 2026 before the acceptance run), `archive/feedback`
+  (real-time feedback system of Emery Descours, folder `1_Emery`, based on the `main` of December 2024;
+  ported by code into `Assets/Scripts/Feedback/` on 6 November 2026, see "Collaborative feedbacks"),
+  `archive/BIM_Interaction`, `archive/BIM_Clean` (old branches from January 2025).
 
 ## Documents
 
@@ -111,12 +111,45 @@ experimenter panel).
 | `playSyncBeep` | the sync beep is also played in the headset at activity start | true |
 | `startInFrontOfPanel` | at scene load, the headset is recentred in front of the welcome panel (tutorial) or the role panel (experiments), whatever its physical orientation | true |
 | `startDistance` | distance between headset and panel at start | 1.6 m |
+| `feedbackGaze` / `feedbackVoice` / `feedbackFace` | collaborative feedbacks (see below) | false |
+| `feedbackScenes` | experiment scenes where the feedbacks apply (empty = all) | empty |
 | `uploadUrl` | data receiver on the PC (empty = no upload) | empty |
 | `uploadTimeoutSeconds` | maximum time allowed for the upload | 180 |
 
 The common base of the experiment scenes (movable windows, keyboard, undo stack, Experimenter role,
 multi-line notepad) is installed by code when the scene loads (`Assets/Scripts/Core/SessionCore.cs`):
 nothing to copy from one scene to another.
+
+## Collaborative feedbacks
+
+Port of Emery Descours' work (branch `feedback`, August 2026, kept as tag `archive/feedback`; see the
+IHM'26 article in the citations). Three feedbacks, installed by code in XP1, XP2 and XP3
+(`Assets/Scripts/Feedback/`), **off by default**:
+
+| Feedback | Behaviour | Settings |
+| --- | --- | --- |
+| Gaze (`feedbackGaze`) | when at least two participants look at the same object, it gets a white outline whose opacity rises over 10 s (blue when all three look at it) | — |
+| Voice (`feedbackVoice`) | the microphone level of the recording is read (dBFS threshold); the network authority tracks the current speaker and the successful or failed interruptions. Individual: crossed-out microphone for 1 s in the left-hand menu for whoever cut in. Collective: message to all (with a bell) when, over a sliding window, the ratio of successful interruptions over attempts exceeds `voiceInterruptionRatio` and the count exceeds `voiceInterruptionCount` | `voiceDbThreshold` (-70), `voiceTimeRequired` (1 s), `voiceWindowSeconds` (60), `voiceInterruptionRatio` (0.62), `voiceInterruptionCount` (3) |
+| Face (`feedbackFace`) | action units 15 (lip corners) and 17 (chin): a light bulb in the left-hand menu whose opacity follows the ratio of samples with expression over the window; a participant is "focused" when the ratio reaches `faceThreshold`; message to all (with a bell) when the three participants are unfocused | `faceWeightThreshold` (0.1), `faceEvaluationSeconds` (60), `faceThreshold` (0.02) |
+
+Activation is the experimental condition: tick the boxes in `SessionConfig` (optionally restricted to some
+scenes with `feedbackScenes`), and switch them at runtime from the Experimenter panel (propagated to the three
+headsets by RPC). The condition is written in the session manifest (`feedbackGaze`, `feedbackVoice`,
+`feedbackFace`). A network object `FeedbackNetwork` (prefab generated in `Assets/Resources/Feedback/` by
+**Outils BIM VR › Créer le prefab réseau des feedbacks**, also at build time) is spawned by the session master and
+holds the shared state. When a feedback is enabled, the tutorial gains two steps: a sensor check (microphone and
+face) before the welcome screen, and an explanation of the pictograms before launching the experiment.
+
+Events are logged in `*_FeedbackData.csv` (same time columns, `MARKER`, `END`, listed in the manifest, uploaded
+with the rest): `Feedback` (gaze, voice, face, session), `Event`, `Role`, `Target`, `Value`, `Count`, `Total`,
+`Ratio`, `Who`.
+
+Documented differences from the published version: gaze detection covers every object with a collider (stable
+identifier computed by code), not only network objects, which makes the feedback usable with the fixed furniture
+of XP1 and the models of XP2 and XP3; the microphone is not opened a second time; the pause tolerance of the
+speaker is really applied; the comparison of the three gazes and the writes of network properties outside the
+authority are fixed; the collective voice threshold uses the script default (3 interruptions) rather than the
+scene value of the branch (1).
 
 ## Running a session
 
@@ -167,6 +200,7 @@ On the headset: `Android/data/<application identifier>/files/Data/`.
 | `*_FaceTrackingData.csv` | 71 facial action units, at frame rate |
 | `*_UsersPositions.csv` | positions, 2 Hz |
 | `*_ChairePositionData.csv` / `*_ReservationPositionData.csv` / `*_CalepinagePositionData.csv` | end-of-session summary: objects, reservations or equipment from all headsets |
+| `*_FeedbackData.csv` | collaborative feedback events, when enabled (see above) |
 
 The gaze, face and position CSV files start with three time columns: `Time` (seconds since the
 application was launched on this headset), `NetTime` (Photon Fusion network clock, identical on

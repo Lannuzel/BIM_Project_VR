@@ -30,9 +30,14 @@ public class MarkerManager : MonoBehaviour
         StopAllRecordings();
     }
 
+    private FeedbackLogger[] FeedbackLoggers() => FindObjectsOfType<FeedbackLogger>();
+
     public void StopAllRecordings()
     {
         Debug.Log("Arrêt de tous les enregistrements.: begin..");
+
+        foreach (var feedbackLogger in FeedbackLoggers())
+            feedbackLogger.StopRecording();
 
         // Arrête les enregistrements pour les AudioTrackers
         Debug.Log("Arrêt des enregistrements dans les chairLoggers...");
@@ -104,6 +109,7 @@ public class MarkerManager : MonoBehaviour
         foreach (var l in chairPositionLogger) yield return l.FilePath;
         foreach (var l in reservationPositionDataLoggers) yield return l.FilePath;
         foreach (var l in calepinagePositionDataLogger) yield return l.FilePath;
+        foreach (var l in FeedbackLoggers()) yield return l.FilePath;
     }
     public void AddMarkerToAllLogs()
     {
@@ -160,6 +166,8 @@ public class MarkerManager : MonoBehaviour
             calepinageLogger.AddMarker();
             Debug.Log($"Marker ajouté dans un CalepinagepositionLogger.");
         }
+        foreach (var feedbackLogger in FeedbackLoggers())
+            feedbackLogger.AddMarker();
         Debug.Log($"Ajout du marker terminé.");
         SessionManifest.Begin(LoggerFiles());
     }

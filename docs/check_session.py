@@ -13,6 +13,7 @@ Pour chaque fichier produit par l'application :
     *_EyeTrackingData.csv    regard (Time;RayOrigin;HitPoint;ObjectHit + lignes MARKER, END)
     *_FaceTrackingData.csv   expressions faciales (Timestamp;<unités>... + MARKER, END)
     *_UsersPositions.csv     positions (Timestamp;<user>_PosX... + MARKER, END)
+    *_FeedbackData.csv       feedbacks collaboratifs, si activés (Time;NetTime;Utc;Feedback;Event;... + MARKER, END)
 le script contrôle : présence, taille, en-tête, présence du marqueur de lancement, fin « END »,
 durée et fréquence moyenne, et signale les trous > 1 s.
 Sortie : rapport texte ; code retour 1 si un contrôle échoue.
@@ -143,12 +144,16 @@ def main():
         ("*_EyeTrackingData.csv", "eye", args.eye_hz),
         ("*_FaceTrackingData.csv", "face", args.eye_hz),
         ("*_UsersPositions.csv", "pos", args.pos_hz),
+        ("*_FeedbackData.csv", "feedback", None),
     ]
     for pattern, kind, hz in kinds:
         files = sorted(glob.glob(os.path.join(args.folder, pattern)))
         print(f"\n[{kind}] {len(files)} fichier(s)")
         if not files:
-            problems.append(f"aucun fichier {pattern}")
+            if kind == "feedback":
+                print("  (facultatif : feedbacks collaboratifs non activés)")
+            else:
+                problems.append(f"aucun fichier {pattern}")
             continue
         for path in files:
             if kind == "audio":

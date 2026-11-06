@@ -43,10 +43,10 @@ scène porte un script manquant (déjà le cas dans XP1 et XP2, sans effet).
 - `main` : version intégrée.
 - `fix/recette-2026-11-05` : corrections de la recette du 5 novembre 2026, un commit par point
   (identifiants `F1`–`F19`, `N1`–`N5` du cahier des charges), puis intégration de l'XP3 et nettoyage.
-- `feedback` : système de feedbacks temps réel (dossier `1_Emery`, Emery Descours), basé sur le `main`
-  de décembre 2024 ; non intégré.
-- Étiquettes : `v3.0-avant-recette` (état d'avril 2026 avant la recette), `archive/BIM_Interaction`,
-  `archive/BIM_Clean` (anciennes branches de janvier 2025).
+- Étiquettes : `v3.0-avant-recette` (état d'avril 2026 avant la recette), `archive/feedback` (système de
+  feedbacks temps réel d'Emery Descours, dossier `1_Emery`, basé sur le `main` de décembre 2024 ; porté
+  par code dans `Assets/Scripts/Feedback/` le 6 novembre 2026, voir « Feedbacks collaboratifs »),
+  `archive/BIM_Interaction`, `archive/BIM_Clean` (anciennes branches de janvier 2025).
 
 ## Documents
 
@@ -111,12 +111,46 @@ rappelés dans le panneau de l'expérimentateur).
 | `playSyncBeep` | le bip de synchronisation est aussi joué dans le casque au lancement de l'activité | vrai |
 | `startInFrontOfPanel` | au chargement d'une scène, le casque est recentré devant le panneau d'accueil (tutoriel) ou de choix du rôle (expériences), quelle que soit son orientation physique | vrai |
 | `startDistance` | distance entre le casque et le panneau au départ | 1,6 m |
+| `feedbackGaze` / `feedbackVoice` / `feedbackFace` | feedbacks collaboratifs (voir plus bas) | faux |
+| `feedbackScenes` | scènes d'expérience concernées par les feedbacks (vide = toutes) | vide |
 | `uploadUrl` | récepteur des données sur le PC (vide = pas d'envoi) | vide |
 | `uploadTimeoutSeconds` | délai maximal accordé à l'envoi | 180 |
 
 Le socle commun des scènes d'expérience (fenêtres déplaçables, clavier, pile d'annulation, rôle
 Expérimentateur, bloc-notes multiligne) est installé par code au chargement de la scène
 (`Assets/Scripts/Core/SessionCore.cs`) : rien à recopier d'une scène à l'autre.
+
+## Feedbacks collaboratifs
+
+Portage des travaux d'Emery Descours (branche `feedback`, août 2026, conservée sous l'étiquette
+`archive/feedback` ; voir l'article IHM'26 dans les citations). Trois feedbacks, installés par code dans XP1,
+XP2 et XP3 (`Assets/Scripts/Feedback/`), **désactivés par défaut** :
+
+| Feedback | Comportement | Réglages |
+| --- | --- | --- |
+| Regard (`feedbackGaze`) | quand au moins deux participants regardent le même objet, il reçoit un contour blanc dont l'opacité monte sur 10 s (bleu quand les trois le regardent) | — |
+| Parole (`feedbackVoice`) | le niveau du micro de l'enregistrement est lu (seuil en dBFS) ; l'autorité réseau suit l'orateur courant et les interruptions réussies ou ratées. Individuel : micro barré 1 s dans le menu de la main gauche pour celui qui a coupé la parole. Collectif : message à tous (avec un son) quand, sur une fenêtre glissante, le ratio interruptions réussies / tentatives dépasse `voiceInterruptionRatio` et le nombre dépasse `voiceInterruptionCount` | `voiceDbThreshold` (-70), `voiceTimeRequired` (1 s), `voiceWindowSeconds` (60), `voiceInterruptionRatio` (0,62), `voiceInterruptionCount` (3) |
+| Visage (`feedbackFace`) | unités d'action 15 (coins des lèvres) et 17 (menton) : une ampoule dans le menu de la main gauche dont l'opacité suit la proportion d'échantillons avec expression sur la fenêtre ; un participant est « concentré » quand la proportion atteint `faceThreshold` ; message à tous (avec un son) quand les trois participants sont non concentrés | `faceWeightThreshold` (0,1), `faceEvaluationSeconds` (60), `faceThreshold` (0,02) |
+
+L'activation est la condition expérimentale : cocher les cases dans `SessionConfig` (au besoin restreintes à
+certaines scènes avec `feedbackScenes`), et les basculer en cours de session depuis le panneau Expérimentateur
+(propagé aux trois casques par RPC). La condition est écrite dans le manifeste de session (`feedbackGaze`,
+`feedbackVoice`, `feedbackFace`). Un objet réseau `FeedbackNetwork` (prefab généré dans
+`Assets/Resources/Feedback/` par **Outils BIM VR › Créer le prefab réseau des feedbacks**, aussi au build) est créé
+par le maître de session et porte l'état partagé. Quand un feedback est activé, le tutoriel gagne deux étapes :
+une vérification des capteurs (micro et visage) avant l'accueil, et une explication des pictogrammes avant de
+lancer l'expérience.
+
+Les événements sont consignés dans `*_FeedbackData.csv` (mêmes colonnes de temps, `MARKER`, `END`, listé dans le
+manifeste, envoyé avec le reste) : `Feedback` (gaze, voice, face, session), `Event`, `Role`, `Target`, `Value`,
+`Count`, `Total`, `Ratio`, `Who`.
+
+Écarts documentés par rapport à la version publiée : la détection du regard couvre tout objet à collider
+(identifiant stable calculé par code), pas seulement les objets réseau, ce qui rend le feedback utilisable avec le
+mobilier fixe de XP1 et les maquettes de XP2 et XP3 ; le micro n'est pas ouvert une seconde fois ; la tolérance de
+pause de l'orateur est réellement appliquée ; la comparaison des trois regards et les écritures de propriétés
+réseau hors autorité sont corrigées ; le seuil collectif de parole reprend la valeur par défaut du script
+(3 interruptions) plutôt que celle de la scène de la branche (1).
 
 ## Déroulé d'une session
 
@@ -169,6 +203,7 @@ Sur le casque : `Android/data/<identifiant de l'application>/files/Data/`.
 | `*_FaceTrackingData.csv` | 71 unités d'action faciales, au framerate |
 | `*_UsersPositions.csv` | positions, 2 Hz |
 | `*_ChairePositionData.csv` / `*_ReservationPositionData.csv` / `*_CalepinagePositionData.csv` | bilan de fin : objets, réservations ou équipements de tous les casques |
+| `*_FeedbackData.csv` | événements des feedbacks collaboratifs, s'ils sont activés (voir plus haut) |
 
 Les CSV du regard, du visage et des positions commencent par trois colonnes de temps :
 `Time` (secondes depuis le lancement de l'application sur ce casque), `NetTime` (horloge réseau

@@ -48,6 +48,33 @@ public class AudioTracker : MonoBehaviour
     /// <summary>Chemin du fichier WAV en cours (vide tant que l'enregistrement n'a pas démarré).</summary>
     public string FilePath => filePath;
 
+    /// <summary>
+    /// Niveau crête (0..1) des derniers échantillons captés par le micro de l'enregistrement, pour les feedbacks de
+    /// parole : Unity n'accepte qu'une capture par micro, le détecteur de voix lit donc ce flux au lieu d'en ouvrir un second.
+    /// Retourne false si la capture n'est pas active.
+    /// </summary>
+    public bool TryGetRecentPeak(int sampleWindow, out float peak)
+    {
+        peak = 0f;
+        if (!isRecording || audioSource == null || audioSource.clip == null || string.IsNullOrEmpty(micDevice)) return false;
+        int position = Microphone.GetPosition(micDevice);
+        if (position <= 0) return false;
+        int window = Mathf.Clamp(sampleWindow, 64, audioSource.clip.samples);
+        int start = position - window;
+        if (start < 0) start += audioSource.clip.samples;
+        if (peakBuffer == null || peakBuffer.Length != window) peakBuffer = new float[window];
+        audioSource.clip.GetData(peakBuffer, start);
+        float max = 0f;
+        for (int i = 0; i < window; i++)
+        {
+            float a = Mathf.Abs(peakBuffer[i]);
+            if (a > max) max = a;
+        }
+        peak = max;
+        return true;
+    }
+    private float[] peakBuffer;
+
     /// <summary>Durée (s) d'audio déjà écrite sur disque.</summary>
     public float RecordedSeconds => fileStream != null ? Mathf.Max(0f, (fileStream.Length - 44) / (float)(sampleRate * 2)) : 0f;
 
