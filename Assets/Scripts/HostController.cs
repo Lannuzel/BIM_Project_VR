@@ -60,6 +60,9 @@ public class HostController : NetworkBehaviour
             return;
         }
         sync.StartSynchronizedRecording();
+        // Le bouton « Lancer l'activité » de la scène active aussi le bouton d'arrêt du menu local : il n'est
+        // conservé que pour le rôle d'arrêt, et seulement une fois le marqueur posé (événement de SyncManager).
+        ShowPersonalisedMenu.RefreshStopItems(false);
         Debug.LogError("Sent synchronization signal to all clients.");
     }
 

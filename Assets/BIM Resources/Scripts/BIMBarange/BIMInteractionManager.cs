@@ -36,14 +36,29 @@ public class BIMInteractionManager : MonoBehaviour
         else gameObject.SetActive(true);
     }
 
+    /// <summary>
+    /// Rôle qui voit les fenêtres de lancement (vérification des participants, « Lancer l'activité »).
+    /// Recette du 6 novembre 2026 : lu dans SessionConfig.startActivityRole (Modélisateur) au lieu du champ de
+    /// scène, qui valait Lecteur dans XP1 et XP2 et Modélisateur dans XP3.
+    /// </summary>
+    private string LaunchRole
+    {
+        get
+        {
+            string configured = SessionConfig.Instance.startActivityRole;
+            return string.IsNullOrWhiteSpace(configured) ? userName : configured.Trim();
+        }
+    }
+
     public void ActiveLogRecorder(GameObject gameObject)
     {
         if (gameObject == null) return;
+        string role = LaunchRole;
         if (!roleCanvases.Exists(c => c.canvas == gameObject))
-            roleCanvases.Add((gameObject, userName));
+            roleCanvases.Add((gameObject, role));
 
         string playerName = NetworkManager.GetLocalPlayerName();
-        if (playerName == userName)
+        if (playerName == role)
         {
             ToggleActivation(gameObject);
         }

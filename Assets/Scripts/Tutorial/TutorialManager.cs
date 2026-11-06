@@ -52,6 +52,15 @@ public class TutorialManager : MonoBehaviour
     [Tooltip("Ancre du panneau. Si vide : à droite du canvas d'accueil (WecomeCanvas).")]
     public Transform progressAnchor;
     public Vector3 progressOffset = new Vector3(1.6f, 0f, 0f);
+    [Tooltip("Recette du 6 novembre 2026 : poser le panneau sur le mur à droite du canvas d'accueil (trouvé par lancer " +
+             "de rayon vers la droite), centré horizontalement sur ce mur, au lieu de le laisser chevaucher le canvas.")]
+    public bool progressOnRightWall = true;
+    [Tooltip("Hauteur (m) du centre du panneau quand il est posé sur le mur.")]
+    public float progressWallHeight = 1.5f;
+    [Tooltip("Décalage (m) du panneau par rapport au mur, vers la salle.")]
+    public float progressWallOffset = 0.03f;
+    [Tooltip("Portée (m) de la recherche du mur de droite.")]
+    public float progressWallMaxDistance = 12f;
     [Tooltip("Échelle du panneau (unités canvas -> mètres). 0,0025 donne environ 1,7 m de large.")]
     public float panelScale = 0.0025f;
     public float progressTitleFontSize = 44f;
@@ -568,7 +577,11 @@ public class TutorialManager : MonoBehaviour
             if (welcome != null && welcome.root != null)
                 anchor = welcome.root.transform;
         }
-        if (anchor != null)
+        if (anchor != null && progressOnRightWall && PlaceOnRightWall(anchor))
+        {
+            // posé sur le mur de droite
+        }
+        else if (anchor != null)
         {
             progressPanel.transform.SetPositionAndRotation(anchor.TransformPoint(progressOffset / Mathf.Max(0.0001f, anchor.lossyScale.x)), anchor.rotation);
             if (anchor.lossyScale.x > 0.5f) // ancre non mise à l'échelle : offset en mètres
@@ -581,6 +594,48 @@ public class TutorialManager : MonoBehaviour
                 progressPanel.transform.SetPositionAndRotation(cam.transform.position + cam.transform.forward * 2f + Vector3.right * 1f,
                     Quaternion.LookRotation(cam.transform.forward, Vector3.up));
         }
+    }
+
+    /// <summary>
+    /// Pose le panneau sur le mur trouvé à droite de l'ancre (rayon vers anchor.right), centré horizontalement sur
+    /// ce mur, à <see cref="progressWallHeight"/>, face à la salle. Retourne false si aucun mur n'est trouvé.
+    /// </summary>
+    private bool PlaceOnRightWall(Transform anchor)
+    {
+        Vector3 origin = anchor.position;
+        origin.y = progressWallHeight;
+        Vector3 dir = anchor.right;
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 1e-4f) return false;
+        dir.Normalize();
+
+        RaycastHit best = default;
+        bool found = false;
+        foreach (var hit in Physics.RaycastAll(origin, dir, progressWallMaxDistance, ~0, QueryTriggerInteraction.Ignore))
+        {
+            if (hit.collider == null || hit.collider.transform.IsChildOf(anchor)) continue;
+            if (hit.collider.GetComponentInParent<Canvas>() != null) continue; // fenêtres, pas des murs
+            if (Mathf.Abs(hit.normal.y) > 0.5f) continue;                        // sol / plafond
+            if (!found || hit.distance < best.distance) { best = hit; found = true; }
+        }
+        if (!found) return false;
+
+        Vector3 normal = best.normal;
+        normal.y = 0f;
+        if (normal.sqrMagnitude < 1e-4f) return false;
+        normal.Normalize();
+        if (Vector3.Dot(normal, dir) > 0f) normal = -normal; // normale tournée vers la salle
+
+        // Centre horizontal du mur touché, hauteur fixée, léger décalage vers la salle.
+        Vector3 center = best.collider.bounds.center;
+        Vector3 pos = new Vector3(center.x, progressWallHeight, center.z) + normal * progressWallOffset;
+        // Le long de la normale on garde le point d'impact (le centre d'une boîte englobante épaisse serait dans le mur).
+        pos -= normal * Vector3.Dot(pos - best.point, normal);
+        pos += normal * progressWallOffset;
+
+        progressPanel.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(-normal, Vector3.up));
+        Debug.Log($"[Tutorial] Panneau de progression posé sur le mur « {best.collider.name} » à {pos}.");
+        return true;
     }
 
     private TMP_Text CreateLine(Transform parent, string text, float fontSize, int index)

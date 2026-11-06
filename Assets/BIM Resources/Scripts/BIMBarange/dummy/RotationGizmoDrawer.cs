@@ -31,6 +31,8 @@ public class RotationGizmoDrawer : NetworkBehaviour
     {
        
         if (lineMaterial == null) return;
+        if (rend == null) rend = GetComponentInChildren<Renderer>();
+        if (rend == null) return;
 
         lineMaterial.SetPass(0);
    

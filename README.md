@@ -11,8 +11,9 @@ intelligence.
 - **Engine**: Unity 2022.3.56f1 (`ProjectSettings/ProjectVersion.txt`), Asset Serialization set to Force Text.
 - **Headset**: Meta Quest Pro (eye tracking and face tracking required), Android API 32.
 - **Network**: Photon Fusion 2.0.3, Shared mode, Photon cloud, region `eu` (see `docs/reseau.md`).
-- **Roles**: Reader (*Lecteur*: instructions, starts and ends the activity), Calculator (*Calculateur*:
-  notepad, calculator, documents), Modeller (*Modélisateur*: creates, moves and measures objects),
+- **Roles**: Reader (*Lecteur*: instructions, ends the activity), Calculator (*Calculateur*:
+  notepad, calculator, documents), Modeller (*Modélisateur*: creates, moves and measures objects,
+  starts the activity),
   Experimenter (*Expérimentateur*: administration panel, outside the task).
 
 Each participant is represented by the avatar shown opposite (`Assets/Prefabs/PlayerPrefabMB.prefab`):
@@ -81,6 +82,12 @@ Before each build, `BuildExperiments` rebuilds the Photon Fusion network prefab 
 reimporting `NetworkProjectConfig`) silently breaks every object creation on the headset. The menu
 **Outils BIM VR › Vérifier la table des prefabs Fusion** lists the table for diagnosis.
 
+At build time, `StaticBatchingAtBuild` marks every renderer coming from a fixed FBX model (BIM
+models of XP2 and XP3, thousands of geometry nodes) as *Batching Static*, so Unity combines their
+meshes in the APK (scenes on disk are untouched). The icons of the XP3 "Générer …" buttons are
+rendered from the prefabs by **Outils BIM VR › Générer les icônes des prefabs XP3**
+(`Assets/Resources/Icone/XP3_*.png`) and assigned by code at scene load.
+
 The only errors logged during a build come from the Meta package (`AvatarBehaviourFusion`,
 exception on a `[Networked]` property): they are known and do not prevent the build.
 
@@ -95,6 +102,8 @@ experimenter panel).
 | `sessionName` | name of the Photon session joined by the headsets | `Modelisateur` |
 | `photonRegion` | fixed Photon region | `eu` |
 | `maxPlayers` | players expected before the activity can be started | 1 (tests); set 3 for a session |
+| `startActivityRole` | role that sees the participant check and the "Lancer l'activité" button | `Modelisateur` |
+| `stopActivityRole` | role that sees "Arreter l'enregistrement" once the activity has started | `Lecteur` |
 | `sessionTimeoutMinutes` | automatic stop of the recordings | 30 |
 | `syncLeadSeconds` | lead given to the network start time | 1 |
 | `exitDelayAfterStop` | delay before closing after the thank-you window | 6 s |
@@ -123,11 +132,11 @@ nothing to copy from one scene to another.
    headset is recentred in front of the starting panel (`startInFrontOfPanel`).
 3. Experiment scene: the trackers, voice included, record from the scene load. Pick the role in the list, then "Rejoindre" (join). The counter
    "Joueurs : n/N" shows the connection state (N = `maxPlayers` from `SessionConfig`).
-4. The Reader presses "Lancer l'activité" (start the activity): a waiting window appears on each
+4. The Modeller (`startActivityRole`) presses "Lancer l'activité" (start the activity): a waiting window appears on each
    headset, then the `MARKER` line is written at the same network time on the three headsets, the
-   sync beep is inserted in the audio file and played in the headset, and the session manifest is
-   written.
-5. The Reader ends the activity, or the automatic stop occurs after `sessionTimeoutMinutes`:
+   sync beep is inserted in the audio file and played in the headset, the session manifest is
+   written and the activity clock appears on every headset.
+5. The Reader (`stopActivityRole`) ends the activity, or the automatic stop occurs after `sessionTimeoutMinutes`:
    thank-you message in a panel that follows the head, upload of the files to the PC if a URL is
    configured (status shown under the message), then the application closes on each headset. The files stay on the headset in
    every case.
@@ -163,6 +172,9 @@ The gaze, face and position CSV files start with three time columns: `Time` (sec
 application was launched on this headset), `NetTime` (Photon Fusion network clock, identical on
 the three headsets of a session, -1 outside a session) and `Utc` (headset UTC time, ISO 8601).
 Headsets are aligned on `NetTime`. Each CSV contains a `MARKER` line at start and ends with `END`.
+The audio file follows real time: if the microphone capture is interrupted (headset removed, system
+menu), the missing span is filled with silence so that the position in the file stays aligned with
+the CSV files (a warning with the padded duration is logged).
 Check with:
 
 ```powershell

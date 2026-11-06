@@ -1,6 +1,9 @@
+using System.Globalization;
+using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 /// <summary>
 /// Socle commun des scènes d'expérience, installé par code au chargement de chaque scène :
@@ -52,6 +55,7 @@ public static class SessionCore
 
         EnsureExperimenterRole();
         EnsureNotepadMultiline();
+        EnsureMenuIcons();
 
         Debug.Log($"[SessionCore] Socle installé dans la scène « {scene.name} ». {SessionConfig.Instance.Summary()}");
     }
@@ -75,6 +79,54 @@ public static class SessionCore
                 lobby.dropdown.RefreshShownValue();
             }
         }
+    }
+
+    /// <summary>Boutons « Générer … » du menu du plafond (XP3) → icône rendue à partir du prefab (PrefabIconRenderer).</summary>
+    private static readonly (string keyword, string resource)[] MenuIcons =
+    {
+        ("ventilateur", "Icone/XP3_Ventilateur"),
+        ("lumi", "Icone/XP3_Lumiere"),
+        ("bouche", "Icone/XP3_BoucheAeration"),
+    };
+
+    /// <summary>
+    /// Recette du 6 novembre 2026 : les trois boutons de création d'équipements (XP3) partageaient l'icône de la
+    /// chaise. L'image « ButtonIcon » de chaque bouton « Générer … » reçoit l'icône de son modèle, si elle existe
+    /// dans Resources/Icone (générée dans l'éditeur, menu Outils BIM VR).
+    /// </summary>
+    private static void EnsureMenuIcons()
+    {
+        int count = 0;
+        foreach (var image in Resources.FindObjectsOfTypeAll<Image>())
+        {
+            if (!image.gameObject.scene.IsValid() || image.name != "ButtonIcon" || image.transform.parent == null) continue;
+            string button = Normalize(image.transform.parent.name);
+            if (!button.StartsWith("generer")) continue;
+            foreach (var (keyword, resource) in MenuIcons)
+            {
+                if (!button.Contains(keyword)) continue;
+                var sprite = Resources.Load<Sprite>(resource);
+                if (sprite == null) break;
+                image.sprite = sprite;
+                image.preserveAspect = true;
+                count++;
+                break;
+            }
+        }
+        if (count > 0) Debug.Log($"[SessionCore] {count} icône(s) de menu affectée(s).");
+    }
+
+    /// <summary>Minuscules sans accents ni apostrophes, pour comparer des noms d'objets saisis à la main.</summary>
+    private static string Normalize(string s)
+    {
+        var sb = new StringBuilder();
+        foreach (char c in s.Normalize(NormalizationForm.FormD))
+        {
+            var cat = CharUnicodeInfo.GetUnicodeCategory(c);
+            if (cat == UnicodeCategory.NonSpacingMark) continue;
+            if (char.IsLetterOrDigit(c) || c == ' ') sb.Append(char.ToLowerInvariant(c));
+        }
+        return sb.ToString();
     }
 
     /// <summary>Le champ du bloc-notes accepte les retours à la ligne (F13) ; les autres champs valident sur Entrée.</summary>

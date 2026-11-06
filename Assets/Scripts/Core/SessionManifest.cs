@@ -44,7 +44,12 @@ public static class SessionManifest
 
     private static Data current;
     private static string path;
-    private static readonly string appStartedUtc = SessionClock.UtcIso;
+    /// <summary>
+    /// Heure UTC de lancement de l'application, déduite de l'horloge locale (recette du 6 novembre 2026 : la valeur
+    /// était prise à la première utilisation de la classe, c'est-à-dire au marqueur, et non au démarrage).
+    /// </summary>
+    private static string AppStartedUtc =>
+        DateTime.UtcNow.AddSeconds(-Time.realtimeSinceStartup).ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", System.Globalization.CultureInfo.InvariantCulture);
 
     /// <summary>Chemin du manifeste de la session en cours (null tant que l'activité n'est pas lancée).</summary>
     public static string FilePath => path;
@@ -80,7 +85,7 @@ public static class SessionManifest
                 deviceModel = SystemInfo.deviceModel,
                 deviceName = SystemInfo.deviceName,
                 deviceId = SystemInfo.deviceUniqueIdentifier,
-                appStartedUtc = appStartedUtc,
+                appStartedUtc = AppStartedUtc,
                 markerLocalTime = Time.time,
                 markerNetTime = SessionClock.NetTime,
                 markerUtc = SessionClock.UtcIso,

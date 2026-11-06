@@ -194,11 +194,41 @@ public class UndoManager : MonoBehaviour
             {
                 if (go == null) continue;
                 any = true;
-                ObjectInteractionHandler.Instance?.DeselectObject(go);
+                ForgetSelection(go);
                 NetworkObjectUtils.DespawnHierarchy(go);
             }
             return any;
         }
+    }
+
+    /// <summary>
+    /// Recette du 6 novembre 2026 : « quand annulé, le gizmo de l'objet reste ». Avant de supprimer ou après avoir
+    /// recréé un objet, tous les repères de sélection sont retirés : sélection des gestionnaires (objets XP1/XP3,
+    /// réservations XP2), repères de déplacement / rotation (TranslateGizmoDrawer, RotationGizmoDrawer), boîte
+    /// englobante, contour et lignes de référence.
+    /// </summary>
+    public static void ForgetSelection(GameObject go)
+    {
+        if (go == null) return;
+        ObjectInteractionHandler.Instance?.DeselectObject(go);
+        var reservations = ReservationInteractionHandler.Instance;
+        if (reservations != null)
+        {
+            reservations.DeselectObject(go);
+            if (reservations.currentReservation == go) reservations.currentReservation = null;
+        }
+        HideGizmos(go);
+        foreach (Transform child in go.transform)
+            if (child.name == "BoundingBox" || child.name == "OutLine")
+                Destroy(child.gameObject);
+    }
+
+    /// <summary>Désactive les repères de déplacement / rotation dessinés sur l'objet.</summary>
+    public static void HideGizmos(GameObject go)
+    {
+        if (go == null) return;
+        foreach (var t in go.GetComponentsInChildren<TranslateGizmoDrawer>(true)) t.enabled = false;
+        foreach (var r in go.GetComponentsInChildren<RotationGizmoDrawer>(true)) r.enabled = false;
     }
 
     public class PoseSnapshot
@@ -399,6 +429,7 @@ public class UndoManager : MonoBehaviour
             if (no == null) return null;
 
             var go = no.gameObject;
+            HideGizmos(go); // objet recréé non sélectionné : aucun repère affiché
             go.name = e.name;
             try { if (!string.IsNullOrEmpty(e.tag)) go.tag = e.tag; } catch { }
             go.transform.localScale = e.localScale;
