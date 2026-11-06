@@ -11,8 +11,8 @@ pour étudier l'intelligence collective.
 - **Moteur** : Unity 2022.3.56f1 (`ProjectSettings/ProjectVersion.txt`), Asset Serialization en Force Text.
 - **Casque** : Meta Quest Pro (eye-tracking et face-tracking requis), Android API 32.
 - **Réseau** : Photon Fusion 2.0.3, mode Shared, cloud Photon région `eu` (voir `docs/reseau.md`).
-- **Rôles** : Lecteur (consignes, lance et termine l'activité), Calculateur (bloc-notes, calculatrice,
-  documents), Modélisateur (création, déplacement, mesure des objets), Expérimentateur (panneau
+- **Rôles** : Lecteur (consignes, termine l'activité), Calculateur (bloc-notes, calculatrice,
+  documents), Modélisateur (création, déplacement, mesure des objets, lance l'activité), Expérimentateur (panneau
   d'administration, hors tâche).
 
 Chaque participant est représenté par l'avatar ci-contre (`Assets/Prefabs/PlayerPrefabMB.prefab`) :
@@ -81,6 +81,12 @@ des labels `FusionPrefab` et refuse une table suspecte : une table périmée (pr
 ajoutés sans réimport de `NetworkProjectConfig`) empêche silencieusement toute création d'objet sur
 casque. Le menu **Outils BIM VR › Vérifier la table des prefabs Fusion** l'affiche pour diagnostic.
 
+Au build, `StaticBatchingAtBuild` marque *Batching Static* tous les renderers issus d'un modèle FBX
+fixe (maquettes BIM de XP2 et XP3, des milliers de nœuds de géométrie) : Unity combine leurs
+maillages dans l'APK (les scènes sur disque ne sont pas modifiées). Les icônes des boutons
+« Générer … » de XP3 sont rendues à partir des prefabs par **Outils BIM VR › Générer les icônes des
+prefabs XP3** (`Assets/Resources/Icone/XP3_*.png`) et affectées par code au chargement de la scène.
+
 Les seules erreurs consignées pendant une build viennent du package Meta
 (`AvatarBehaviourFusion`, exception sur une propriété `[Networked]`) : elles sont connues et
 n'empêchent pas la génération.
@@ -96,6 +102,8 @@ rappelés dans le panneau de l'expérimentateur).
 | `sessionName` | nom de la session Photon rejointe par les casques | `Modelisateur` |
 | `photonRegion` | région Photon fixe | `eu` |
 | `maxPlayers` | joueurs attendus avant de pouvoir lancer l'activité | 1 (tests) ; mettre 3 en passation |
+| `startActivityRole` | rôle qui voit la vérification des participants et le bouton « Lancer l'activité » | `Modelisateur` |
+| `stopActivityRole` | rôle qui voit « Arreter l'enregistrement » une fois l'activité lancée | `Lecteur` |
 | `sessionTimeoutMinutes` | arrêt automatique des enregistrements | 30 |
 | `syncLeadSeconds` | avance donnée à l'heure réseau de lancement | 1 |
 | `exitDelayAfterStop` | délai avant fermeture après la fenêtre de remerciement | 6 s |
@@ -124,10 +132,11 @@ Expérimentateur, bloc-notes multiligne) est installé par code au chargement de
    le casque est recentré devant le panneau de départ (`startInFrontOfPanel`).
 3. Scène d'expérience : les capteurs, voix comprise, enregistrent dès le chargement. Choisir le rôle dans la liste, « Rejoindre ». Le compteur « Joueurs : n/N »
    affiche l'état de connexion (N = `maxPlayers` de `SessionConfig`).
-4. Le Lecteur appuie sur « Lancer l'activité » : fenêtre d'attente sur chaque casque, puis les
+4. Le Modélisateur (`startActivityRole`) appuie sur « Lancer l'activité » : fenêtre d'attente sur chaque casque, puis les
    lignes `MARKER` sont écrites à la même heure réseau sur les trois casques, le bip de synchronisation
-   est inséré dans le fichier audio et joué dans le casque, et le manifeste de session est écrit.
-5. Le Lecteur termine l'activité, ou l'arrêt automatique survient après `sessionTimeoutMinutes` :
+   est inséré dans le fichier audio et joué dans le casque, le manifeste de session est écrit et
+   l'horloge de l'activité apparaît sur chaque casque.
+5. Le Lecteur (`stopActivityRole`) termine l'activité, ou l'arrêt automatique survient après `sessionTimeoutMinutes` :
    message de remerciement dans un panneau qui suit la tête, envoi des fichiers au PC si une URL est
    configurée (état affiché sous le message), puis fermeture de l'application sur chaque casque. Les fichiers restent sur le casque
    dans tous les cas.
@@ -165,7 +174,10 @@ Les CSV du regard, du visage et des positions commencent par trois colonnes de t
 `Time` (secondes depuis le lancement de l'application sur ce casque), `NetTime` (horloge réseau
 Photon Fusion, identique sur les trois casques d'une session, -1 hors session) et `Utc` (heure UTC
 du casque, ISO 8601). L'alignement entre casques se fait sur `NetTime`. Chaque CSV contient une
-ligne `MARKER` au lancement et se termine par `END`. Vérification :
+ligne `MARKER` au lancement et se termine par `END`. Le fichier audio suit le temps réel : si la
+capture du micro est interrompue (casque retiré, menu système), la durée manquante est comblée par du
+silence pour que la position dans le fichier reste alignée sur les CSV (un avertissement avec la durée
+comblée est consigné). Vérification :
 
 ```powershell
 python docs/check_session.py <dossier Data copié depuis le casque>
