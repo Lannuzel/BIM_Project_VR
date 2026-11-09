@@ -1,5 +1,6 @@
 using Fusion;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Horloge de l'activité (chronomètre affiché dans la salle).
@@ -8,6 +9,9 @@ using UnityEngine;
 /// expérimentateur, autre rôle) ne la créait pas. Elle est désormais une copie locale du prefab, instanciée sur
 /// chaque casque au marqueur de lancement (<see cref="SyncManager.RecordingStartedEvent"/>) et retirée à
 /// l'arrêt : même position que l'ancien objet réseau, mais sans dépendre du réseau ni de qui lance.
+/// Recette du 9 novembre 2026 : la pose du prefab (tableau blanc de XP1) ne convient pas à toutes les scènes (en XP3 le
+/// cadran flottait devant le mur est, sous le faux plafond). <see cref="SessionConfig.clockPlacements"/> donne, par
+/// scène, la position du cadran ; sans entrée, la pose du prefab est conservée.
 /// </summary>
 public class CountDownWatch : NetworkBehaviour
 {
@@ -52,7 +56,8 @@ public class CountDownWatch : NetworkBehaviour
             return;
         }
 
-        localClock = Instantiate(clockPrefab, clockPrefab.transform.position, clockPrefab.transform.rotation, transform);
+        ClockPose(out Vector3 position, out Quaternion rotation);
+        localClock = Instantiate(clockPrefab, position, rotation, transform);
         localClock.name = clockPrefab.name + " (local)";
 
         // Copie locale : les composants réseau sont rendus inertes (comme la fenêtre de remerciement),
@@ -64,6 +69,22 @@ public class CountDownWatch : NetworkBehaviour
 
         localClock.SetActive(true);
         Debug.Log($"[CountDownWatch] Horloge locale affichée à {localClock.transform.position}.");
+    }
+
+    /// <summary>Pose de la racine du prefab : celle du prefab, ou celle qui amène le cadran à la position configurée pour la scène.</summary>
+    private void ClockPose(out Vector3 position, out Quaternion rotation)
+    {
+        position = clockPrefab.transform.position;
+        rotation = clockPrefab.transform.rotation;
+        var placement = SessionConfig.Instance.ClockPlacementFor(SceneManager.GetActiveScene().name);
+        if (placement == null) return;
+
+        // Le cadran (canvas) est décalé par rapport à la racine du prefab : on compense ce décalage.
+        var face = clockPrefab.GetComponentInChildren<Canvas>(true);
+        Vector3 faceOffset = face != null ? face.transform.position - clockPrefab.transform.position : Vector3.zero;
+        rotation = Quaternion.Euler(placement.euler);
+        position = placement.position - rotation * faceOffset;
+        Debug.Log($"[CountDownWatch] Cadran placé selon la configuration ({placement.scene}) à {placement.position}.");
     }
 
     public void DeleteClock()

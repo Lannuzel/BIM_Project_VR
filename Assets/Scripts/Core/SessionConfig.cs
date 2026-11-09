@@ -7,6 +7,18 @@ using UnityEngine;
 /// joueurs attendus), SyncManager (arrêt automatique, délai de synchronisation, délai de fermeture),
 /// DataUploader (envoi des données) et affichée dans le panneau de l'expérimentateur.
 /// </summary>
+/// <summary>Position du cadran de l'horloge de l'activité dans une scène (voir <see cref="SessionConfig.clockPlacements"/>).</summary>
+[System.Serializable]
+public class ClockPlacement
+{
+    [Tooltip("Fragment du nom de la scène concernée (ex. Exp3).")]
+    public string scene;
+    [Tooltip("Position (m) du centre du cadran dans la scène.")]
+    public Vector3 position;
+    [Tooltip("Rotation (degrés). À zéro, le cadran se lit depuis le côté -X, comme sur le tableau de XP1 (mur de droite) ; Y = -90 : lisible depuis le côté -Z.")]
+    public Vector3 euler;
+}
+
 [CreateAssetMenu(menuName = "BIM VR/Configuration de session", fileName = "SessionConfig")]
 public class SessionConfig : ScriptableObject
 {
@@ -49,6 +61,15 @@ public class SessionConfig : ScriptableObject
     [Tooltip("Distance (m) entre le casque et le panneau d'accueil du tutoriel (4 m de large : plus loin que le panneau de rôle). " +
              "Recette du 9 novembre 2026 : position de départ reculée.")]
     [Min(0.5f)] public float startDistanceTutorial = 2.2f;
+
+    [Header("Horloge de l'activité")]
+    [Tooltip("Position du cadran de l'horloge par scène (fragment du nom de la scène). Sans entrée pour une scène, l'horloge garde la pose " +
+             "du prefab (tableau blanc de XP1 et XP2). Recette du 9 novembre 2026 : en XP3 le cadran flottait devant le mur est, sous le faux " +
+             "plafond à 2,17 m ; il est posé sur ce mur, à 1,75 m.")]
+    public System.Collections.Generic.List<ClockPlacement> clockPlacements = new System.Collections.Generic.List<ClockPlacement>
+    {
+        new ClockPlacement { scene = "Exp3", position = new Vector3(6.50f, 1.75f, 1.20f), euler = Vector3.zero },
+    };
 
     [Header("Feedbacks (travaux d'Emery Descours, portés de la branche feedback)")]
     [Tooltip("Regard partagé : l'objet regardé par au moins deux participants reçoit un contour (blanc, bleu à trois) dont l'opacité monte sur 10 s.")]
@@ -103,6 +124,16 @@ public class SessionConfig : ScriptableObject
     }
 
     public bool UploadEnabled => !string.IsNullOrWhiteSpace(uploadUrl);
+
+    /// <summary>Position du cadran de l'horloge pour une scène (null = pose du prefab).</summary>
+    public ClockPlacement ClockPlacementFor(string sceneName)
+    {
+        if (clockPlacements == null || string.IsNullOrEmpty(sceneName)) return null;
+        foreach (var p in clockPlacements)
+            if (p != null && !string.IsNullOrWhiteSpace(p.scene) && sceneName.IndexOf(p.scene.Trim(), System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return p;
+        return null;
+    }
 
     /// <summary>Résumé lisible pour le panneau de l'expérimentateur.</summary>
     public string Summary()
