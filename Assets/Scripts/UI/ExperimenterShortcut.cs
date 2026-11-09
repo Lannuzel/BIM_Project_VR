@@ -4,7 +4,7 @@ using UnityEngine;
 
 /// <summary>
 /// Mode expérimentateur caché (recette du 9 novembre 2026). Le rôle « Experimentateur » n'apparaît plus ni dans le
-/// tutoriel ni dans la liste des rôles de la scène d'expérience : il s'obtient par la suite A, A, B, B sur la manette
+/// tutoriel ni dans la liste des rôles de la scène d'expérience (retiré au chargement) : il s'obtient par la suite A, A, B, B sur la manette
 /// droite, en moins de <see cref="windowSeconds"/> secondes.
 /// - Scène d'expérience : le rôle local devient Expérimentateur (<see cref="AdminTools.SetLocalRole"/>), l'option est
 ///   ajoutée et sélectionnée dans la liste des rôles (pour « Rejoindre ») et le panneau de l'expérimentateur est
@@ -28,9 +28,13 @@ public class ExperimenterShortcut : MonoBehaviour
     private void Start()
     {
         isTutorial = FindObjectOfType<TutorialManager>(true) != null;
-        // Rôle retenu depuis le tutoriel (ou une session précédente) : l'option cachée est rétablie et sélectionnée.
-        if (!isTutorial && PlayerPrefs.GetString("PlayerName", string.Empty) == AdminTools.Experimentateur)
+        if (isTutorial) return;
+        // Les scènes XP1 et XP2 listent « Experimentateur » dans leur liste déroulante : l'option est retirée, sauf si le
+        // casque est déjà en mode expérimentateur (rôle retenu depuis le tutoriel ou une session précédente).
+        if (PlayerPrefs.GetString("PlayerName", string.Empty) == AdminTools.Experimentateur)
             EnsureLobbyOption();
+        else
+            RemoveLobbyOption();
     }
 
     private void Update()
@@ -77,6 +81,22 @@ public class ExperimenterShortcut : MonoBehaviour
         var panel = FindObjectOfType<ExperimenterPanel>(true);
         if (panel == null) ExperimenterPanel.Create();
         else panel.gameObject.SetActive(roleChanged || !panel.gameObject.activeSelf);
+    }
+
+    /// <summary>Retire « Experimentateur » de la liste des rôles du lobby (option présente dans les scènes XP1 et XP2).</summary>
+    private static void RemoveLobbyOption()
+    {
+        foreach (var lobby in FindObjectsOfType<LobbyManager>(true))
+        {
+            var dropdown = lobby.dropdown;
+            if (dropdown == null) continue;
+            int index = dropdown.options.FindIndex(o => o.text == AdminTools.Experimentateur);
+            if (index < 0) continue;
+            bool wasSelected = dropdown.value == index;
+            dropdown.options.RemoveAt(index);
+            if (wasSelected || dropdown.value >= dropdown.options.Count) dropdown.SetValueWithoutNotify(0);
+            dropdown.RefreshShownValue();
+        }
     }
 
     /// <summary>Ajoute (si besoin) et sélectionne « Experimentateur » dans la liste des rôles du lobby, pour « Rejoindre ».</summary>

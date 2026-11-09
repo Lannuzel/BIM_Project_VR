@@ -182,8 +182,12 @@ public class ExperimenterPanel : MonoBehaviour
         if (cam == null) return;
         Vector3 fwd = cam.transform.forward; fwd.y = 0f; fwd.Normalize();
         Vector3 right = Vector3.Cross(Vector3.up, fwd);
-        transform.position = cam.transform.position + fwd * 1.5f - right * 0.7f + Vector3.up * 0.15f;
-        transform.rotation = Quaternion.LookRotation(fwd, Vector3.up);
+        // Recette du 9 novembre 2026 : à gauche du panneau de choix du rôle (1 m de large, 1,6 m devant le casque), pour
+        // ne pas le recouvrir ni bloquer sa liste déroulante ; tourné vers le casque.
+        transform.position = cam.transform.position + fwd * 1.5f - right * 1.2f + Vector3.up * 0.15f;
+        Vector3 toPanel = transform.position - cam.transform.position;
+        toPanel.y = 0f;
+        transform.rotation = Quaternion.LookRotation(toPanel.normalized, Vector3.up);
     }
 
     private void Update()
