@@ -6,7 +6,9 @@
 
 Virtual-reality research application (CESI LINEACT): a triad collaborates on a BIM-inspired task
 while the application records voice, gaze, facial expressions and positions to study collective
-intelligence. Above, two moments of the Modeller's view in XP1, taken from one minute of a session
+intelligence; the indicators are then computed by the
+[TRACE](https://github.com/Lannuzel/TRACE---Traceable-Reproducible-Analysis-of-Collective-Emergent-States)
+pipeline (see "Recorded data"). Above, two moments of the Modeller's view in XP1, taken from one minute of a session
 filmed from the headset.
 
 - **Engine**: Unity 2022.3.56f1 (`ProjectSettings/ProjectVersion.txt`), Asset Serialization set to Force Text.
@@ -243,6 +245,11 @@ Check with:
 ```powershell
 python docs/check_session.py <Data folder copied from the headset>
 ```
+
+The analysis of these data (computation and use of the indicators measured during the task) is done by the
+**TRACE** pipeline (Traceable Reproducible Analysis of Collective Emergent States):
+<https://github.com/Lannuzel/TRACE---Traceable-Reproducible-Analysis-of-Collective-Emergent-States>.
+This application produces the files; TRACE processes them.
 
 ## Architecture (key points)
 
