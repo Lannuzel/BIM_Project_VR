@@ -106,14 +106,13 @@ public class TutorialManager : MonoBehaviour
         RefreshProgress();
     }
 
-    #region Raccourcis : passer le tutoriel, choisir son rôle dès le début
+    #region Raccourcis : passer le tutoriel
 
     [Header("Raccourcis (sous le panneau de progression)")]
-    [Tooltip("Afficher le bouton « Passer le tutoriel » et le choix du rôle dès le début.")]
+    [Tooltip("Afficher le bouton « Passer le tutoriel » sous le panneau de progression.")]
     public bool showQuickActions = true;
     public string skipLabel = "Passer le tutoriel ›";
 
-    private readonly Dictionary<string, Image> roleButtons = new Dictionary<string, Image>();
     private GameObject quickPanel;
 
     private void BuildQuickActions()
@@ -127,7 +126,7 @@ public class TutorialManager : MonoBehaviour
         XRUiCanvas.MakeInteractive(canvas); // pointeur laser Meta (OVRRaycaster) + XRI
 
         var rect = canvas.GetComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(700f, 250f);
+        rect.sizeDelta = new Vector2(700f, 130f);
         rect.localScale = Vector3.one * panelScale;
 
         var bg = new GameObject("Background", typeof(RectTransform), typeof(Image));
@@ -144,26 +143,9 @@ public class TutorialManager : MonoBehaviour
             progressPanel.transform.position - progressPanel.transform.up * (progressHeight / 2f + 0.03f + rect.sizeDelta.y * panelScale / 2f),
             progressPanel.transform.rotation);
 
-        // Ligne 1 : rôle
-        var label = CreateLine(quickPanel.transform, "Mon rôle :", progressLineFontSize * 0.8f, 0);
-        label.color = Color.white;
-        label.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -8f);
-
-        string current = PlayerPrefs.GetString("PlayerName", string.Empty);
-        string[] roles = { "Lecteur", "Calculateur", "Modelisateur", "Experimentateur" };
-        string[] labels = { "Lecteur", "Calculateur", "Modélisateur", "Expérim." };
-        float gap = 8f, left = -330f, width = (660f - gap * 3) / 4f;
-        for (int i = 0; i < roles.Length; i++)
-        {
-            string role = roles[i];
-            var img = CreateQuickButton(labels[i], new Vector2(left + i * (width + gap), -70f), new Vector2(width, 58f), new Vector2(0f, 1f),
-                () => SelectRole(role));
-            roleButtons[role] = img;
-        }
-        HighlightRole(current);
-
-        // Ligne 2 : passer le tutoriel
-        CreateQuickButton(skipLabel, new Vector2(0f, -150f), new Vector2(660f, 70f), new Vector2(0.5f, 1f), SkipTutorial);
+        // Recette du 9 novembre 2026 : plus de choix du rôle ici (le rôle se choisit dans la scène d'expérience ;
+        // le mode expérimentateur s'obtient par A, A, B, B sur la manette droite, voir ExperimenterShortcut).
+        CreateQuickButton(skipLabel, new Vector2(0f, -30f), new Vector2(660f, 70f), new Vector2(0.5f, 1f), SkipTutorial);
     }
 
     private Image CreateQuickButton(string text, Vector2 pos, Vector2 size, Vector2 pivot, UnityEngine.Events.UnityAction action)
@@ -190,20 +172,6 @@ public class TutorialManager : MonoBehaviour
         t.alignment = TextAlignmentOptions.Center;
         t.raycastTarget = false;
         return img;
-    }
-
-    private void SelectRole(string role)
-    {
-        PlayerPrefs.SetString("PlayerName", role);
-        PlayerPrefs.Save();
-        HighlightRole(role);
-        Debug.Log($"[TutorialManager] Rôle choisi dès le tutoriel : {role}");
-    }
-
-    private void HighlightRole(string role)
-    {
-        foreach (var kv in roleButtons)
-            kv.Value.color = kv.Key == role ? new Color(0.95f, 0.65f, 0.15f, 1f) : new Color(0.2f, 0.35f, 0.6f, 1f);
     }
 
     /// <summary>Charge directement la scène d'expérience (même action que la fin du tutoriel).</summary>
