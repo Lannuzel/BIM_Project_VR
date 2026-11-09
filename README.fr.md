@@ -7,7 +7,7 @@
 Application de recherche en réalité virtuelle (CESI LINEACT) : une triade collabore sur une tâche
 inspirée du BIM pendant que l'application enregistre voix, regard, expressions faciales et positions
 pour étudier l'intelligence collective. Ci-dessus, deux instants de la vue du Modélisateur en XP1,
-extraits d'une minute de passation filmée depuis le casque (`docs/images/5__expe_tristan_lannuzel.mp4`).
+extraits d'une minute de passation filmée depuis le casque.
 
 - **Moteur** : Unity 2022.3.56f1 (`ProjectSettings/ProjectVersion.txt`), Asset Serialization en Force Text.
 - **Casque** : Meta Quest Pro (eye-tracking et face-tracking requis), Android API 32.
@@ -50,7 +50,7 @@ dans `docs/historique.md`.
 | `docs/check_session.py` | contrôle d'intégrité des fichiers d'une session (voir ci-dessous) |
 | `docs/receive_data.py` | récepteur HTTP qui collecte les fichiers de session des casques (voir ci-dessous) |
 | `docs/check_references.py` | liste (et peut restaurer) les assets encore référencés par les scènes, prefabs ou matériaux mais absents du projet ; à lancer après tout nettoyage |
-| `docs/images/` | illustrations du README et vidéo d'une passation (Git LFS) |
+| `docs/images/` | illustrations du README (Git LFS) |
 
 ## Générer les APK
 

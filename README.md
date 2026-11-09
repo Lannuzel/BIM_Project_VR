@@ -7,7 +7,7 @@
 Virtual-reality research application (CESI LINEACT): a triad collaborates on a BIM-inspired task
 while the application records voice, gaze, facial expressions and positions to study collective
 intelligence. Above, two moments of the Modeller's view in XP1, taken from one minute of a session
-filmed from the headset (`docs/images/5__expe_tristan_lannuzel.mp4`).
+filmed from the headset.
 
 - **Engine**: Unity 2022.3.56f1 (`ProjectSettings/ProjectVersion.txt`), Asset Serialization set to Force Text.
 - **Headset**: Meta Quest Pro (eye tracking and face tracking required), Android API 32.
@@ -51,7 +51,7 @@ in `docs/history.md`.
 | `docs/check_session.py` | integrity check of a session's files (see below) |
 | `docs/receive_data.py` | HTTP receiver that collects the session files from the headsets (see below) |
 | `docs/check_references.py` | lists (and can restore) assets still referenced by scenes, prefabs or materials but missing from the project; run after any cleanup |
-| `docs/images/` | README illustrations and the video of a session (Git LFS) |
+| `docs/images/` | README illustrations (Git LFS) |
 
 ## Building the APKs
 
