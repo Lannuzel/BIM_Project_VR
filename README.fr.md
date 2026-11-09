@@ -51,6 +51,7 @@ dans `docs/historique.md`.
 | `docs/receive_data.py` | récepteur HTTP qui collecte les fichiers de session des casques (voir ci-dessous) |
 | `docs/check_references.py` | liste (et peut restaurer) les assets encore référencés par les scènes, prefabs ou matériaux mais absents du projet ; à lancer après tout nettoyage |
 | `docs/images/` | illustrations du README (Git LFS) |
+| `docs/tutoriel/` | sources Word du PDF du tutoriel (`Assets/StreamingAssets/PDFs/Tutorial/`), hors APK |
 
 ## Générer les APK
 

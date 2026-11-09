@@ -50,7 +50,9 @@ by GUID, were restored the same day.
 - **9 November 2026**: tutorial start position moved back, progress panel moved off the move-object
   instructions, XP3 clock placed on the east wall, role choice removed from the tutorial and hidden
   Experimenter role (A, A, B, B), feedbacks switchable from the panel even when disabled in the
-  configuration, README illustration and trimming.
+  configuration, README illustration and trimming; cleanup: unused packages removed from the manifest
+  (Unity services, ProBuilder, Transport, editor tutorials, Collab) with their settings, Word sources of the
+  tutorial moved out of StreamingAssets (they were shipped in every APK).
 
 ## Known build errors
 

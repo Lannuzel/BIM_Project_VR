@@ -7,7 +7,6 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Fusion;
-using static Unity.Collections.Unicode;
 public class MultiObjectSelector : Fusion.NetworkBehaviour
 {
     public Transform controller; // Assign your controller here

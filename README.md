@@ -52,6 +52,7 @@ in `docs/history.md`.
 | `docs/receive_data.py` | HTTP receiver that collects the session files from the headsets (see below) |
 | `docs/check_references.py` | lists (and can restore) assets still referenced by scenes, prefabs or materials but missing from the project; run after any cleanup |
 | `docs/images/` | README illustrations (Git LFS) |
+| `docs/tutoriel/` | Word sources of the tutorial PDF (`Assets/StreamingAssets/PDFs/Tutorial/`), kept out of the APKs |
 
 ## Building the APKs
 

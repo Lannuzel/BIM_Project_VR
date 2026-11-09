@@ -53,7 +53,9 @@ référencés par nom et non par GUID, ont été restaurés le même jour.
 - **9 novembre 2026** : position de départ du tutoriel reculée, panneau de progression déplacé pour ne pas
   recouvrir la consigne de déplacement, horloge de l'XP3 posée sur le mur est, choix du rôle retiré du
   tutoriel et rôle Expérimentateur caché (A, A, B, B), feedbacks basculables depuis le panneau même désactivés
-  dans la configuration, illustration et allègement du README.
+  dans la configuration, illustration et allègement du README ; nettoyage : packages inutilisés retirés du
+  manifeste (services Unity, ProBuilder, Transport, tutoriels d'éditeur, Collab) avec leurs réglages, sources
+  Word du tutoriel sorties de StreamingAssets (elles partaient dans chaque APK).
 
 ## Erreurs de build connues
 

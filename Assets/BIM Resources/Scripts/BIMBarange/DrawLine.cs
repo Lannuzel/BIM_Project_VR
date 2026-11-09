@@ -6,7 +6,6 @@ using Fusion;
 using UnityEngine.UIElements;
 using UnityEngine.EventSystems;
 using System.Net;
-using Unity.Networking.Transport;
 using UnityEngine.Animations.Rigging;
 
 public class DrawLine1 : MonoBehaviour
