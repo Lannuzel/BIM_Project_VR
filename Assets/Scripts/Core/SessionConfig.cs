@@ -59,8 +59,8 @@ public class SessionConfig : ScriptableObject
     [Tooltip("Distance (m) entre le casque et le panneau au départ (panneau de choix du rôle des expériences).")]
     [Min(0.5f)] public float startDistance = 1.6f;
     [Tooltip("Distance (m) entre le casque et le panneau d'accueil du tutoriel (4 m de large : plus loin que le panneau de rôle). " +
-             "Recette du 9 novembre 2026 : position de départ reculée.")]
-    [Min(0.5f)] public float startDistanceTutorial = 2.2f;
+             "Recette du 9 novembre 2026 : position de départ reculée (2,2 m puis 2,8 m).")]
+    [Min(0.5f)] public float startDistanceTutorial = 2.8f;
 
     [Header("Horloge de l'activité")]
     [Tooltip("Position du cadran de l'horloge par scène (fragment du nom de la scène). Sans entrée pour une scène, l'horloge garde la pose " +
