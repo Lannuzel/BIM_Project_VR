@@ -72,6 +72,10 @@ public class FeedbackManager : MonoBehaviour
     {
         EnsureNetworkObject();
         WatchMessages();
+        // Le gestionnaire est toujours installé : l'ampoule (concentration) n'est visible que si le feedback visage est actif.
+        bool faceOn = IsEnabled(FeedbackNetwork.MessageKindFace);
+        if (bulbPicto != null && bulbPicto.gameObject.activeSelf != faceOn)
+            bulbPicto.gameObject.SetActive(faceOn);
         if (micPicto != null && micPicto.gameObject.activeSelf && Time.unscaledTime >= micPictoUntil)
         {
             micPicto.gameObject.SetActive(false);
