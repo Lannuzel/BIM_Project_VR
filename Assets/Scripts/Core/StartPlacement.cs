@@ -5,7 +5,8 @@ using UnityEngine;
 /// Recette du 6 novembre 2026 : au chargement d'une scène, le casque est recentré devant le panneau de départ
 /// (accueil du tutoriel, choix du rôle dans les expériences), quelle que soit l'orientation physique du casque
 /// au lancement. Le rig OVR est tourné autour de la caméra puis translaté pour que la caméra se retrouve à
-/// <see cref="SessionConfig.startDistance"/> du panneau, face à lui, du côté lisible.
+/// <see cref="SessionConfig.startDistance"/> du panneau (<see cref="SessionConfig.startDistanceTutorial"/> pour l'accueil du
+/// tutoriel), face à lui, du côté lisible.
 /// Installé par <see cref="SessionCore"/> ; aucune modification de scène.
 /// </summary>
 public class StartPlacement : MonoBehaviour
@@ -49,7 +50,9 @@ public class StartPlacement : MonoBehaviour
 
         var rig = FindObjectOfType<OVRCameraRig>();
         Transform rigTransform = rig != null ? rig.transform : cam.transform.root;
-        Place(rigTransform, cam.transform, target, config.startDistance);
+        // Le panneau d'accueil du tutoriel est large (4 m) : distance de départ propre au tutoriel (recette du 9 novembre 2026).
+        float distance = target.name == TargetNames[0] ? config.startDistanceTutorial : config.startDistance;
+        Place(rigTransform, cam.transform, target, distance);
     }
 
     /// <summary>Déplace le rig pour que la caméra soit à <paramref name="distance"/> du panneau, face à lui.</summary>

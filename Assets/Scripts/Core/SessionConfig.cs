@@ -44,8 +44,11 @@ public class SessionConfig : ScriptableObject
     [Tooltip("Au chargement d'une scène, recentre le casque devant le panneau d'accueil (tutoriel) ou de choix du rôle (expériences), " +
              "quelle que soit l'orientation physique du casque.")]
     public bool startInFrontOfPanel = true;
-    [Tooltip("Distance (m) entre le casque et le panneau au départ.")]
+    [Tooltip("Distance (m) entre le casque et le panneau au départ (panneau de choix du rôle des expériences).")]
     [Min(0.5f)] public float startDistance = 1.6f;
+    [Tooltip("Distance (m) entre le casque et le panneau d'accueil du tutoriel (4 m de large : plus loin que le panneau de rôle). " +
+             "Recette du 9 novembre 2026 : position de départ reculée.")]
+    [Min(0.5f)] public float startDistanceTutorial = 2.2f;
 
     [Header("Feedbacks (travaux d'Emery Descours, portés de la branche feedback)")]
     [Tooltip("Regard partagé : l'objet regardé par au moins deux participants reçoit un contour (blanc, bleu à trois) dont l'opacité monte sur 10 s.")]
