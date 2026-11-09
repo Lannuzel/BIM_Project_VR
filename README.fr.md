@@ -101,7 +101,7 @@ réglages sont rappelés dans le panneau de l'expérimentateur.
 | `playSyncBeep` | le bip de synchronisation est aussi joué dans le casque au lancement de l'activité | vrai |
 | `startInFrontOfPanel` | au chargement d'une scène, le casque est recentré devant le panneau d'accueil (tutoriel) ou de choix du rôle (expériences), quelle que soit son orientation physique | vrai |
 | `startDistance` | distance entre le casque et le panneau de choix du rôle au départ | 1,6 m |
-| `startDistanceTutorial` | distance entre le casque et le panneau d'accueil du tutoriel (4 m de large) | 2,2 m |
+| `startDistanceTutorial` | distance entre le casque et le panneau d'accueil du tutoriel (4 m de large) | 2,8 m |
 | `clockPlacements` | position du cadran de l'horloge de l'activité par scène (fragment du nom de scène, position, rotation) ; sans entrée, pose du prefab (tableau blanc de XP1 et XP2) | `Exp3` → (6,50 ; 1,75 ; 1,20), mur est |
 | `feedbackGaze` / `feedbackVoice` / `feedbackFace` | feedbacks collaboratifs (voir plus bas) | faux |
 | `feedbackScenes` | scènes d'expérience concernées par les feedbacks (vide = toutes) | vide |
@@ -111,6 +111,28 @@ réglages sont rappelés dans le panneau de l'expérimentateur.
 Le socle commun des scènes (fenêtres déplaçables, clavier, pile d'annulation, recentrage au départ,
 mode expérimentateur caché, feedbacks, bloc-notes multiligne) est installé par code au chargement de la
 scène (`Assets/Scripts/Core/SessionCore.cs`) : rien à recopier d'une scène à l'autre.
+
+## Mode expérimentateur
+
+Le rôle Expérimentateur est caché : il n'est proposé ni dans le tutoriel ni dans la liste des rôles de la
+scène d'expérience (l'option y est retirée au chargement). Sur le casque de l'expérimentateur :
+
+1. appuyer sur **A, A, B, B** sur la manette droite, en moins de 3 secondes, dans le tutoriel ou dans la
+   scène d'expérience avant « Rejoindre » ;
+2. dans la scène d'expérience, le rôle Expérimentateur est appliqué, l'option « Experimentateur » apparaît
+   et est sélectionnée dans la liste des rôles, et le panneau de l'expérimentateur s'ouvre à gauche du
+   panneau de choix du rôle (depuis le tutoriel, le rôle est mémorisé et tout cela se produit au
+   chargement de la scène d'expérience) ;
+3. « Rejoindre » comme les autres casques. Le casque de l'expérimentateur compte comme un joueur connecté :
+   prévoir `maxPlayers` = 4 si les trois participants et l'expérimentateur rejoignent la même session.
+
+Le panneau propose : lancement / arrêt synchronisés de l'enregistrement, fin de session forcée (second clic
+de confirmation), feedbacks Regard / Parole / Visage ON / OFF pour les trois casques, changement de rôle à
+chaud (retour à un rôle de participant compris), joueurs simulés (comptés comme connectés), rappel de la
+configuration et suivi en temps réel des enregistrements. Il se déplace comme les autres fenêtres (gâchette
+intérieure droite maintenue). La même suite A, A, B, B masque ou réaffiche le panneau. Le rôle est conservé
+d'un lancement à l'autre : pour redevenir participant, choisir un rôle dans le panneau ou dans la liste
+avant « Rejoindre ».
 
 ## Feedbacks collaboratifs
 
@@ -170,9 +192,8 @@ plutôt que celle de la scène de la branche (1).
 3. Scène d'expérience : les capteurs, voix comprise, enregistrent dès le chargement. Choisir le rôle dans
    la liste (Lecteur, Calculateur, Modélisateur), « Rejoindre ». Le compteur « Joueurs : n/N » affiche
    l'état de connexion (N = `maxPlayers` de `SessionConfig`).
-4. Casque de l'expérimentateur, s'il y en a un : A, A, B, B sur la manette droite (en moins de 3 s), dans
-   le tutoriel ou dans la scène d'expérience, avant « Rejoindre ». Le rôle Expérimentateur est appliqué,
-   sélectionné dans la liste et son panneau s'affiche ; la même suite masque ou réaffiche le panneau.
+4. Casque de l'expérimentateur, s'il y en a un : A, A, B, B sur la manette droite avant « Rejoindre »
+   (voir « Mode expérimentateur »).
 5. Le Modélisateur (`startActivityRole`) appuie sur « Lancer l'activité » : fenêtre d'attente sur chaque casque, puis les
    lignes `MARKER` sont écrites à la même heure réseau sur les trois casques, le bip de synchronisation
    est inséré dans le fichier audio et joué dans le casque, le manifeste de session est écrit et
