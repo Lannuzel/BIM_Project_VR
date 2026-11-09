@@ -44,6 +44,14 @@ public static class FeedbackSettings
     /// <summary>Vrai si les feedbacks s'appliqueront à la scène d'expérience qui suit le tutoriel.</summary>
     public static bool EnabledForNextExperiment => AppliesToScene(ExperimentSceneName() ?? string.Empty);
 
+    /// <summary>État initial dans la configuration d'un feedback (0 regard, 1 parole, 2 visage) pour la scène active, restreint par feedbackScenes.</summary>
+    public static bool InitialEnabled(int kind)
+    {
+        var c = SessionConfig.Instance;
+        if (c == null || !AppliesToScene(SceneManager.GetActiveScene().name)) return false;
+        return kind == 1 ? c.feedbackVoice : kind == 2 ? c.feedbackFace : c.feedbackGaze;
+    }
+
     public static int RoleIndex(string role) => string.IsNullOrEmpty(role) ? -1 : Array.IndexOf(AdminTools.ParticipantRoles, role);
 
     public static int LocalRoleIndex => RoleIndex(NetworkManager.GetLocalPlayerName());

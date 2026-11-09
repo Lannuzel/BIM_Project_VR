@@ -4,7 +4,8 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Installe et pilote les feedbacks collaboratifs d'Emery Descours dans une scène d'expérience (XP1, XP2, XP3),
-/// par code au chargement (SessionCore), quand <see cref="SessionConfig"/> les active pour cette scène :
+/// par code au chargement (SessionCore), dans toutes les scènes ; inerte tant qu'aucun feedback n'est activé
+/// (<see cref="SessionConfig"/> ou interrupteurs du panneau de l'expérimentateur, recette du 9 novembre 2026) :
 /// - objet réseau <see cref="FeedbackNetwork"/> créé par le maître de session ;
 /// - <see cref="GazeFeedback"/>, <see cref="VoiceFeedback"/>, <see cref="FaceFeedback"/> ;
 /// - pictogrammes sous le menu de la main gauche (micro barré, ampoule) ;
@@ -16,6 +17,18 @@ public class FeedbackManager : MonoBehaviour
     public static FeedbackManager Instance { get; private set; }
 
     public const string PrefabResource = "Feedback/FeedbackNetwork";
+
+    /// <summary>Choix fait dans le panneau de l'expérimentateur avant que l'objet réseau existe (prioritaire sur la configuration).</summary>
+    private static bool? overrideGaze, overrideVoice, overrideFace;
+
+    /// <summary>État initial d'un feedback pour cette scène : choix de l'expérimentateur, sinon configuration (restreinte par feedbackScenes).</summary>
+    public static bool InitialEnabled(int kind)
+    {
+        bool? chosen = kind == FeedbackNetwork.MessageKindVoice ? overrideVoice : kind == FeedbackNetwork.MessageKindFace ? overrideFace : overrideGaze;
+        return chosen ?? FeedbackSettings.InitialEnabled(kind);
+    }
+
+    public static bool AnyEnabled => IsEnabled(0) || IsEnabled(FeedbackNetwork.MessageKindVoice) || IsEnabled(FeedbackNetwork.MessageKindFace);
 
     private FeedbackLogger logger;
     private Image micPicto, bulbPicto;
@@ -89,7 +102,8 @@ public class FeedbackManager : MonoBehaviour
     {
         var net = FeedbackNetwork.Instance;
         if (net != null && net.HasStateAuthority) net.RPC_SetStarted(true);
-        Log("session", "start", "", null, null, null, null, $"gaze={IsEnabled(0)} voice={IsEnabled(FeedbackNetwork.MessageKindVoice)} face={IsEnabled(FeedbackNetwork.MessageKindFace)}");
+        if (AnyEnabled)
+            Log("session", "start", "", null, null, null, null, $"gaze={IsEnabled(0)} voice={IsEnabled(FeedbackNetwork.MessageKindVoice)} face={IsEnabled(FeedbackNetwork.MessageKindFace)}");
     }
 
     private void OnRecordingStopped(bool timeout)
@@ -103,8 +117,7 @@ public class FeedbackManager : MonoBehaviour
     {
         var net = FeedbackNetwork.Instance;
         if (net != null && net.Object != null && net.Object.IsValid) return net.IsEnabled(kind);
-        var c = SessionConfig.Instance;
-        return kind == FeedbackNetwork.MessageKindVoice ? c.feedbackVoice : kind == FeedbackNetwork.MessageKindFace ? c.feedbackFace : c.feedbackGaze;
+        return InitialEnabled(kind);
     }
 
     /// <summary>Change l'activation pour tous les casques (RPC vers l'autorité) ou, hors session, dans la configuration locale.</summary>
@@ -113,8 +126,7 @@ public class FeedbackManager : MonoBehaviour
         var net = FeedbackNetwork.Instance;
         if (net != null && net.Object != null && net.Object.IsValid)
             net.RPC_SetEnabled(gaze, voice, face);
-        var c = SessionConfig.Instance;
-        c.feedbackGaze = gaze; c.feedbackVoice = voice; c.feedbackFace = face;
+        overrideGaze = gaze; overrideVoice = voice; overrideFace = face;
         Log("session", "toggle", "", null, null, null, null, $"gaze={gaze} voice={voice} face={face}");
     }
 

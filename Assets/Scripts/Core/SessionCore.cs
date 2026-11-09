@@ -53,9 +53,9 @@ public static class SessionCore
         Ensure<UIWindowsManager>(host);
         Ensure<XRKeyboardTweaks>(host);
         Ensure<UndoManager>(host);
-        // Feedbacks collaboratifs (Emery Descours) si la configuration les active pour cette scène.
-        if (FeedbackSettings.AppliesToScene(scene.name))
-            Ensure<FeedbackManager>(host);
+        // Feedbacks collaboratifs (Emery Descours) : toujours installés, inertes tant qu'aucun n'est activé par la
+        // configuration ou par le panneau de l'expérimentateur (recette du 9 novembre 2026).
+        Ensure<FeedbackManager>(host);
 
         EnsureNotepadMultiline();
         EnsureMenuIcons();
