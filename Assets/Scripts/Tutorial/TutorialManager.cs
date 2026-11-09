@@ -61,6 +61,12 @@ public class TutorialManager : MonoBehaviour
     public float progressWallOffset = 0.03f;
     [Tooltip("Portée (m) de la recherche du mur de droite.")]
     public float progressWallMaxDistance = 12f;
+    [Tooltip("Recette du 9 novembre 2026 : le mur de droite porte aussi la consigne « déplacer l'objet » (canvas MoveObject, 0,5 m devant " +
+             "le mur). Les canvas posés à moins de cette distance (m) du mur sont des obstacles : le panneau est décalé le long du mur " +
+             "vers la zone libre la plus proche du centre.")]
+    public float progressWallObstacleDepth = 1f;
+    [Tooltip("Marge (m) gardée entre le panneau et un obstacle ou le bord du mur.")]
+    public float progressWallClearance = 0.15f;
     [Tooltip("Échelle du panneau (unités canvas -> mètres). 0,0025 donne environ 1,7 m de large.")]
     public float panelScale = 0.0025f;
     public float progressTitleFontSize = 44f;
@@ -652,9 +658,77 @@ public class TutorialManager : MonoBehaviour
         pos -= normal * Vector3.Dot(pos - best.point, normal);
         pos += normal * progressWallOffset;
 
+        // Décalage le long du mur pour ne recouvrir aucun autre panneau posé sur ce mur (consigne « déplacer l'objet »).
+        Vector3 tangent = Vector3.Cross(Vector3.up, normal).normalized;
+        pos += tangent * (FreeOffsetAlongWall(best, normal, tangent, pos) - Vector3.Dot(pos, tangent));
+
         progressPanel.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(-normal, Vector3.up));
         Debug.Log($"[Tutorial] Panneau de progression posé sur le mur « {best.collider.name} » à {pos}.");
         return true;
+    }
+
+    /// <summary>
+    /// Abscisse (le long de <paramref name="tangent"/>) la plus proche du centre du mur où le panneau (et les raccourcis
+    /// sous lui, même largeur) ne chevauche aucun canvas de la scène posé devant ce mur, dans les limites du mur.
+    /// </summary>
+    private float FreeOffsetAlongWall(RaycastHit wall, Vector3 normal, Vector3 tangent, Vector3 pos)
+    {
+        var panelRect = progressPanel.GetComponent<RectTransform>();
+        float halfWidth = Mathf.Max(panelRect.sizeDelta.x, 700f) * panelScale / 2f + progressWallClearance;
+        float centerT = Vector3.Dot(pos, tangent);
+
+        // Étendue du mur le long de la tangente.
+        var b = wall.collider.bounds;
+        float wallMin = float.MaxValue, wallMax = float.MinValue;
+        for (int i = 0; i < 8; i++)
+        {
+            var corner = new Vector3((i & 1) == 0 ? b.min.x : b.max.x, (i & 2) == 0 ? b.min.y : b.max.y, (i & 4) == 0 ? b.min.z : b.max.z);
+            float t = Vector3.Dot(corner, tangent);
+            wallMin = Mathf.Min(wallMin, t); wallMax = Mathf.Max(wallMax, t);
+        }
+        float low = wallMin + halfWidth, high = wallMax - halfWidth;
+        if (low > high) return centerT;
+
+        // Obstacles : canvas monde (actifs ou non) parallèles au mur et à moins de progressWallObstacleDepth devant lui.
+        var blocked = new List<Vector2>();
+        var corners = new Vector3[4];
+        foreach (var c in Resources.FindObjectsOfTypeAll<Canvas>())
+        {
+            if (!c.gameObject.scene.IsValid() || c.renderMode != RenderMode.WorldSpace) continue;
+            if (c.transform.IsChildOf(progressPanel.transform) || c.GetComponentInParent<OVRCameraRig>() != null) continue;
+            if (Mathf.Abs(Vector3.Dot(c.transform.forward, normal)) < 0.7f) continue;
+            float depth = Vector3.Dot(c.transform.position - wall.point, normal);
+            if (depth < -0.2f || depth > progressWallObstacleDepth) continue;
+            c.GetComponent<RectTransform>().GetWorldCorners(corners);
+            float a = float.MaxValue, z = float.MinValue;
+            foreach (var k in corners) { float t = Vector3.Dot(k, tangent); a = Mathf.Min(a, t); z = Mathf.Max(z, t); }
+            if (z - a < 0.05f) continue;
+            blocked.Add(new Vector2(a - progressWallClearance, z + progressWallClearance));
+            Debug.Log($"[Tutorial] Obstacle sur le mur : « {c.name} » de {a:0.00} à {z:0.00} m.");
+        }
+
+        bool Free(float t)
+        {
+            if (t < low || t > high) return false;
+            foreach (var iv in blocked)
+                if (t + halfWidth > iv.x && t - halfWidth < iv.y) return false;
+            return true;
+        }
+
+        float best = Mathf.Clamp(centerT, low, high);
+        if (Free(best)) return best;
+        float bestDist = float.MaxValue;
+        bool found = false;
+        foreach (var iv in blocked)
+        {
+            foreach (float t in new[] { iv.x - halfWidth, iv.y + halfWidth })
+            {
+                if (!Free(t)) continue;
+                float d = Mathf.Abs(t - centerT);
+                if (d < bestDist) { bestDist = d; best = t; found = true; }
+            }
+        }
+        return found ? best : Mathf.Clamp(centerT, low, high);
     }
 
     private TMP_Text CreateLine(Transform parent, string text, float fontSize, int index)
