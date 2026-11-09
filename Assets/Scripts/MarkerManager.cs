@@ -109,7 +109,7 @@ public class MarkerManager : MonoBehaviour
         foreach (var l in chairPositionLogger) yield return l.FilePath;
         foreach (var l in reservationPositionDataLoggers) yield return l.FilePath;
         foreach (var l in calepinagePositionDataLogger) yield return l.FilePath;
-        foreach (var l in FeedbackLoggers()) yield return l.FilePath;
+        foreach (var l in FeedbackLoggers()) if (!string.IsNullOrEmpty(l.FilePath)) yield return l.FilePath; // null tant que rien n'est consigné
     }
     public void AddMarkerToAllLogs()
     {

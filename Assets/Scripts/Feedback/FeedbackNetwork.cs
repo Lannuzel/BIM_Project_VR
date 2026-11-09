@@ -65,10 +65,10 @@ public class FeedbackNetwork : NetworkBehaviour
         Instance = this;
         if (HasStateAuthority)
         {
-            var c = SessionConfig.Instance;
-            GazeEnabled = c.feedbackGaze;
-            VoiceEnabled = c.feedbackVoice;
-            FaceEnabled = c.feedbackFace;
+            // État initial : choix de l'expérimentateur s'il a déjà basculé, sinon configuration (feedbackScenes comprise).
+            GazeEnabled = FeedbackManager.InitialEnabled(0);
+            VoiceEnabled = FeedbackManager.InitialEnabled(MessageKindVoice);
+            FaceEnabled = FeedbackManager.InitialEnabled(MessageKindFace);
             CurrentSpeaker = -1;
             LastInterrupter = -1;
             LastFailedInterrupter = -1;

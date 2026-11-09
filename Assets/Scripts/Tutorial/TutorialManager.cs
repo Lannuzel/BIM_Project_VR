@@ -61,6 +61,12 @@ public class TutorialManager : MonoBehaviour
     public float progressWallOffset = 0.03f;
     [Tooltip("Portée (m) de la recherche du mur de droite.")]
     public float progressWallMaxDistance = 12f;
+    [Tooltip("Recette du 9 novembre 2026 : le mur de droite porte aussi la consigne « déplacer l'objet » (canvas MoveObject, 0,5 m devant " +
+             "le mur). Les canvas posés à moins de cette distance (m) du mur sont des obstacles : le panneau est décalé le long du mur " +
+             "vers la zone libre la plus proche du centre.")]
+    public float progressWallObstacleDepth = 1f;
+    [Tooltip("Marge (m) gardée entre le panneau et un obstacle ou le bord du mur.")]
+    public float progressWallClearance = 0.15f;
     [Tooltip("Échelle du panneau (unités canvas -> mètres). 0,0025 donne environ 1,7 m de large.")]
     public float panelScale = 0.0025f;
     public float progressTitleFontSize = 44f;
@@ -100,14 +106,13 @@ public class TutorialManager : MonoBehaviour
         RefreshProgress();
     }
 
-    #region Raccourcis : passer le tutoriel, choisir son rôle dès le début
+    #region Raccourcis : passer le tutoriel
 
     [Header("Raccourcis (sous le panneau de progression)")]
-    [Tooltip("Afficher le bouton « Passer le tutoriel » et le choix du rôle dès le début.")]
+    [Tooltip("Afficher le bouton « Passer le tutoriel » sous le panneau de progression.")]
     public bool showQuickActions = true;
     public string skipLabel = "Passer le tutoriel ›";
 
-    private readonly Dictionary<string, Image> roleButtons = new Dictionary<string, Image>();
     private GameObject quickPanel;
 
     private void BuildQuickActions()
@@ -121,7 +126,7 @@ public class TutorialManager : MonoBehaviour
         XRUiCanvas.MakeInteractive(canvas); // pointeur laser Meta (OVRRaycaster) + XRI
 
         var rect = canvas.GetComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(700f, 250f);
+        rect.sizeDelta = new Vector2(700f, 130f);
         rect.localScale = Vector3.one * panelScale;
 
         var bg = new GameObject("Background", typeof(RectTransform), typeof(Image));
@@ -138,26 +143,9 @@ public class TutorialManager : MonoBehaviour
             progressPanel.transform.position - progressPanel.transform.up * (progressHeight / 2f + 0.03f + rect.sizeDelta.y * panelScale / 2f),
             progressPanel.transform.rotation);
 
-        // Ligne 1 : rôle
-        var label = CreateLine(quickPanel.transform, "Mon rôle :", progressLineFontSize * 0.8f, 0);
-        label.color = Color.white;
-        label.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -8f);
-
-        string current = PlayerPrefs.GetString("PlayerName", string.Empty);
-        string[] roles = { "Lecteur", "Calculateur", "Modelisateur", "Experimentateur" };
-        string[] labels = { "Lecteur", "Calculateur", "Modélisateur", "Expérim." };
-        float gap = 8f, left = -330f, width = (660f - gap * 3) / 4f;
-        for (int i = 0; i < roles.Length; i++)
-        {
-            string role = roles[i];
-            var img = CreateQuickButton(labels[i], new Vector2(left + i * (width + gap), -70f), new Vector2(width, 58f), new Vector2(0f, 1f),
-                () => SelectRole(role));
-            roleButtons[role] = img;
-        }
-        HighlightRole(current);
-
-        // Ligne 2 : passer le tutoriel
-        CreateQuickButton(skipLabel, new Vector2(0f, -150f), new Vector2(660f, 70f), new Vector2(0.5f, 1f), SkipTutorial);
+        // Recette du 9 novembre 2026 : plus de choix du rôle ici (le rôle se choisit dans la scène d'expérience ;
+        // le mode expérimentateur s'obtient par A, A, B, B sur la manette droite, voir ExperimenterShortcut).
+        CreateQuickButton(skipLabel, new Vector2(0f, -30f), new Vector2(660f, 70f), new Vector2(0.5f, 1f), SkipTutorial);
     }
 
     private Image CreateQuickButton(string text, Vector2 pos, Vector2 size, Vector2 pivot, UnityEngine.Events.UnityAction action)
@@ -184,20 +172,6 @@ public class TutorialManager : MonoBehaviour
         t.alignment = TextAlignmentOptions.Center;
         t.raycastTarget = false;
         return img;
-    }
-
-    private void SelectRole(string role)
-    {
-        PlayerPrefs.SetString("PlayerName", role);
-        PlayerPrefs.Save();
-        HighlightRole(role);
-        Debug.Log($"[TutorialManager] Rôle choisi dès le tutoriel : {role}");
-    }
-
-    private void HighlightRole(string role)
-    {
-        foreach (var kv in roleButtons)
-            kv.Value.color = kv.Key == role ? new Color(0.95f, 0.65f, 0.15f, 1f) : new Color(0.2f, 0.35f, 0.6f, 1f);
     }
 
     /// <summary>Charge directement la scène d'expérience (même action que la fin du tutoriel).</summary>
@@ -652,9 +626,77 @@ public class TutorialManager : MonoBehaviour
         pos -= normal * Vector3.Dot(pos - best.point, normal);
         pos += normal * progressWallOffset;
 
+        // Décalage le long du mur pour ne recouvrir aucun autre panneau posé sur ce mur (consigne « déplacer l'objet »).
+        Vector3 tangent = Vector3.Cross(Vector3.up, normal).normalized;
+        pos += tangent * (FreeOffsetAlongWall(best, normal, tangent, pos) - Vector3.Dot(pos, tangent));
+
         progressPanel.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(-normal, Vector3.up));
         Debug.Log($"[Tutorial] Panneau de progression posé sur le mur « {best.collider.name} » à {pos}.");
         return true;
+    }
+
+    /// <summary>
+    /// Abscisse (le long de <paramref name="tangent"/>) la plus proche du centre du mur où le panneau (et les raccourcis
+    /// sous lui, même largeur) ne chevauche aucun canvas de la scène posé devant ce mur, dans les limites du mur.
+    /// </summary>
+    private float FreeOffsetAlongWall(RaycastHit wall, Vector3 normal, Vector3 tangent, Vector3 pos)
+    {
+        var panelRect = progressPanel.GetComponent<RectTransform>();
+        float halfWidth = Mathf.Max(panelRect.sizeDelta.x, 700f) * panelScale / 2f + progressWallClearance;
+        float centerT = Vector3.Dot(pos, tangent);
+
+        // Étendue du mur le long de la tangente.
+        var b = wall.collider.bounds;
+        float wallMin = float.MaxValue, wallMax = float.MinValue;
+        for (int i = 0; i < 8; i++)
+        {
+            var corner = new Vector3((i & 1) == 0 ? b.min.x : b.max.x, (i & 2) == 0 ? b.min.y : b.max.y, (i & 4) == 0 ? b.min.z : b.max.z);
+            float t = Vector3.Dot(corner, tangent);
+            wallMin = Mathf.Min(wallMin, t); wallMax = Mathf.Max(wallMax, t);
+        }
+        float low = wallMin + halfWidth, high = wallMax - halfWidth;
+        if (low > high) return centerT;
+
+        // Obstacles : canvas monde (actifs ou non) parallèles au mur et à moins de progressWallObstacleDepth devant lui.
+        var blocked = new List<Vector2>();
+        var corners = new Vector3[4];
+        foreach (var c in Resources.FindObjectsOfTypeAll<Canvas>())
+        {
+            if (!c.gameObject.scene.IsValid() || c.renderMode != RenderMode.WorldSpace) continue;
+            if (c.transform.IsChildOf(progressPanel.transform) || c.GetComponentInParent<OVRCameraRig>() != null) continue;
+            if (Mathf.Abs(Vector3.Dot(c.transform.forward, normal)) < 0.7f) continue;
+            float depth = Vector3.Dot(c.transform.position - wall.point, normal);
+            if (depth < -0.2f || depth > progressWallObstacleDepth) continue;
+            c.GetComponent<RectTransform>().GetWorldCorners(corners);
+            float a = float.MaxValue, z = float.MinValue;
+            foreach (var k in corners) { float t = Vector3.Dot(k, tangent); a = Mathf.Min(a, t); z = Mathf.Max(z, t); }
+            if (z - a < 0.05f) continue;
+            blocked.Add(new Vector2(a - progressWallClearance, z + progressWallClearance));
+            Debug.Log($"[Tutorial] Obstacle sur le mur : « {c.name} » de {a:0.00} à {z:0.00} m.");
+        }
+
+        bool Free(float t)
+        {
+            if (t < low || t > high) return false;
+            foreach (var iv in blocked)
+                if (t + halfWidth > iv.x && t - halfWidth < iv.y) return false;
+            return true;
+        }
+
+        float best = Mathf.Clamp(centerT, low, high);
+        if (Free(best)) return best;
+        float bestDist = float.MaxValue;
+        bool found = false;
+        foreach (var iv in blocked)
+        {
+            foreach (float t in new[] { iv.x - halfWidth, iv.y + halfWidth })
+            {
+                if (!Free(t)) continue;
+                float d = Mathf.Abs(t - centerT);
+                if (d < bestDist) { bestDist = d; best = t; found = true; }
+            }
+        }
+        return found ? best : Mathf.Clamp(centerT, low, high);
     }
 
     private TMP_Text CreateLine(Transform parent, string text, float fontSize, int index)

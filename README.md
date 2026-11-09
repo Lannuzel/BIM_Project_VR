@@ -2,19 +2,22 @@
 
 *Version française : [README.fr.md](README.fr.md).*
 
-<img src="docs/images/avatar.png" alt="Network avatar of a participant (head, body, role label and controllers)" width="240" align="right">
+![Modeller's view during a session: measurement between two objects, left-hand menu, avatars of the Reader and the Calculator](docs/images/application.jpg)
 
 Virtual-reality research application (CESI LINEACT): a triad collaborates on a BIM-inspired task
 while the application records voice, gaze, facial expressions and positions to study collective
-intelligence.
+intelligence. Above, two moments of the Modeller's view in XP1, taken from one minute of a session
+filmed from the headset (`docs/images/5__expe_tristan_lannuzel.mp4`).
 
 - **Engine**: Unity 2022.3.56f1 (`ProjectSettings/ProjectVersion.txt`), Asset Serialization set to Force Text.
 - **Headset**: Meta Quest Pro (eye tracking and face tracking required), Android API 32.
 - **Network**: Photon Fusion 2.0.3, Shared mode, Photon cloud, region `eu` (see `docs/reseau.md`).
 - **Roles**: Reader (*Lecteur*: instructions, ends the activity), Calculator (*Calculateur*:
   notepad, calculator, documents), Modeller (*Modélisateur*: creates, moves and measures objects,
-  starts the activity),
-  Experimenter (*Expérimentateur*: administration panel, outside the task).
+  starts the activity), Experimenter (*Expérimentateur*: administration panel, outside the task;
+  hidden role, obtained with A, A, B, B on the right controller).
+
+<img src="docs/images/avatar.png" alt="Network avatar of a participant (head, body, role label and controllers)" width="150" align="right">
 
 Each participant is represented by the avatar shown opposite (`Assets/Prefabs/PlayerPrefabMB.prefab`):
 a translucent head and body, two eyes that follow the headset, the role displayed above the head
@@ -25,41 +28,30 @@ and the two Touch Pro controllers. The picture is produced by **BIM VR Tools ›
 
 | Scenario | Scene | Task | Status |
 | --- | --- | --- | --- |
-| Tutorial (shared) | `Assets/EXP1/Scenes/Tutorial/BIM-EXP_Tutorial_V2.unity` | grabbing, teleporting, drawing lines, moving an object, choosing a role | tested |
-| XP1 | `Assets/EXP1/Scenes/Exp1_V3.unity` | laying out a classroom (tables and chairs) | tested (acceptance run of 5 November 2026) |
-| XP2 | `Assets/EXP2/Scene/Exp2-V1-09-06-2025_EXP2_User.unity` | reservations for ducts and pipes in walls and floors | tested (acceptance run of 5 November 2026) |
-| XP3 | `Assets/EXP3/Scenes/Exp3-V0.2-10-02-26.unity` | ceiling equipment (luminaires, air terminals, fans), scaling against a reference slab, air-change rate, reservations | **not yet tested with participants** |
+| Tutorial (shared) | `Assets/EXP1/Scenes/Tutorial/BIM-EXP_Tutorial_V2.unity` | grabbing, teleporting, drawing lines, moving an object | tested |
+| XP1 | `Assets/EXP1/Scenes/Exp1_V3.unity` | laying out a classroom (tables and chairs) | tested (acceptance runs of November 2026) |
+| XP2 | `Assets/EXP2/Scene/Exp2-V1-09-06-2025_EXP2_User.unity` | reservations for ducts and pipes in walls and floors | tested (acceptance runs of November 2026) |
+| XP3 | `Assets/EXP3/Scenes/Exp3-V0.2-10-02-26.unity` | ceiling equipment (luminaires, air terminals, fans), scaling against a reference slab, air-change rate, reservations | tested alone on a headset, **no three-participant session yet** |
 
 Each experiment is a separate APK: scene 0 = tutorial, scene 1 = experiment
 (`SceneLoader` loads index 1 at the end of the tutorial or on "Skip the tutorial").
 
-XP3 comes from the `Network` branch (April 2026, Mukesh Barange), integrated on 6 November 2026.
-That branch had been committed without its `.meta` files: they were rebuilt, keeping the original
-identifiers wherever the scenes allowed them to be recovered. The scene builds, but no session has
-validated the scenario on a headset yet. Known point: the `PDFCanvas` object of the scene carries a
-missing script (already the case in XP1 and XP2, with no effect).
-
-## Branches and tags
-
-- `main`: integrated version.
-- `fix/recette-2026-11-05`: fixes from the acceptance run of 5 November 2026, one commit per item
-  (identifiers `F1`–`F19`, `N1`–`N5` of the requirements document), then XP3 integration and cleanup.
-- Tags: `v3.0-avant-recette` (state of April 2026 before the acceptance run), `archive/feedback`
-  (real-time feedback system of Emery Descours, folder `1_Emery`, based on the `main` of December 2024;
-  ported by code into `Assets/Scripts/Feedback/` on 6 November 2026, see "Collaborative feedbacks"),
-  `archive/BIM_Interaction`, `archive/BIM_Clean` (old branches from January 2025).
+The history of the project (branches and tags, XP3 integration, repository cleanup, acceptance runs) is
+in `docs/history.md`.
 
 ## Documents
 
 | File | Content |
 | --- | --- |
+| `docs/history.md` | branches, tags, XP3 integration, repository cleanup, acceptance runs, known build errors |
 | `docs/cahier_des_charges.md` | requirements F1–F18, N1–N5, defects, points to clarify (French) |
 | `docs/recette_2026-11-05.md` | transcript of the test voice memo (French) |
 | `docs/reseau.md` | network requirements (Photon ports), pre-session check, behaviour on connection loss (French) |
 | `docs/clavier_natif_quest.md` | study of the native Meta keyboard (not enabled) (French) |
 | `docs/check_session.py` | integrity check of a session's files (see below) |
 | `docs/receive_data.py` | HTTP receiver that collects the session files from the headsets (see below) |
-| `docs/check_references.py` | lists (and can restore) assets still referenced by scenes, prefabs or materials but missing from the project; run after any cleanup (see below) |
+| `docs/check_references.py` | lists (and can restore) assets still referenced by scenes, prefabs or materials but missing from the project; run after any cleanup |
+| `docs/images/` | README illustrations and the video of a session (Git LFS) |
 
 ## Building the APKs
 
@@ -86,16 +78,15 @@ At build time, `StaticBatchingAtBuild` marks every renderer coming from a fixed 
 models of XP2 and XP3, thousands of geometry nodes) as *Batching Static*, so Unity combines their
 meshes in the APK (scenes on disk are untouched). The icons of the XP3 "Générer …" buttons are
 rendered from the prefabs by **Outils BIM VR › Générer les icônes des prefabs XP3**
-(`Assets/Resources/Icone/XP3_*.png`) and assigned by code at scene load.
-
-The only errors logged during a build come from the Meta package (`AvatarBehaviourFusion`,
-exception on a `[Networked]` property): they are known and do not prevent the build.
+(`Assets/Resources/Icone/XP3_*.png`) and assigned by code at scene load. The known build errors
+(Meta package) are listed in `docs/history.md`.
 
 ## Session configuration
 
-All session settings live in a single asset: `Assets/Resources/SessionConfig.asset`
-(select the file in Unity, the fields appear in the Inspector; they are also shown in the
-experimenter panel).
+All session settings live in a single asset: `Assets/Resources/SessionConfig.asset`. Select it
+**in Unity**: the fields appear in the Inspector (a field left at its default value is not written to the
+`.asset` file, so it does not show up in a text editor). The settings are also shown in the experimenter
+panel.
 
 | Field | Purpose | Current value |
 | --- | --- | --- |
@@ -110,15 +101,17 @@ experimenter panel).
 | `audioFromSceneStart` | voice recording starts when the scene loads, like the other trackers (the sync beep is inserted at activity start) | true |
 | `playSyncBeep` | the sync beep is also played in the headset at activity start | true |
 | `startInFrontOfPanel` | at scene load, the headset is recentred in front of the welcome panel (tutorial) or the role panel (experiments), whatever its physical orientation | true |
-| `startDistance` | distance between headset and panel at start | 1.6 m |
+| `startDistance` | distance between headset and role panel at start | 1.6 m |
+| `startDistanceTutorial` | distance between headset and the tutorial welcome panel (4 m wide) | 2.2 m |
+| `clockPlacements` | position of the activity clock face per scene (scene-name fragment, position, rotation); without an entry, the prefab pose is kept (whiteboard of XP1 and XP2) | `Exp3` → (6.50; 1.75; 1.20), east wall |
 | `feedbackGaze` / `feedbackVoice` / `feedbackFace` | collaborative feedbacks (see below) | false |
 | `feedbackScenes` | experiment scenes where the feedbacks apply (empty = all) | empty |
 | `uploadUrl` | data receiver on the PC (empty = no upload) | empty |
 | `uploadTimeoutSeconds` | maximum time allowed for the upload | 180 |
 
-The common base of the experiment scenes (movable windows, keyboard, undo stack, Experimenter role,
-multi-line notepad) is installed by code when the scene loads (`Assets/Scripts/Core/SessionCore.cs`):
-nothing to copy from one scene to another.
+The common base of the scenes (movable windows, keyboard, undo stack, start recentring, hidden
+experimenter mode, feedbacks, multi-line notepad) is installed by code when the scene loads
+(`Assets/Scripts/Core/SessionCore.cs`): nothing to copy from one scene to another.
 
 ## Collaborative feedbacks
 
@@ -132,17 +125,28 @@ IHM'26 article in the citations). Three feedbacks, installed by code in XP1, XP2
 | Voice (`feedbackVoice`) | the microphone level of the recording is read (dBFS threshold); the network authority tracks the current speaker and the successful or failed interruptions. Individual: crossed-out microphone for 1 s in the left-hand menu for whoever cut in. Collective: message to all (with a bell) when, over a sliding window, the ratio of successful interruptions over attempts exceeds `voiceInterruptionRatio` and the count exceeds `voiceInterruptionCount` | `voiceDbThreshold` (-70), `voiceTimeRequired` (1 s), `voiceWindowSeconds` (60), `voiceInterruptionRatio` (0.62), `voiceInterruptionCount` (3) |
 | Face (`feedbackFace`) | action units 15 (lip corners) and 17 (chin): a light bulb in the left-hand menu whose opacity follows the ratio of samples with expression over the window; a participant is "focused" when the ratio reaches `faceThreshold`; message to all (with a bell) when the three participants are unfocused | `faceWeightThreshold` (0.1), `faceEvaluationSeconds` (60), `faceThreshold` (0.02) |
 
-Activation is the experimental condition: tick the boxes in `SessionConfig` (optionally restricted to some
-scenes with `feedbackScenes`), and switch them at runtime from the Experimenter panel (propagated to the three
-headsets by RPC). The condition is written in the session manifest (`feedbackGaze`, `feedbackVoice`,
-`feedbackFace`). A network object `FeedbackNetwork` (prefab generated in `Assets/Resources/Feedback/` by
-**Outils BIM VR › Créer le prefab réseau des feedbacks**, also at build time) is spawned by the session master and
-holds the shared state. When a feedback is enabled, the tutorial gains two steps: a sensor check (microphone and
-face) before the welcome screen, and an explanation of the pictograms before launching the experiment.
+### Enabling or disabling the feedbacks
+
+Activation is the experimental condition. Two ways, which can be combined:
+
+1. **Before building the APKs**: in Unity, select `Assets/Resources/SessionConfig.asset` and tick
+   `feedbackGaze`, `feedbackVoice` and / or `feedbackFace` in the Inspector (`feedbackScenes` optionally
+   restricts the effect to some scenes). The three headsets then start with these feedbacks on, and the
+   tutorial gains two steps: a sensor check (microphone and face) before the welcome screen, and an
+   explanation of the pictograms before launching the experiment.
+2. **During the session**: on the experimenter's headset, press A, A, B, B on the right controller to open
+   the experimenter panel, then the **Regard** (gaze), **Parole** (voice) and **Visage** (face) buttons
+   ("ON" / "OFF" label). The choice is propagated to the three headsets by RPC and takes effect at once,
+   before or after the activity starts, even when the configuration left everything off.
+
+The condition is written in the session manifest (`feedbackGaze`, `feedbackVoice`, `feedbackFace`) and every
+switch is logged in the feedback log. A network object `FeedbackNetwork` (prefab generated in
+`Assets/Resources/Feedback/` by **Outils BIM VR › Créer le prefab réseau des feedbacks**, also at build time)
+is spawned by the session master and holds the shared state.
 
 Events are logged in `*_FeedbackData.csv` (same time columns, `MARKER`, `END`, listed in the manifest, uploaded
 with the rest): `Feedback` (gaze, voice, face, session), `Event`, `Role`, `Target`, `Value`, `Count`, `Total`,
-`Ratio`, `Who`.
+`Ratio`, `Who`. The file is only created when a feedback was on or switched during the session.
 
 Documented differences from the published version: gaze detection covers every object with a collider (stable
 identifier computed by code), not only network objects, which makes the feedback usable with the fixed furniture
@@ -161,15 +165,19 @@ scene value of the branch (1).
    python docs/receive_data.py --port 8765 --out .\sessions
    ```
 
-2. Tutorial on each headset; the role can be chosen from the tutorial onwards. On every scene load the
-   headset is recentred in front of the starting panel (`startInFrontOfPanel`).
-3. Experiment scene: the trackers, voice included, record from the scene load. Pick the role in the list, then "Rejoindre" (join). The counter
-   "Joueurs : n/N" shows the connection state (N = `maxPlayers` from `SessionConfig`).
-4. The Modeller (`startActivityRole`) presses "Lancer l'activité" (start the activity): a waiting window appears on each
+2. Tutorial on each headset ("Passer le tutoriel" button under the progress panel to skip it). On every
+   scene load the headset is recentred in front of the starting panel (`startInFrontOfPanel`).
+3. Experiment scene: the trackers, voice included, record from the scene load. Pick the role in the list
+   (Lecteur, Calculateur, Modélisateur), then "Rejoindre" (join). The counter "Joueurs : n/N" shows the
+   connection state (N = `maxPlayers` from `SessionConfig`).
+4. Experimenter's headset, if any: A, A, B, B on the right controller (within 3 s), in the tutorial or in
+   the experiment scene, before "Rejoindre". The Experimenter role is applied, selected in the list and its
+   panel is shown; the same sequence hides or shows the panel again.
+5. The Modeller (`startActivityRole`) presses "Lancer l'activité" (start the activity): a waiting window appears on each
    headset, then the `MARKER` line is written at the same network time on the three headsets, the
    sync beep is inserted in the audio file and played in the headset, the session manifest is
    written and the activity clock appears on every headset.
-5. The Reader (`stopActivityRole`) ends the activity, or the automatic stop occurs after `sessionTimeoutMinutes`:
+6. The Reader (`stopActivityRole`) ends the activity, or the automatic stop occurs after `sessionTimeoutMinutes`:
    thank-you message in a panel that follows the head, upload of the files to the PC if a URL is
    configured (status shown under the message), then the application closes on each headset. The files stay on the headset in
    every case.
@@ -185,8 +193,9 @@ scene value of the branch (1).
   top-right corner of its body, since its canvas is not in the plane of its face).
 - **Keyboard**: AZERTY, Enter validates the field (line break only in the notepad), "Fermer"
   (close) key.
-- **Experimenter**: panel with recording start / stop, forced end of session (with confirmation),
-  live role change, simulated players, real-time monitoring of the recordings.
+- **Experimenter**: A, A, B, B on the right controller; panel with recording start / stop, forced end of
+  session (with confirmation), feedbacks ON / OFF, live role change (back to a participant role included),
+  simulated players, real-time monitoring of the recordings.
 
 ## Recorded data
 
@@ -194,13 +203,13 @@ On the headset: `Android/data/<application identifier>/files/Data/`.
 
 | File | Content |
 | --- | --- |
-| `*_Session.json` | manifest: session, role, scene, headset, application version, marker and end times (local, network, UTC), files produced and their size |
+| `*_Session.json` | manifest: session, role, scene, headset, application version, marker and end times (local, network, UTC), active feedbacks, files produced and their size |
 | `*_Audio.wav` | voice, 16-bit PCM mono 44.1 kHz, starts when the scene loads (`audioFromSceneStart`), synchronisation beep inserted when the activity starts (1 kHz, 0.5 s, `Assets/Resources/SyncSignal.wav`) |
 | `*_EyeTrackingData.csv` | gaze: origin, hit point, object looked at, at frame rate |
 | `*_FaceTrackingData.csv` | 71 facial action units, at frame rate |
 | `*_UsersPositions.csv` | positions, 2 Hz |
 | `*_ChairePositionData.csv` / `*_ReservationPositionData.csv` / `*_CalepinagePositionData.csv` | end-of-session summary: objects, reservations or equipment from all headsets |
-| `*_FeedbackData.csv` | collaborative feedback events, when enabled (see above) |
+| `*_FeedbackData.csv` | collaborative feedback events, when they were on (see above) |
 
 The gaze, face and position CSV files start with three time columns: `Time` (seconds since the
 application was launched on this headset), `NetTime` (Photon Fusion network clock, identical on
@@ -218,48 +227,44 @@ python docs/check_session.py <Data folder copied from the headset>
 ## Architecture (key points)
 
 - `Assets/Scripts/Core/`: `SessionConfig` (configuration asset), `SessionCore` (base installed by
-  code in the experiment scenes), `StartPlacement` (headset recentred in front of the starting panel),
+  code in the scenes), `StartPlacement` (headset recentred in front of the starting panel),
   `SessionClock` (time columns of the CSV files),
   `SessionManifest` (JSON manifest), `DataUploader` (HTTP upload of the files at the end of a session).
 - `Assets/Scripts/Network/NetworkManager.cs`: Fusion session, automatic reconnection after a
   connection loss, `GetLocalPlayerName()` for the local role.
 - `Assets/Scripts/SyncManager.cs`, `HostController.cs`, `ExitManager.cs` (on the avatar
   `PlayerPrefabMB`): synchronised start and stop, end of session.
-- `Assets/Scripts/Network/AdminTools.cs`, `Assets/Scripts/UI/ExperimenterPanel.cs`: experimenter tools.
+- `Assets/Scripts/Network/AdminTools.cs`, `Assets/Scripts/UI/ExperimenterPanel.cs`,
+  `ExperimenterShortcut.cs`: experimenter tools and the A, A, B, B sequence.
+- `Assets/Scripts/Feedback/`: collaborative feedbacks (`FeedbackManager`, network object
+  `FeedbackNetwork`, gaze, voice, face, log, tutorial steps).
 - `Assets/Scripts/Undo/UndoManager.cs`: Modeller undo stack (networked Despawn / Spawn /
   teleport; XP3 scaling cannot be undone).
 - `Assets/Scripts/Tutorial/TutorialManager.cs`: progression and validation of the tutorial steps;
   `ModeGizmo.cs`: move / rotate gizmo on the tutorial object (same drawing as
   `TranslateGizmoDrawer` / `RotationGizmoDrawer` in XP2).
 - `Assets/BIM Resources/Scripts/BIMBarange/`: Modeller tools (selection, measurement, alignment,
-  distance to wall, reservations). `ObjectInteractionHandler.HeightFor` gives the placement height
-  of an object: 0 (floor) in XP1, ceiling height by object name in XP3 (`spawnHeightRules`).
+  distance to wall, reservations) and the activity clock (`CountDownWatch`).
+  `ObjectInteractionHandler.HeightFor` gives the placement height of an object: 0 (floor) in XP1,
+  ceiling height by object name in XP3 (`spawnHeightRules`).
 - Interfaces created in code: use `XRUiCanvas.MakeInteractive` so that they respond to the Meta
   laser pointer (`OVRRaycaster`).
 
-## Repository content
+## Repository rules
 
 The repository only contains what the four build scenes reach, plus the folders loaded by name
-(`Resources`, `StreamingAssets`, `Editor`, `Scripts`, SDKs). The cleanup of 6 November 2026
-removed the kits unrelated to the experiment (platformer, VRKeys, ShadersCollection, XRI
-multiplayer template and its editor tutorials, Netcode for GameObjects and the Unity multiplayer
-services, PDF libraries for iOS / macOS / UWP / WebGL), the old test scenes and the scripts that
-no scene, prefab or other script references. Everything remains in the git history.
-
-Rules to keep the repository healthy:
+(`Resources`, `StreamingAssets`, `Editor`, `Scripts`, SDKs); see `docs/history.md` for the cleanup
+that brought it there.
 
 - never ignore `*.meta`: every asset must be versioned with its `.meta`;
-- build archives, logs and IDE settings are excluded by `.gitignore`;
+- build archives, logs and IDE settings are excluded by `.gitignore`; images and videos go through
+  Git LFS (`.gitattributes`);
 - a test scene does not go into `Assets/EXP*/Scenes`; the Build Settings list only the tutorial
   and the three experiment scenes;
-- never delete a folder wholesale without checking the references into it: the cleanup of
-  6 November removed materials of the lines and of the tutorial cube, the room model and the Fusion
-  prefabs' dependencies that way (magenta objects on the headset, object creation broken). Run
+- never delete a folder wholesale without checking the references into it; run
   `python docs/check_references.py .` after any deletion: it must report no `MANQUANT` line;
 - shader include files (`*.cginc`, `*.hlsl`) are referenced by name, not by GUID: a dependency
-  analysis does not see them. The two includes used by the avatar and keyboard shaders
-  (`TexturedStableFresnelCommon.cginc`, `MixedRealityShaderUtils.cginc`) were restored on
-  6 November 2026 after the cleanup; a magenta avatar means an include is missing.
+  analysis does not see them; a magenta avatar or keyboard means an include is missing.
 
 ## Citing the application
 

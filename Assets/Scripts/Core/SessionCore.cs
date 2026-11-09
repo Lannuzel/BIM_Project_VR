@@ -10,14 +10,13 @@ using UnityEngine.UI;
 /// plus besoin de recopier à la main la même configuration dans XP1, XP2 et XP3.
 /// - objet « SessionCore » portant UIWindowsManager (fenêtres déplaçables, croix de fermeture),
 ///   XRKeyboardTweaks (clavier AZERTY, Entrée valide) et UndoManager (pile d'annulation) ;
-/// - option « Experimentateur » dans la liste des rôles si elle manque ;
+/// - mode expérimentateur caché (ExperimenterShortcut : A, A, B, B sur la manette droite), dans le tutoriel aussi ;
 /// - bloc-notes en saisie multiligne (Entrée = retour à la ligne, uniquement là).
-/// Une scène de tutoriel (TutorialManager présent) n'est pas concernée : elle porte ses propres composants.
+/// Une scène de tutoriel (TutorialManager présent) ne reçoit que StartPlacement et ExperimenterShortcut.
 /// </summary>
 public static class SessionCore
 {
     public const string ObjectName = "SessionCore";
-    public const string ExperimenterRole = "Experimentateur";
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Init()
@@ -47,16 +46,17 @@ public static class SessionCore
 
         // Commun au tutoriel et aux expériences : casque recentré devant le panneau de départ.
         Ensure<StartPlacement>(host);
+        // Recette du 9 novembre 2026 : le rôle Expérimentateur n'est plus proposé ; il s'obtient par A, A, B, B (manette droite).
+        Ensure<ExperimenterShortcut>(host);
         if (isTutorial) return;
 
         Ensure<UIWindowsManager>(host);
         Ensure<XRKeyboardTweaks>(host);
         Ensure<UndoManager>(host);
-        // Feedbacks collaboratifs (Emery Descours) si la configuration les active pour cette scène.
-        if (FeedbackSettings.AppliesToScene(scene.name))
-            Ensure<FeedbackManager>(host);
+        // Feedbacks collaboratifs (Emery Descours) : toujours installés, inertes tant qu'aucun n'est activé par la
+        // configuration ou par le panneau de l'expérimentateur (recette du 9 novembre 2026).
+        Ensure<FeedbackManager>(host);
 
-        EnsureExperimenterRole();
         EnsureNotepadMultiline();
         EnsureMenuIcons();
 
@@ -67,21 +67,6 @@ public static class SessionCore
     {
         if (Object.FindObjectOfType<T>(true) == null)
             host.AddComponent<T>();
-    }
-
-    /// <summary>Ajoute le rôle Expérimentateur à la liste déroulante des rôles s'il n'y figure pas.</summary>
-    private static void EnsureExperimenterRole()
-    {
-        foreach (var lobby in Object.FindObjectsOfType<LobbyManager>(true))
-        {
-            if (lobby.dropdown == null) continue;
-            bool present = lobby.dropdown.options.Exists(o => o.text == ExperimenterRole);
-            if (!present)
-            {
-                lobby.dropdown.options.Add(new TMP_Dropdown.OptionData(ExperimenterRole));
-                lobby.dropdown.RefreshShownValue();
-            }
-        }
     }
 
     /// <summary>Boutons « Générer … » du menu du plafond (XP3) → icône rendue à partir du prefab (PrefabIconRenderer).</summary>
