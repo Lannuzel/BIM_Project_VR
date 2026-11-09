@@ -15,7 +15,7 @@ public class ClockPlacement
     public string scene;
     [Tooltip("Position (m) du centre du cadran dans la scène.")]
     public Vector3 position;
-    [Tooltip("Rotation (degrés). À zéro, le cadran se lit depuis le côté -X, comme sur le tableau de XP1 (mur de droite) ; Y = -90 : lisible depuis le côté -Z.")]
+    [Tooltip("Rotation (degrés) ajoutée à la pose du prefab. À zéro, le cadran garde l'orientation de XP1 (parallèle au mur de droite, lisible depuis la salle) ; Y = 90 ou -90 le tourne d'un quart de tour.")]
     public Vector3 euler;
 }
 
