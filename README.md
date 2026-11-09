@@ -7,7 +7,7 @@
 Virtual-reality research application (CESI LINEACT): a triad collaborates on a BIM-inspired task
 while the application records voice, gaze, facial expressions and positions to study collective
 intelligence. Above, two moments of the Modeller's view in XP1, taken from one minute of a session
-filmed from the headset (`docs/images/5__expe_tristan_lannuzel.mp4`).
+filmed from the headset.
 
 - **Engine**: Unity 2022.3.56f1 (`ProjectSettings/ProjectVersion.txt`), Asset Serialization set to Force Text.
 - **Headset**: Meta Quest Pro (eye tracking and face tracking required), Android API 32.
@@ -51,7 +51,7 @@ in `docs/history.md`.
 | `docs/check_session.py` | integrity check of a session's files (see below) |
 | `docs/receive_data.py` | HTTP receiver that collects the session files from the headsets (see below) |
 | `docs/check_references.py` | lists (and can restore) assets still referenced by scenes, prefabs or materials but missing from the project; run after any cleanup |
-| `docs/images/` | README illustrations and the video of a session (Git LFS) |
+| `docs/images/` | README illustrations (Git LFS) |
 
 ## Building the APKs
 
@@ -102,7 +102,7 @@ panel.
 | `playSyncBeep` | the sync beep is also played in the headset at activity start | true |
 | `startInFrontOfPanel` | at scene load, the headset is recentred in front of the welcome panel (tutorial) or the role panel (experiments), whatever its physical orientation | true |
 | `startDistance` | distance between headset and role panel at start | 1.6 m |
-| `startDistanceTutorial` | distance between headset and the tutorial welcome panel (4 m wide) | 2.2 m |
+| `startDistanceTutorial` | distance between headset and the tutorial welcome panel (4 m wide) | 2.8 m |
 | `clockPlacements` | position of the activity clock face per scene (scene-name fragment, position, rotation); without an entry, the prefab pose is kept (whiteboard of XP1 and XP2) | `Exp3` → (6.50; 1.75; 1.20), east wall |
 | `feedbackGaze` / `feedbackVoice` / `feedbackFace` | collaborative feedbacks (see below) | false |
 | `feedbackScenes` | experiment scenes where the feedbacks apply (empty = all) | empty |
@@ -112,6 +112,26 @@ panel.
 The common base of the scenes (movable windows, keyboard, undo stack, start recentring, hidden
 experimenter mode, feedbacks, multi-line notepad) is installed by code when the scene loads
 (`Assets/Scripts/Core/SessionCore.cs`): nothing to copy from one scene to another.
+
+## Experimenter mode
+
+The Experimenter role is hidden: it is offered neither in the tutorial nor in the role list of the
+experiment scene (the option is removed at scene load). On the experimenter's headset:
+
+1. press **A, A, B, B** on the right controller, within 3 seconds, in the tutorial or in the experiment
+   scene before "Rejoindre";
+2. in the experiment scene, the Experimenter role is applied, the "Experimentateur" option appears and is
+   selected in the role list, and the experimenter panel opens to the left of the role panel (from the
+   tutorial, the role is remembered and all this happens when the experiment scene loads);
+3. "Rejoindre" like the other headsets. The experimenter's headset counts as a connected player: set
+   `maxPlayers` = 4 when the three participants and the experimenter join the same session.
+
+The panel offers: synchronised recording start / stop, forced end of session (second click to confirm),
+Gaze / Voice / Face feedbacks ON / OFF for the three headsets, live role change (back to a participant role
+included), simulated players (counted as connected), a reminder of the configuration and real-time
+monitoring of the recordings. It moves like the other windows (hold the right grip trigger). The same
+A, A, B, B sequence hides or shows the panel again. The role is kept from one launch to the next: to become a
+participant again, pick a role in the panel or in the list before "Rejoindre".
 
 ## Collaborative feedbacks
 
@@ -170,9 +190,8 @@ scene value of the branch (1).
 3. Experiment scene: the trackers, voice included, record from the scene load. Pick the role in the list
    (Lecteur, Calculateur, Modélisateur), then "Rejoindre" (join). The counter "Joueurs : n/N" shows the
    connection state (N = `maxPlayers` from `SessionConfig`).
-4. Experimenter's headset, if any: A, A, B, B on the right controller (within 3 s), in the tutorial or in
-   the experiment scene, before "Rejoindre". The Experimenter role is applied, selected in the list and its
-   panel is shown; the same sequence hides or shows the panel again.
+4. Experimenter's headset, if any: A, A, B, B on the right controller before "Rejoindre" (see
+   "Experimenter mode").
 5. The Modeller (`startActivityRole`) presses "Lancer l'activité" (start the activity): a waiting window appears on each
    headset, then the `MARKER` line is written at the same network time on the three headsets, the
    sync beep is inserted in the audio file and played in the headset, the session manifest is

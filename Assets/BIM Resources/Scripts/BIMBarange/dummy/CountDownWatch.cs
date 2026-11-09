@@ -82,7 +82,8 @@ public class CountDownWatch : NetworkBehaviour
         // Le cadran (canvas) est décalé par rapport à la racine du prefab : on compense ce décalage.
         var face = clockPrefab.GetComponentInChildren<Canvas>(true);
         Vector3 faceOffset = face != null ? face.transform.position - clockPrefab.transform.position : Vector3.zero;
-        rotation = Quaternion.Euler(placement.euler);
+        // Rotation relative à la pose du prefab (sa racine est déjà tournée de 90° : cadran parallèle au mur de droite).
+        rotation = clockPrefab.transform.rotation * Quaternion.Euler(placement.euler);
         position = placement.position - rotation * faceOffset;
         Debug.Log($"[CountDownWatch] Cadran placé selon la configuration ({placement.scene}) à {placement.position}.");
     }
